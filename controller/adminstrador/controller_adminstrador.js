@@ -113,11 +113,67 @@ const validarDados = async (administrador, contentType) => {
     let message = JSON.parse(JSON.stringify(config_message))
 
     // Valida se o formato de dados é JSON
+    // Rejeita requisições com conteúdo incompatível
     if(String(contentType).toLowerCase() != 'application/json') return message.ERROR_CONTENT_TYPE // Status code 415
 
-    if(administrador.nome == undefined || administrador.nome == null || administrador.nome == '' || administrador.nome.length > 100 || typeof(administrador.nome) != 'string'){
-        message.ERROR_BAD_REQUEST.field = '[NOME] INVÁLIDO'
+    // Garante que o administrador foi informado como objeto
+    if(administrador == undefined || administrador == null || typeof administrador != 'object'){
+        message.ERROR_BAD_REQUEST.field = '[ADMINISTRADOR] INVÁLIDO'
         return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Valida nome completo obrigatório
+    if(typeof administrador.nome_completo != 'string' || administrador.nome_completo.trim() == '' || administrador.nome_completo.length > 150){
+        message.ERROR_BAD_REQUEST.field = '[NOME_COMPLETO] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST
+    }
+
+    // Valida e-mail obrigatório
+    if(typeof administrador.email != 'string' || administrador.email.trim() == '' || administrador.email.length > 150){
+        message.ERROR_BAD_REQUEST.field = '[EMAIL] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST
+    }
+
+    // Valida papel obrigatório
+    if(typeof administrador.papel != 'string' || administrador.papel.trim() == '' || administrador.papel.length > 20){
+        message.ERROR_BAD_REQUEST.field = '[PAPEL] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST
+    }
+
+    // Valida senha hash opcional
+    if(administrador.senha_hash != undefined && administrador.senha_hash != null &&
+       (typeof administrador.senha_hash != 'string' || administrador.senha_hash.length > 255)){
+        message.ERROR_BAD_REQUEST.field = '[SENHA_HASH] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST
+    }
+
+    // Valida celular opcional
+    if(administrador.celular != undefined && administrador.celular != null &&
+       (typeof administrador.celular != 'string' || administrador.celular.length > 20)){
+        message.ERROR_BAD_REQUEST.field = '[CELULAR] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST
+    }
+
+    // Valida avatar opcional
+    if(administrador.foto_avatar != undefined && administrador.foto_avatar != null &&
+       typeof administrador.foto_avatar != 'string'){
+        message.ERROR_BAD_REQUEST.field = '[FOTO_AVATAR] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST
+    }
+
+    // Valida flag de senha provisória
+    if(administrador.senha_provisoria != undefined && administrador.senha_provisoria != null &&
+       ![0, 1, true, false].includes(administrador.senha_provisoria)){
+        message.ERROR_BAD_REQUEST.field = '[SENHA_PROVISORIA] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST
+    }
+
+    // Valida data de criação obrigatória
+    if(administrador.data_criacao == undefined || administrador.data_criacao == null ||
+       (typeof administrador.data_criacao != 'string' && !(administrador.data_criacao instanceof Date)) ||
+       String(administrador.data_criacao).trim() == ''){
+        message.ERROR_BAD_REQUEST.field = '[DATA_CRIACAO] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST
     }
 
     return false
@@ -126,6 +182,7 @@ const validarDados = async (administrador, contentType) => {
 const validarId = async (id) => {
     let message = JSON.parse(JSON.stringify(config_message))
     
+    // Valida identificador positivo
     if(id == undefined || id == '' || id == null || id <= 0 || isNaN(id)){
         message.ERROR_BAD_REQUEST.field = '[ID] INVÁLIDO'
         return message.ERROR_BAD_REQUEST // 400

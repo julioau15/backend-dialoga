@@ -113,10 +113,18 @@ const validarDados = async (especialidade, contentType) => {
     let message = JSON.parse(JSON.stringify(config_message))
 
     // Valida se o formato de dados é JSON
+    // Valida o formato da requisição
     if(String(contentType).toLowerCase() != 'application/json') return message.ERROR_CONTENT_TYPE // Status code 415
 
-    if(especialidade.nome == undefined || especialidade.nome == null || especialidade.nome == '' || especialidade.nome.length > 100 || typeof(especialidade.nome) != 'string'){
-        message.ERROR_BAD_REQUEST.field = '[NOME] INVÁLIDO'
+    // Garante que o objeto foi informado
+    if(especialidade == undefined || especialidade == null || typeof especialidade != 'object'){
+        message.ERROR_BAD_REQUEST.field = '[ESPECIALIDADE] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Valida a especialidade obrigatória
+    if(typeof especialidade.especialidade != 'string' || especialidade.especialidade.trim() == '' || especialidade.especialidade.length > 100){
+        message.ERROR_BAD_REQUEST.field = '[ESPECIALIDADE] INVÁLIDO'
         return message.ERROR_BAD_REQUEST // 400
     }
 

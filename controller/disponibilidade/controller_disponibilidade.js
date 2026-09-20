@@ -113,10 +113,54 @@ const validarDados = async (disponibilidade, contentType) => {
     let message = JSON.parse(JSON.stringify(config_message))
 
     // Valida se o formato de dados é JSON
+    // Valida o formato da requisição
     if(String(contentType).toLowerCase() != 'application/json') return message.ERROR_CONTENT_TYPE // Status code 415
 
-    if(disponibilidade.nome == undefined || disponibilidade.nome == null || disponibilidade.nome == '' || disponibilidade.nome.length > 100 || typeof(disponibilidade.nome) != 'string'){
-        message.ERROR_BAD_REQUEST.field = '[NOME] INVÁLIDO'
+    // Garante que o objeto foi informado
+    if(disponibilidade == undefined || disponibilidade == null || typeof disponibilidade != 'object'){
+        message.ERROR_BAD_REQUEST.field = '[DISPONIBILIDADE] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Valida os dias da semana
+    if(typeof disponibilidade.dias_da_semana != 'string' || disponibilidade.dias_da_semana.trim() == '' || disponibilidade.dias_da_semana.length > 50){
+        message.ERROR_BAD_REQUEST.field = '[DIAS_DA_SEMANA] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Valida a hora inicial
+    if(disponibilidade.hora_inicio == undefined || disponibilidade.hora_inicio == null || String(disponibilidade.hora_inicio).trim() == ''){
+        message.ERROR_BAD_REQUEST.field = '[HORA_INICIO] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Valida a hora final
+    if(disponibilidade.hora_fim == undefined || disponibilidade.hora_fim == null || String(disponibilidade.hora_fim).trim() == ''){
+        message.ERROR_BAD_REQUEST.field = '[HORA_FIM] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Valida o tipo de repetição
+    if(typeof disponibilidade.tipo_repeticao != 'string' || disponibilidade.tipo_repeticao.trim() == '' || disponibilidade.tipo_repeticao.length > 20){
+        message.ERROR_BAD_REQUEST.field = '[TIPO_REPETICAO] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Valida a data inicial opcional
+    if(disponibilidade.data_inicial != undefined && disponibilidade.data_inicial != null && String(disponibilidade.data_inicial).trim() == ''){
+        message.ERROR_BAD_REQUEST.field = '[DATA_INICIAL] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Valida a data final opcional
+    if(disponibilidade.data_final != undefined && disponibilidade.data_final != null && String(disponibilidade.data_final).trim() == ''){
+        message.ERROR_BAD_REQUEST.field = '[DATA_FINAL] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Valida o profissional relacionado
+    if(disponibilidade.id_profissional == undefined || disponibilidade.id_profissional == null || !Number.isInteger(Number(disponibilidade.id_profissional)) || Number(disponibilidade.id_profissional) <= 0){
+        message.ERROR_BAD_REQUEST.field = '[ID_PROFISSIONAL] INVÁLIDO'
         return message.ERROR_BAD_REQUEST // 400
     }
 

@@ -113,10 +113,30 @@ const validarDados = async (categoriaCompartilhada, contentType) => {
     let message = JSON.parse(JSON.stringify(config_message))
 
     // Valida se o formato de dados é JSON
+    // Valida o formato da requisição
     if(String(contentType).toLowerCase() != 'application/json') return message.ERROR_CONTENT_TYPE // Status code 415
 
-    if(categoriaCompartilhada.nome == undefined || categoriaCompartilhada.nome == null || categoriaCompartilhada.nome == '' || categoriaCompartilhada.nome.length > 100 || typeof(categoriaCompartilhada.nome) != 'string'){
-        message.ERROR_BAD_REQUEST.field = '[NOME] INVÁLIDO'
+    // Garante que o objeto foi informado
+    if(categoriaCompartilhada == undefined || categoriaCompartilhada == null || typeof categoriaCompartilhada != 'object'){
+        message.ERROR_BAD_REQUEST.field = '[CATEGORIA_COMPARTILHADA] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Valida a categoria obrigatória
+    if(typeof categoriaCompartilhada.categoria != 'string' || categoriaCompartilhada.categoria.trim() == '' || categoriaCompartilhada.categoria.length > 30){
+        message.ERROR_BAD_REQUEST.field = '[CATEGORIA] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Valida a autorização
+    if(![0, 1, true, false].includes(categoriaCompartilhada.autorizado)){
+        message.ERROR_BAD_REQUEST.field = '[AUTORIZADO] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Valida a solicitação relacionada
+    if(categoriaCompartilhada.id_solicitacao_acesso == undefined || categoriaCompartilhada.id_solicitacao_acesso == null || !Number.isInteger(Number(categoriaCompartilhada.id_solicitacao_acesso)) || Number(categoriaCompartilhada.id_solicitacao_acesso) <= 0){
+        message.ERROR_BAD_REQUEST.field = '[ID_SOLICITACAO_ACESSO] INVÁLIDO'
         return message.ERROR_BAD_REQUEST // 400
     }
 

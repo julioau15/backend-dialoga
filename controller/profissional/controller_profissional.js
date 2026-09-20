@@ -113,10 +113,69 @@ const validarDados = async (profissional, contentType) => {
     let message = JSON.parse(JSON.stringify(config_message))
 
     // Valida se o formato de dados é JSON
+    // Valida o formato da requisição
     if(String(contentType).toLowerCase() != 'application/json') return message.ERROR_CONTENT_TYPE // Status code 415
 
-    if(profissional.nome == undefined || profissional.nome == null || profissional.nome == '' || profissional.nome.length > 100 || typeof(profissional.nome) != 'string'){
-        message.ERROR_BAD_REQUEST.field = '[NOME] INVÁLIDO'
+    // Garante que o objeto foi informado
+    if(profissional == undefined || profissional == null || typeof profissional != 'object'){
+        message.ERROR_BAD_REQUEST.field = '[PROFISSIONAL] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Valida o nome completo
+    if(typeof profissional.nome_completo != 'string' || profissional.nome_completo.trim() == '' || profissional.nome_completo.length > 150){
+        message.ERROR_BAD_REQUEST.field = '[NOME_COMPLETO] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Valida o e-mail
+    if(typeof profissional.email != 'string' || profissional.email.trim() == '' || profissional.email.length > 150){
+        message.ERROR_BAD_REQUEST.field = '[EMAIL] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Valida o CPF
+    if(typeof profissional.cpf != 'string' || profissional.cpf.trim() == '' || profissional.cpf.length > 11){
+        message.ERROR_BAD_REQUEST.field = '[CPF] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Valida o CRP
+    if(typeof profissional.crp != 'string' || profissional.crp.trim() == '' || profissional.crp.length > 20){
+        message.ERROR_BAD_REQUEST.field = '[CRP] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Valida a senha hash opcional
+    if(profissional.senha_hash != undefined && profissional.senha_hash != null &&
+       (typeof profissional.senha_hash != 'string' || profissional.senha_hash.length > 255)){
+        message.ERROR_BAD_REQUEST.field = '[SENHA_HASH] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Valida o celular opcional
+    if(profissional.celular != undefined && profissional.celular != null &&
+       (typeof profissional.celular != 'string' || profissional.celular.length > 20)){
+        message.ERROR_BAD_REQUEST.field = '[CELULAR] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Valida a instituição opcional
+    if(profissional.instituicao_clinica != undefined && profissional.instituicao_clinica != null &&
+       (typeof profissional.instituicao_clinica != 'string' || profissional.instituicao_clinica.length > 150)){
+        message.ERROR_BAD_REQUEST.field = '[INSTITUICAO_CLINICA] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Valida o avatar opcional
+    if(profissional.foto_avatar != undefined && profissional.foto_avatar != null && typeof profissional.foto_avatar != 'string'){
+        message.ERROR_BAD_REQUEST.field = '[FOTO_AVATAR] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Valida o papel
+    if(typeof profissional.papel != 'string' || profissional.papel.trim() == '' || profissional.papel.length > 20){
+        message.ERROR_BAD_REQUEST.field = '[PAPEL] INVÁLIDO'
         return message.ERROR_BAD_REQUEST // 400
     }
 

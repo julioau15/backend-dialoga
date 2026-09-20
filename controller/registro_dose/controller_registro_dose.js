@@ -113,10 +113,36 @@ const validarDados = async (registroDose, contentType) => {
     let message = JSON.parse(JSON.stringify(config_message))
 
     // Valida se o formato de dados é JSON
+    // Valida o formato da requisição
     if(String(contentType).toLowerCase() != 'application/json') return message.ERROR_CONTENT_TYPE // Status code 415
 
-    if(registroDose.nome == undefined || registroDose.nome == null || registroDose.nome == '' || registroDose.nome.length > 100 || typeof(registroDose.nome) != 'string'){
-        message.ERROR_BAD_REQUEST.field = '[NOME] INVÁLIDO'
+    // Garante que o objeto foi informado
+    if(registroDose == undefined || registroDose == null || typeof registroDose != 'object'){
+        message.ERROR_BAD_REQUEST.field = '[REGISTRO_DOSE] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Valida a data prevista
+    if(registroDose.data_hora_prevista == undefined || registroDose.data_hora_prevista == null || String(registroDose.data_hora_prevista).trim() == ''){
+        message.ERROR_BAD_REQUEST.field = '[DATA_HORA_PREVISTA] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Valida o status
+    if(typeof registroDose.status != 'string' || registroDose.status.trim() == '' || registroDose.status.length > 25){
+        message.ERROR_BAD_REQUEST.field = '[STATUS] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Valida a confirmação opcional
+    if(registroDose.data_hora_confirmacao != undefined && registroDose.data_hora_confirmacao != null && String(registroDose.data_hora_confirmacao).trim() == ''){
+        message.ERROR_BAD_REQUEST.field = '[DATA_HORA_CONFIRMACAO] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Valida o horário relacionado
+    if(registroDose.id_horario_tratamento == undefined || registroDose.id_horario_tratamento == null || !Number.isInteger(Number(registroDose.id_horario_tratamento)) || Number(registroDose.id_horario_tratamento) <= 0){
+        message.ERROR_BAD_REQUEST.field = '[ID_HORARIO_TRATAMENTO] INVÁLIDO'
         return message.ERROR_BAD_REQUEST // 400
     }
 

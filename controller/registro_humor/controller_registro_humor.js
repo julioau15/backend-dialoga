@@ -113,10 +113,66 @@ const validarDados = async (registroHumor, contentType) => {
     let message = JSON.parse(JSON.stringify(config_message))
 
     // Valida se o formato de dados é JSON
+    // Valida o formato da requisição
     if(String(contentType).toLowerCase() != 'application/json') return message.ERROR_CONTENT_TYPE // Status code 415
 
-    if(registroHumor.nome == undefined || registroHumor.nome == null || registroHumor.nome == '' || registroHumor.nome.length > 100 || typeof(registroHumor.nome) != 'string'){
-        message.ERROR_BAD_REQUEST.field = '[NOME] INVÁLIDO'
+    // Garante que o objeto foi informado
+    if(registroHumor == undefined || registroHumor == null || typeof registroHumor != 'object'){
+        message.ERROR_BAD_REQUEST.field = '[REGISTRO_HUMOR] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Valida a data do registro
+    if(registroHumor.data == undefined || registroHumor.data == null || String(registroHumor.data).trim() == ''){
+        message.ERROR_BAD_REQUEST.field = '[DATA] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Valida o sentimento
+    if(typeof registroHumor.sentimento != 'string' || registroHumor.sentimento.trim() == '' || registroHumor.sentimento.length > 30){
+        message.ERROR_BAD_REQUEST.field = '[SENTIMENTO] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Valida a energia
+    if(typeof registroHumor.energia != 'string' || registroHumor.energia.trim() == '' || registroHumor.energia.length > 20){
+        message.ERROR_BAD_REQUEST.field = '[ENERGIA] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Valida o humor
+    if(typeof registroHumor.humor != 'string' || registroHumor.humor.trim() == '' || registroHumor.humor.length > 20){
+        message.ERROR_BAD_REQUEST.field = '[HUMOR] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Valida o padrão de pensamentos
+    if(typeof registroHumor.padrao_pensamentos != 'string' || registroHumor.padrao_pensamentos.trim() == '' || registroHumor.padrao_pensamentos.length > 500){
+        message.ERROR_BAD_REQUEST.field = '[PADRAO_PENSAMENTOS] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Valida as horas de sono
+    if(registroHumor.horas_sono == undefined || registroHumor.horas_sono == null || isNaN(Number(registroHumor.horas_sono)) || Number(registroHumor.horas_sono) < 0){
+        message.ERROR_BAD_REQUEST.field = '[HORAS_SONO] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Valida o relato opcional
+    if(registroHumor.relato != undefined && registroHumor.relato != null && typeof registroHumor.relato != 'string'){
+        message.ERROR_BAD_REQUEST.field = '[RELATO] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Valida a data de criação
+    if(registroHumor.data_criacao == undefined || registroHumor.data_criacao == null || String(registroHumor.data_criacao).trim() == ''){
+        message.ERROR_BAD_REQUEST.field = '[DATA_CRIACAO] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Valida o paciente relacionado
+    if(registroHumor.id_paciente == undefined || registroHumor.id_paciente == null || !Number.isInteger(Number(registroHumor.id_paciente)) || Number(registroHumor.id_paciente) <= 0){
+        message.ERROR_BAD_REQUEST.field = '[ID_PACIENTE] INVÁLIDO'
         return message.ERROR_BAD_REQUEST // 400
     }
 

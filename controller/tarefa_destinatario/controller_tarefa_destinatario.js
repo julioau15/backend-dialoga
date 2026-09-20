@@ -113,10 +113,42 @@ const validarDados = async (tarefaDestinatario, contentType) => {
     let message = JSON.parse(JSON.stringify(config_message))
 
     // Valida se o formato de dados é JSON
+    // Valida o formato da requisição
     if(String(contentType).toLowerCase() != 'application/json') return message.ERROR_CONTENT_TYPE // Status code 415
 
-    if(tarefaDestinatario.nome == undefined || tarefaDestinatario.nome == null || tarefaDestinatario.nome == '' || tarefaDestinatario.nome.length > 100 || typeof(tarefaDestinatario.nome) != 'string'){
-        message.ERROR_BAD_REQUEST.field = '[NOME] INVÁLIDO'
+    // Garante que o objeto foi informado
+    if(tarefaDestinatario == undefined || tarefaDestinatario == null || typeof tarefaDestinatario != 'object'){
+        message.ERROR_BAD_REQUEST.field = '[TAREFA_DESTINATARIO] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Valida o prazo opcional
+    if(tarefaDestinatario.prazo != undefined && tarefaDestinatario.prazo != null && String(tarefaDestinatario.prazo).trim() == ''){
+        message.ERROR_BAD_REQUEST.field = '[PRAZO] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Valida o status
+    if(typeof tarefaDestinatario.status != 'string' || tarefaDestinatario.status.trim() == '' || tarefaDestinatario.status.length > 20){
+        message.ERROR_BAD_REQUEST.field = '[STATUS] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Valida a conclusão opcional
+    if(tarefaDestinatario.data_conclusao != undefined && tarefaDestinatario.data_conclusao != null && String(tarefaDestinatario.data_conclusao).trim() == ''){
+        message.ERROR_BAD_REQUEST.field = '[DATA_CONCLUSAO] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Valida a tarefa relacionada
+    if(tarefaDestinatario.id_tarefa == undefined || tarefaDestinatario.id_tarefa == null || !Number.isInteger(Number(tarefaDestinatario.id_tarefa)) || Number(tarefaDestinatario.id_tarefa) <= 0){
+        message.ERROR_BAD_REQUEST.field = '[ID_TAREFA] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Valida o paciente relacionado
+    if(tarefaDestinatario.id_paciente == undefined || tarefaDestinatario.id_paciente == null || !Number.isInteger(Number(tarefaDestinatario.id_paciente)) || Number(tarefaDestinatario.id_paciente) <= 0){
+        message.ERROR_BAD_REQUEST.field = '[ID_PACIENTE] INVÁLIDO'
         return message.ERROR_BAD_REQUEST // 400
     }
 

@@ -72,15 +72,30 @@ const validarDados = async (usuario, contentType) => {
     let message = JSON.parse(JSON.stringify(config_message))
 
     // Valida se o formato de dados é JSON
+    // Valida o formato da requisição
     if(String(contentType).toLowerCase() != 'application/json') return message.ERROR_CONTENT_TYPE // Status code 415
 
-    if(usuario.email == undefined || usuario.email == null || usuario.email == '' || usuario.email.length > 255 || typeof(usuario.email) != 'string'){
+    // Garante que o usuário foi informado
+    if(usuario == undefined || usuario == null || typeof usuario != 'object'){
+        message.ERROR_BAD_REQUEST.field = '[USUARIO] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Valida o e-mail de acesso
+    if(typeof(usuario.email) != 'string' || usuario.email.trim() == '' || usuario.email.length > 150){
         message.ERROR_BAD_REQUEST.field = '[EMAIL] INVÁLIDO'
         return message.ERROR_BAD_REQUEST // 400
     }
 
-    if(usuario.senha == undefined || usuario.senha == null || usuario.senha == '' || usuario.senha.length > 30 || typeof(usuario.senha) != 'string'){
+    // Valida a senha de acesso
+    if(typeof(usuario.senha) != 'string' || usuario.senha.trim() == '' || usuario.senha.length > 30){
         message.ERROR_BAD_REQUEST.field = '[SENHA] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Valida o tipo de usuário
+    if(typeof(usuario.tipo_usuario) != 'string' || usuario.tipo_usuario.trim() == '' || usuario.tipo_usuario.length > 20){
+        message.ERROR_BAD_REQUEST.field = '[TIPO_USUARIO] INVÁLIDO'
         return message.ERROR_BAD_REQUEST // 400
     }
 

@@ -113,10 +113,44 @@ const validarDados = async (tratamento, contentType) => {
     let message = JSON.parse(JSON.stringify(config_message))
 
     // Valida se o formato de dados é JSON
+    // Valida o formato da requisição
     if(String(contentType).toLowerCase() != 'application/json') return message.ERROR_CONTENT_TYPE // Status code 415
 
-    if(tratamento.nome == undefined || tratamento.nome == null || tratamento.nome == '' || tratamento.nome.length > 100 || typeof(tratamento.nome) != 'string'){
-        message.ERROR_BAD_REQUEST.field = '[NOME] INVÁLIDO'
+    // Garante que o objeto foi informado
+    if(tratamento == undefined || tratamento == null || typeof tratamento != 'object'){
+        message.ERROR_BAD_REQUEST.field = '[TRATAMENTO] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Valida o medicamento
+    if(typeof tratamento.nome_medicamento != 'string' || tratamento.nome_medicamento.trim() == '' || tratamento.nome_medicamento.length > 150){
+        message.ERROR_BAD_REQUEST.field = '[NOME_MEDICAMENTO] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Valida a dosagem
+    if(typeof tratamento.dosagem != 'string' || tratamento.dosagem.trim() == '' || tratamento.dosagem.length > 150){
+        message.ERROR_BAD_REQUEST.field = '[DOSAGEM] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Valida a frequência opcional
+    if(tratamento.frequencia != undefined && tratamento.frequencia != null &&
+       (typeof tratamento.frequencia != 'string' || tratamento.frequencia.length > 100)){
+        message.ERROR_BAD_REQUEST.field = '[FREQUENCIA] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Valida o lembrete opcional
+    if(tratamento.lembrete_ativo != undefined && tratamento.lembrete_ativo != null &&
+       ![0, 1, true, false].includes(tratamento.lembrete_ativo)){
+        message.ERROR_BAD_REQUEST.field = '[LEMBRETE_ATIVO] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Valida o paciente relacionado
+    if(tratamento.id_paciente == undefined || tratamento.id_paciente == null || !Number.isInteger(Number(tratamento.id_paciente)) || Number(tratamento.id_paciente) <= 0){
+        message.ERROR_BAD_REQUEST.field = '[ID_PACIENTE] INVÁLIDO'
         return message.ERROR_BAD_REQUEST // 400
     }
 

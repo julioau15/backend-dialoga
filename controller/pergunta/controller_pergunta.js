@@ -113,10 +113,49 @@ const validarDados = async (pergunta, contentType) => {
     let message = JSON.parse(JSON.stringify(config_message))
 
     // Valida se o formato de dados é JSON
+    // Valida o formato da requisição
     if(String(contentType).toLowerCase() != 'application/json') return message.ERROR_CONTENT_TYPE // Status code 415
 
-    if(pergunta.nome == undefined || pergunta.nome == null || pergunta.nome == '' || pergunta.nome.length > 100 || typeof(pergunta.nome) != 'string'){
-        message.ERROR_BAD_REQUEST.field = '[NOME] INVÁLIDO'
+    // Garante que o objeto foi informado
+    if(pergunta == undefined || pergunta == null || typeof pergunta != 'object'){
+        message.ERROR_BAD_REQUEST.field = '[PERGUNTA] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Valida o tipo da pergunta
+    if(typeof pergunta.tipo != 'string' || pergunta.tipo.trim() == '' || pergunta.tipo.length > 30){
+        message.ERROR_BAD_REQUEST.field = '[TIPO] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Valida o texto da pergunta
+    if(typeof pergunta.texto != 'string' || pergunta.texto.trim() == ''){
+        message.ERROR_BAD_REQUEST.field = '[TEXTO] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Valida a imagem opcional
+    if(pergunta.imagem != undefined && pergunta.imagem != null &&
+       (typeof pergunta.imagem != 'string' || pergunta.imagem.length > 255)){
+        message.ERROR_BAD_REQUEST.field = '[IMAGEM] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Valida o indicador de obrigatoriedade
+    if(![0, 1, true, false].includes(pergunta.obrigatoria)){
+        message.ERROR_BAD_REQUEST.field = '[OBRIGATORIA] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Valida a ordem da pergunta
+    if(pergunta.ordem == undefined || pergunta.ordem == null || !Number.isInteger(Number(pergunta.ordem)) || Number(pergunta.ordem) < 0){
+        message.ERROR_BAD_REQUEST.field = '[ORDEM] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Valida a tarefa relacionada
+    if(pergunta.id_tarefa == undefined || pergunta.id_tarefa == null || !Number.isInteger(Number(pergunta.id_tarefa)) || Number(pergunta.id_tarefa) <= 0){
+        message.ERROR_BAD_REQUEST.field = '[ID_TAREFA] INVÁLIDO'
         return message.ERROR_BAD_REQUEST // 400
     }
 

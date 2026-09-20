@@ -113,10 +113,48 @@ const validarDados = async (anotacao, contentType) => {
     let message = JSON.parse(JSON.stringify(config_message))
 
     // Valida se o formato de dados é JSON
+    // Valida o formato da requisição
     if(String(contentType).toLowerCase() != 'application/json') return message.ERROR_CONTENT_TYPE // Status code 415
 
-    if(anotacao.nome == undefined || anotacao.nome == null || anotacao.nome == '' || anotacao.nome.length > 100 || typeof(anotacao.nome) != 'string'){
-        message.ERROR_BAD_REQUEST.field = '[NOME] INVÁLIDO'
+    // Garante que o objeto foi informado
+    if(anotacao == undefined || anotacao == null || typeof anotacao != 'object'){
+        message.ERROR_BAD_REQUEST.field = '[ANOTACAO] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Valida o título obrigatório
+    if(typeof anotacao.titulo != 'string' || anotacao.titulo.trim() == '' || anotacao.titulo.length > 200){
+        message.ERROR_BAD_REQUEST.field = '[TITULO] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Valida o conteúdo obrigatório
+    if(typeof anotacao.conteudo != 'string' || anotacao.conteudo.trim() == '' || anotacao.conteudo.length > 1000){
+        message.ERROR_BAD_REQUEST.field = '[CONTEUDO] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Valida a data de criação
+    if(anotacao.data_criacao == undefined || anotacao.data_criacao == null || String(anotacao.data_criacao).trim() == ''){
+        message.ERROR_BAD_REQUEST.field = '[DATA_CRIACAO] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Valida a data de edição opcional
+    if(anotacao.data_edicao != undefined && anotacao.data_edicao != null && String(anotacao.data_edicao).trim() == ''){
+        message.ERROR_BAD_REQUEST.field = '[DATA_EDICAO] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Valida o profissional relacionado
+    if(anotacao.id_profissional == undefined || anotacao.id_profissional == null || !Number.isInteger(Number(anotacao.id_profissional)) || Number(anotacao.id_profissional) <= 0){
+        message.ERROR_BAD_REQUEST.field = '[ID_PROFISSIONAL] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Valida o paciente relacionado
+    if(anotacao.id_paciente == undefined || anotacao.id_paciente == null || !Number.isInteger(Number(anotacao.id_paciente)) || Number(anotacao.id_paciente) <= 0){
+        message.ERROR_BAD_REQUEST.field = '[ID_PACIENTE] INVÁLIDO'
         return message.ERROR_BAD_REQUEST // 400
     }
 

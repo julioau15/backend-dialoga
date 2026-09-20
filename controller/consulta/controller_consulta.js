@@ -113,10 +113,55 @@ const validarDados = async (consulta, contentType) => {
     let message = JSON.parse(JSON.stringify(config_message))
 
     // Valida se o formato de dados é JSON
+    // Valida o formato da requisição
     if(String(contentType).toLowerCase() != 'application/json') return message.ERROR_CONTENT_TYPE // Status code 415
 
-    if(consulta.nome == undefined || consulta.nome == null || consulta.nome == '' || consulta.nome.length > 100 || typeof(consulta.nome) != 'string'){
-        message.ERROR_BAD_REQUEST.field = '[NOME] INVÁLIDO'
+    // Garante que o objeto foi informado
+    if(consulta == undefined || consulta == null || typeof consulta != 'object'){
+        message.ERROR_BAD_REQUEST.field = '[CONSULTA] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Valida o responsável pela consulta
+    if(typeof consulta.criado_por != 'string' || consulta.criado_por.trim() == '' || consulta.criado_por.length > 20){
+        message.ERROR_BAD_REQUEST.field = '[CRIADO_POR] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Valida o nome da consulta
+    if(typeof consulta.nome_da_conculta != 'string' || consulta.nome_da_conculta.trim() == '' || consulta.nome_da_conculta.length > 150){
+        message.ERROR_BAD_REQUEST.field = '[NOME_DA_CONSULTA] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Valida a especialidade opcional
+    if(consulta.especialidade != undefined && consulta.especialidade != null &&
+       (typeof consulta.especialidade != 'string' || consulta.especialidade.length > 100)){
+        message.ERROR_BAD_REQUEST.field = '[ESPECIALIDADE] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Valida a data da consulta
+    if(consulta.data == undefined || consulta.data == null || String(consulta.data).trim() == ''){
+        message.ERROR_BAD_REQUEST.field = '[DATA] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Valida o horário da consulta
+    if(consulta.hora == undefined || consulta.hora == null || String(consulta.hora).trim() == ''){
+        message.ERROR_BAD_REQUEST.field = '[HORA] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Valida o status da consulta
+    if(typeof consulta.status != 'string' || consulta.status.trim() == '' || consulta.status.length > 20){
+        message.ERROR_BAD_REQUEST.field = '[STATUS] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Valida o vínculo relacionado
+    if(consulta.id_vinculo == undefined || consulta.id_vinculo == null || !Number.isInteger(Number(consulta.id_vinculo)) || Number(consulta.id_vinculo) <= 0){
+        message.ERROR_BAD_REQUEST.field = '[ID_VINCULO] INVÁLIDO'
         return message.ERROR_BAD_REQUEST // 400
     }
 

@@ -113,10 +113,30 @@ const validarDados = async (opcaoPergunta, contentType) => {
     let message = JSON.parse(JSON.stringify(config_message))
 
     // Valida se o formato de dados é JSON
+    // Valida o formato da requisição
     if(String(contentType).toLowerCase() != 'application/json') return message.ERROR_CONTENT_TYPE // Status code 415
 
-    if(opcaoPergunta.nome == undefined || opcaoPergunta.nome == null || opcaoPergunta.nome == '' || opcaoPergunta.nome.length > 100 || typeof(opcaoPergunta.nome) != 'string'){
-        message.ERROR_BAD_REQUEST.field = '[NOME] INVÁLIDO'
+    // Garante que o objeto foi informado
+    if(opcaoPergunta == undefined || opcaoPergunta == null || typeof opcaoPergunta != 'object'){
+        message.ERROR_BAD_REQUEST.field = '[OPCAO_PERGUNTA] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Valida o texto da opção
+    if(typeof opcaoPergunta.texto != 'string' || opcaoPergunta.texto.trim() == '' || opcaoPergunta.texto.length > 200){
+        message.ERROR_BAD_REQUEST.field = '[TEXTO] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Valida a ordem da opção
+    if(opcaoPergunta.ordem == undefined || opcaoPergunta.ordem == null || !Number.isInteger(Number(opcaoPergunta.ordem)) || Number(opcaoPergunta.ordem) < 0){
+        message.ERROR_BAD_REQUEST.field = '[ORDEM] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Valida a pergunta relacionada
+    if(opcaoPergunta.id_pergunta == undefined || opcaoPergunta.id_pergunta == null || !Number.isInteger(Number(opcaoPergunta.id_pergunta)) || Number(opcaoPergunta.id_pergunta) <= 0){
+        message.ERROR_BAD_REQUEST.field = '[ID_PERGUNTA] INVÁLIDO'
         return message.ERROR_BAD_REQUEST // 400
     }
 

@@ -113,10 +113,43 @@ const validarDados = async (resposta, contentType) => {
     let message = JSON.parse(JSON.stringify(config_message))
 
     // Valida se o formato de dados é JSON
+    // Valida o formato da requisição
     if(String(contentType).toLowerCase() != 'application/json') return message.ERROR_CONTENT_TYPE // Status code 415
 
-    if(resposta.nome == undefined || resposta.nome == null || resposta.nome == '' || resposta.nome.length > 100 || typeof(resposta.nome) != 'string'){
-        message.ERROR_BAD_REQUEST.field = '[NOME] INVÁLIDO'
+    // Garante que o objeto foi informado
+    if(resposta == undefined || resposta == null || typeof resposta != 'object'){
+        message.ERROR_BAD_REQUEST.field = '[RESPOSTA] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Valida o valor opcional
+    if(resposta.valor != undefined && resposta.valor != null && typeof resposta.valor != 'string'){
+        message.ERROR_BAD_REQUEST.field = '[VALOR] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Valida a data de envio
+    if(resposta.data_envio == undefined || resposta.data_envio == null || String(resposta.data_envio).trim() == ''){
+        message.ERROR_BAD_REQUEST.field = '[DATA_ENVIO] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Valida a pergunta relacionada
+    if(resposta.id_pergunta == undefined || resposta.id_pergunta == null || !Number.isInteger(Number(resposta.id_pergunta)) || Number(resposta.id_pergunta) <= 0){
+        message.ERROR_BAD_REQUEST.field = '[ID_PERGUNTA] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Valida a opção opcional
+    if(resposta.id_opcao_pergunta != undefined && resposta.id_opcao_pergunta != null &&
+       (!Number.isInteger(Number(resposta.id_opcao_pergunta)) || Number(resposta.id_opcao_pergunta) <= 0)){
+        message.ERROR_BAD_REQUEST.field = '[ID_OPCAO_PERGUNTA] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Valida o destinatário da tarefa
+    if(resposta.id_tarefa_destinatario == undefined || resposta.id_tarefa_destinatario == null || !Number.isInteger(Number(resposta.id_tarefa_destinatario)) || Number(resposta.id_tarefa_destinatario) <= 0){
+        message.ERROR_BAD_REQUEST.field = '[ID_TAREFA_DESTINATARIO] INVÁLIDO'
         return message.ERROR_BAD_REQUEST // 400
     }
 

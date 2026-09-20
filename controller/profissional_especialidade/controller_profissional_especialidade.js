@@ -113,10 +113,24 @@ const validarDados = async (profissionalEspecialidade, contentType) => {
     let message = JSON.parse(JSON.stringify(config_message))
 
     // Valida se o formato de dados é JSON
+    // Valida o formato da requisição
     if(String(contentType).toLowerCase() != 'application/json') return message.ERROR_CONTENT_TYPE // Status code 415
 
-    if(profissionalEspecialidade.nome == undefined || profissionalEspecialidade.nome == null || profissionalEspecialidade.nome == '' || profissionalEspecialidade.nome.length > 100 || typeof(profissionalEspecialidade.nome) != 'string'){
-        message.ERROR_BAD_REQUEST.field = '[NOME] INVÁLIDO'
+    // Garante que o objeto foi informado
+    if(profissionalEspecialidade == undefined || profissionalEspecialidade == null || typeof profissionalEspecialidade != 'object'){
+        message.ERROR_BAD_REQUEST.field = '[PROFISSIONAL_ESPECIALIDADE] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Valida o profissional relacionado
+    if(profissionalEspecialidade.id_profissional == undefined || profissionalEspecialidade.id_profissional == null || !Number.isInteger(Number(profissionalEspecialidade.id_profissional)) || Number(profissionalEspecialidade.id_profissional) <= 0){
+        message.ERROR_BAD_REQUEST.field = '[ID_PROFISSIONAL] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Valida a especialidade relacionada
+    if(profissionalEspecialidade.id_especialidade == undefined || profissionalEspecialidade.id_especialidade == null || !Number.isInteger(Number(profissionalEspecialidade.id_especialidade)) || Number(profissionalEspecialidade.id_especialidade) <= 0){
+        message.ERROR_BAD_REQUEST.field = '[ID_ESPECIALIDADE] INVÁLIDO'
         return message.ERROR_BAD_REQUEST // 400
     }
 

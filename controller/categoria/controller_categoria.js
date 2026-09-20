@@ -113,10 +113,25 @@ const validarDados = async (categoria, contentType) => {
     let message = JSON.parse(JSON.stringify(config_message))
 
     // Valida se o formato de dados é JSON
+    // Valida o formato da requisição
     if(String(contentType).toLowerCase() != 'application/json') return message.ERROR_CONTENT_TYPE // Status code 415
 
-    if(categoria.nome == undefined || categoria.nome == null || categoria.nome == '' || categoria.nome.length > 100 || typeof(categoria.nome) != 'string'){
-        message.ERROR_BAD_REQUEST.field = '[NOME] INVÁLIDO'
+    // Garante que o objeto foi informado
+    if(categoria == undefined || categoria == null || typeof categoria != 'object'){
+        message.ERROR_BAD_REQUEST.field = '[CATEGORIA] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Valida a categoria obrigatória
+    if(typeof categoria.categoria != 'string' || categoria.categoria.trim() == '' || categoria.categoria.length > 20){
+        message.ERROR_BAD_REQUEST.field = '[CATEGORIA] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Valida o tipo específico opcional
+    if(categoria.tipo_especifico != undefined && categoria.tipo_especifico != null &&
+       (typeof categoria.tipo_especifico != 'string' || categoria.tipo_especifico.length > 50)){
+        message.ERROR_BAD_REQUEST.field = '[TIPO_ESPECIFICO] INVÁLIDO'
         return message.ERROR_BAD_REQUEST // 400
     }
 

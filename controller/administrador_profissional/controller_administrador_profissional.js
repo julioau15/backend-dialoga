@@ -113,10 +113,37 @@ const validarDados = async (administradorProfissional, contentType) => {
     let message = JSON.parse(JSON.stringify(config_message))
 
     // Valida se o formato de dados é JSON
+    // Valida o formato da requisição
     if(String(contentType).toLowerCase() != 'application/json') return message.ERROR_CONTENT_TYPE // Status code 415
 
-    if(administradorProfissional.nome == undefined || administradorProfissional.nome == null || administradorProfissional.nome == '' || administradorProfissional.nome.length > 100 || typeof(administradorProfissional.nome) != 'string'){
-        message.ERROR_BAD_REQUEST.field = '[NOME] INVÁLIDO'
+    // Garante que o objeto foi informado
+    if(administradorProfissional == undefined || administradorProfissional == null || typeof administradorProfissional != 'object'){
+        message.ERROR_BAD_REQUEST.field = '[ADMINISTRADOR_PROFISSIONAL] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Valida o status da aprovação
+    if(typeof administradorProfissional.status_aprovacao != 'string' || administradorProfissional.status_aprovacao.trim() == '' || administradorProfissional.status_aprovacao.length > 20){
+        message.ERROR_BAD_REQUEST.field = '[STATUS_APROVACAO] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Valida a data de criação
+    if(administradorProfissional.criado_em == undefined || administradorProfissional.criado_em == null || String(administradorProfissional.criado_em).trim() == ''){
+        message.ERROR_BAD_REQUEST.field = '[CRIADO_EM] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Valida o profissional relacionado
+    if(administradorProfissional.id_profissional == undefined || administradorProfissional.id_profissional == null || !Number.isInteger(Number(administradorProfissional.id_profissional)) || Number(administradorProfissional.id_profissional) <= 0){
+        message.ERROR_BAD_REQUEST.field = '[ID_PROFISSIONAL] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Valida o administrador opcional
+    if(administradorProfissional.id_administrador != undefined && administradorProfissional.id_administrador != null &&
+       (!Number.isInteger(Number(administradorProfissional.id_administrador)) || Number(administradorProfissional.id_administrador) <= 0)){
+        message.ERROR_BAD_REQUEST.field = '[ID_ADMINISTRADOR] INVÁLIDO'
         return message.ERROR_BAD_REQUEST // 400
     }
 

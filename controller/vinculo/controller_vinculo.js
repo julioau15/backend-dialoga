@@ -113,10 +113,60 @@ const validarDados = async (vinculo, contentType) => {
     let message = JSON.parse(JSON.stringify(config_message))
 
     // Valida se o formato de dados é JSON
+    // Valida o formato da requisição
     if(String(contentType).toLowerCase() != 'application/json') return message.ERROR_CONTENT_TYPE // Status code 415
 
-    if(vinculo.nome == undefined || vinculo.nome == null || vinculo.nome == '' || vinculo.nome.length > 100 || typeof(vinculo.nome) != 'string'){
-        message.ERROR_BAD_REQUEST.field = '[NOME] INVÁLIDO'
+    // Garante que o objeto foi informado
+    if(vinculo == undefined || vinculo == null || typeof vinculo != 'object'){
+        message.ERROR_BAD_REQUEST.field = '[VINCULO] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Valida o status
+    if(typeof vinculo.status != 'string' || vinculo.status.trim() == '' || vinculo.status.length > 20){
+        message.ERROR_BAD_REQUEST.field = '[STATUS] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Valida a origem do cadastro
+    if(typeof vinculo.origem_cadastro != 'string' || vinculo.origem_cadastro.trim() == '' || vinculo.origem_cadastro.length > 20){
+        message.ERROR_BAD_REQUEST.field = '[ORIGEM_CADASTRO] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Valida a solicitação opcional
+    if(vinculo.data_solicitacao != undefined && vinculo.data_solicitacao != null && String(vinculo.data_solicitacao).trim() == ''){
+        message.ERROR_BAD_REQUEST.field = '[DATA_SOLICITACAO] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Valida a data de aceite opcional
+    if(vinculo.data_aceite != undefined && vinculo.data_aceite != null && String(vinculo.data_aceite).trim() == ''){
+        message.ERROR_BAD_REQUEST.field = '[DATA_ACEITE] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Valida o início do acompanhamento opcional
+    if(vinculo.data_inicio_acompanhamento != undefined && vinculo.data_inicio_acompanhamento != null && String(vinculo.data_inicio_acompanhamento).trim() == ''){
+        message.ERROR_BAD_REQUEST.field = '[DATA_INICIO_ACOMPANHAMENTO] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Valida o fim do acompanhamento opcional
+    if(vinculo.data_fim != undefined && vinculo.data_fim != null && String(vinculo.data_fim).trim() == ''){
+        message.ERROR_BAD_REQUEST.field = '[DATA_FIM] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Valida o profissional relacionado
+    if(vinculo.id_profissional == undefined || vinculo.id_profissional == null || !Number.isInteger(Number(vinculo.id_profissional)) || Number(vinculo.id_profissional) <= 0){
+        message.ERROR_BAD_REQUEST.field = '[ID_PROFISSIONAL] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Valida o paciente relacionado
+    if(vinculo.id_paciente == undefined || vinculo.id_paciente == null || !Number.isInteger(Number(vinculo.id_paciente)) || Number(vinculo.id_paciente) <= 0){
+        message.ERROR_BAD_REQUEST.field = '[ID_PACIENTE] INVÁLIDO'
         return message.ERROR_BAD_REQUEST // 400
     }
 

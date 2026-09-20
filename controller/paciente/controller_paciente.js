@@ -113,10 +113,83 @@ const validarDados = async (paciente, contentType) => {
     let message = JSON.parse(JSON.stringify(config_message))
 
     // Valida se o formato de dados é JSON
+    // Valida o formato da requisição
     if(String(contentType).toLowerCase() != 'application/json') return message.ERROR_CONTENT_TYPE // Status code 415
 
-    if(paciente.nome == undefined || paciente.nome == null || paciente.nome == '' || paciente.nome.length > 100 || typeof(paciente.nome) != 'string'){
-        message.ERROR_BAD_REQUEST.field = '[NOME] INVÁLIDO'
+    // Garante que o objeto foi informado
+    if(paciente == undefined || paciente == null || typeof paciente != 'object'){
+        message.ERROR_BAD_REQUEST.field = '[PACIENTE] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Valida o nome completo
+    if(typeof paciente.nome_completo != 'string' || paciente.nome_completo.trim() == '' || paciente.nome_completo.length > 150){
+        message.ERROR_BAD_REQUEST.field = '[NOME_COMPLETO] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Valida o apelido opcional
+    if(paciente.apelido != undefined && paciente.apelido != null &&
+       (typeof paciente.apelido != 'string' || paciente.apelido.length > 80)){
+        message.ERROR_BAD_REQUEST.field = '[APELIDO] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Valida o celular opcional
+    if(paciente.celular != undefined && paciente.celular != null &&
+       (typeof paciente.celular != 'string' || paciente.celular.length > 20)){
+        message.ERROR_BAD_REQUEST.field = '[CELULAR] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Valida o e-mail opcional
+    if(paciente.email != undefined && paciente.email != null &&
+       (typeof paciente.email != 'string' || paciente.email.length > 150)){
+        message.ERROR_BAD_REQUEST.field = '[EMAIL] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Valida a senha hash opcional
+    if(paciente.senha_hash != undefined && paciente.senha_hash != null &&
+       (typeof paciente.senha_hash != 'string' || paciente.senha_hash.length > 255)){
+        message.ERROR_BAD_REQUEST.field = '[SENHA_HASH] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Valida o avatar opcional
+    if(paciente.foto_avatar != undefined && paciente.foto_avatar != null &&
+       (typeof paciente.foto_avatar != 'string' || paciente.foto_avatar.length > 255)){
+        message.ERROR_BAD_REQUEST.field = '[FOTO_AVATAR] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Valida o indicador de início dos registros
+    if(![0, 1, true, false].includes(paciente.deseja_iniciar_registros)){
+        message.ERROR_BAD_REQUEST.field = '[DESEJA_INICIAR_REGISTROS] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Valida o indicador do primeiro acesso
+    if(![0, 1, true, false].includes(paciente.primeiro_acesso_concluido)){
+        message.ERROR_BAD_REQUEST.field = '[PRIMEIRO_ACESSO_CONCLUIDO] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Valida o status da atividade
+    if(typeof paciente.status_atividade != 'string' || paciente.status_atividade.trim() == '' || paciente.status_atividade.length > 20){
+        message.ERROR_BAD_REQUEST.field = '[STATUS_ATIVIDADE] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Valida a data de nascimento opcional
+    if(paciente.data_nascimento != undefined && paciente.data_nascimento != null && String(paciente.data_nascimento).trim() == ''){
+        message.ERROR_BAD_REQUEST.field = '[DATA_NASCIMENTO] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Valida a data de criação opcional
+    if(paciente.criado_em != undefined && paciente.criado_em != null && String(paciente.criado_em).trim() == ''){
+        message.ERROR_BAD_REQUEST.field = '[CRIADO_EM] INVÁLIDO'
         return message.ERROR_BAD_REQUEST // 400
     }
 

@@ -113,10 +113,42 @@ const validarDados = async (solicitacaoAcesso, contentType) => {
     let message = JSON.parse(JSON.stringify(config_message))
 
     // Valida se o formato de dados é JSON
+    // Valida o formato da requisição
     if(String(contentType).toLowerCase() != 'application/json') return message.ERROR_CONTENT_TYPE // Status code 415
 
-    if(solicitacaoAcesso.nome == undefined || solicitacaoAcesso.nome == null || solicitacaoAcesso.nome == '' || solicitacaoAcesso.nome.length > 100 || typeof(solicitacaoAcesso.nome) != 'string'){
-        message.ERROR_BAD_REQUEST.field = '[NOME] INVÁLIDO'
+    // Garante que o objeto foi informado
+    if(solicitacaoAcesso == undefined || solicitacaoAcesso == null || typeof solicitacaoAcesso != 'object'){
+        message.ERROR_BAD_REQUEST.field = '[SOLICITACAO_ACESSO] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Valida o status
+    if(typeof solicitacaoAcesso.status != 'string' || solicitacaoAcesso.status.trim() == '' || solicitacaoAcesso.status.length > 20){
+        message.ERROR_BAD_REQUEST.field = '[STATUS] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Valida a data da solicitação
+    if(solicitacaoAcesso.data_solicitacao == undefined || solicitacaoAcesso.data_solicitacao == null || String(solicitacaoAcesso.data_solicitacao).trim() == ''){
+        message.ERROR_BAD_REQUEST.field = '[DATA_SOLICITACAO] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Valida a data de resposta opcional
+    if(solicitacaoAcesso.data_resposta != undefined && solicitacaoAcesso.data_resposta != null && String(solicitacaoAcesso.data_resposta).trim() == ''){
+        message.ERROR_BAD_REQUEST.field = '[DATA_RESPOSTA] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Valida o profissional relacionado
+    if(solicitacaoAcesso.id_profissional == undefined || solicitacaoAcesso.id_profissional == null || !Number.isInteger(Number(solicitacaoAcesso.id_profissional)) || Number(solicitacaoAcesso.id_profissional) <= 0){
+        message.ERROR_BAD_REQUEST.field = '[ID_PROFISSIONAL] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Valida o paciente relacionado
+    if(solicitacaoAcesso.id_paciente == undefined || solicitacaoAcesso.id_paciente == null || !Number.isInteger(Number(solicitacaoAcesso.id_paciente)) || Number(solicitacaoAcesso.id_paciente) <= 0){
+        message.ERROR_BAD_REQUEST.field = '[ID_PACIENTE] INVÁLIDO'
         return message.ERROR_BAD_REQUEST // 400
     }
 

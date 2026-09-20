@@ -113,10 +113,64 @@ const validarDados = async (notificacao, contentType) => {
     let message = JSON.parse(JSON.stringify(config_message))
 
     // Valida se o formato de dados é JSON
+    // Valida o formato da requisição
     if(String(contentType).toLowerCase() != 'application/json') return message.ERROR_CONTENT_TYPE // Status code 415
 
-    if(notificacao.nome == undefined || notificacao.nome == null || notificacao.nome == '' || notificacao.nome.length > 100 || typeof(notificacao.nome) != 'string'){
-        message.ERROR_BAD_REQUEST.field = '[NOME] INVÁLIDO'
+    // Garante que o objeto foi informado
+    if(notificacao == undefined || notificacao == null || typeof notificacao != 'object'){
+        message.ERROR_BAD_REQUEST.field = '[NOTIFICACAO] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Valida a mensagem obrigatória
+    if(typeof notificacao.titulo_mensagem != 'string' || notificacao.titulo_mensagem.trim() == '' || notificacao.titulo_mensagem.length > 255){
+        message.ERROR_BAD_REQUEST.field = '[TITULO_MENSAGEM] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Valida o indicador de leitura
+    if(![0, 1, true, false].includes(notificacao.lida)){
+        message.ERROR_BAD_REQUEST.field = '[LIDA] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Valida a data de criação
+    if(notificacao.data_criacao == undefined || notificacao.data_criacao == null || String(notificacao.data_criacao).trim() == ''){
+        message.ERROR_BAD_REQUEST.field = '[DATA_CRIACAO] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Valida a referência opcional
+    if(notificacao.referencia_evento != undefined && notificacao.referencia_evento != null &&
+       (typeof notificacao.referencia_evento != 'string' || notificacao.referencia_evento.length > 255)){
+        message.ERROR_BAD_REQUEST.field = '[REFERENCIA_EVENTO] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Valida a categoria relacionada
+    if(notificacao.id_categoria == undefined || notificacao.id_categoria == null || !Number.isInteger(Number(notificacao.id_categoria)) || Number(notificacao.id_categoria) <= 0){
+        message.ERROR_BAD_REQUEST.field = '[ID_CATEGORIA] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Exige exatamente um destinatário
+    if((notificacao.id_profissional == undefined || notificacao.id_profissional == null) ==
+       (notificacao.id_paciente == undefined || notificacao.id_paciente == null)){
+        message.ERROR_BAD_REQUEST.field = '[DESTINATARIO] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Valida o profissional quando informado
+    if(notificacao.id_profissional != undefined && notificacao.id_profissional != null &&
+       (!Number.isInteger(Number(notificacao.id_profissional)) || Number(notificacao.id_profissional) <= 0)){
+        message.ERROR_BAD_REQUEST.field = '[ID_PROFISSIONAL] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Valida o paciente quando informado
+    if(notificacao.id_paciente != undefined && notificacao.id_paciente != null &&
+       (!Number.isInteger(Number(notificacao.id_paciente)) || Number(notificacao.id_paciente) <= 0)){
+        message.ERROR_BAD_REQUEST.field = '[ID_PACIENTE] INVÁLIDO'
         return message.ERROR_BAD_REQUEST // 400
     }
 

@@ -113,10 +113,24 @@ const validarDados = async (horarioTratamento, contentType) => {
     let message = JSON.parse(JSON.stringify(config_message))
 
     // Valida se o formato de dados é JSON
+    // Valida o formato da requisição
     if(String(contentType).toLowerCase() != 'application/json') return message.ERROR_CONTENT_TYPE // Status code 415
 
-    if(horarioTratamento.nome == undefined || horarioTratamento.nome == null || horarioTratamento.nome == '' || horarioTratamento.nome.length > 100 || typeof(horarioTratamento.nome) != 'string'){
-        message.ERROR_BAD_REQUEST.field = '[NOME] INVÁLIDO'
+    // Garante que o objeto foi informado
+    if(horarioTratamento == undefined || horarioTratamento == null || typeof horarioTratamento != 'object'){
+        message.ERROR_BAD_REQUEST.field = '[HORARIO_TRATAMENTO] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Valida o horário
+    if(horarioTratamento.horario == undefined || horarioTratamento.horario == null || String(horarioTratamento.horario).trim() == ''){
+        message.ERROR_BAD_REQUEST.field = '[HORARIO] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Valida o tratamento relacionado
+    if(horarioTratamento.id_tratamento == undefined || horarioTratamento.id_tratamento == null || !Number.isInteger(Number(horarioTratamento.id_tratamento)) || Number(horarioTratamento.id_tratamento) <= 0){
+        message.ERROR_BAD_REQUEST.field = '[ID_TRATAMENTO] INVÁLIDO'
         return message.ERROR_BAD_REQUEST // 400
     }
 

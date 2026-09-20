@@ -113,10 +113,52 @@ const validarDados = async (preferenciaNotificacao, contentType) => {
     let message = JSON.parse(JSON.stringify(config_message))
 
     // Valida se o formato de dados é JSON
+    // Valida o formato da requisição
     if(String(contentType).toLowerCase() != 'application/json') return message.ERROR_CONTENT_TYPE // Status code 415
 
-    if(preferenciaNotificacao.nome == undefined || preferenciaNotificacao.nome == null || preferenciaNotificacao.nome == '' || preferenciaNotificacao.nome.length > 100 || typeof(preferenciaNotificacao.nome) != 'string'){
-        message.ERROR_BAD_REQUEST.field = '[NOME] INVÁLIDO'
+    // Garante que o objeto foi informado
+    if(preferenciaNotificacao == undefined || preferenciaNotificacao == null || typeof preferenciaNotificacao != 'object'){
+        message.ERROR_BAD_REQUEST.field = '[PREFERENCIA_NOTIFICACAO] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Valida a categoria
+    if(typeof preferenciaNotificacao.categoria != 'string' || preferenciaNotificacao.categoria.trim() == '' || preferenciaNotificacao.categoria.length > 30){
+        message.ERROR_BAD_REQUEST.field = '[CATEGORIA] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Valida o tipo específico opcional
+    if(preferenciaNotificacao.tipo_especifico != undefined && preferenciaNotificacao.tipo_especifico != null &&
+       (typeof preferenciaNotificacao.tipo_especifico != 'string' || preferenciaNotificacao.tipo_especifico.length > 50)){
+        message.ERROR_BAD_REQUEST.field = '[TIPO_ESPECIFICO] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Valida o indicador de atividade
+    if(![0, 1, true, false].includes(preferenciaNotificacao.ativo)){
+        message.ERROR_BAD_REQUEST.field = '[ATIVO] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Exige exatamente um usuário relacionado
+    if((preferenciaNotificacao.id_profissional == undefined || preferenciaNotificacao.id_profissional == null) ==
+       (preferenciaNotificacao.id_paciente == undefined || preferenciaNotificacao.id_paciente == null)){
+        message.ERROR_BAD_REQUEST.field = '[USUARIO] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Valida o profissional quando informado
+    if(preferenciaNotificacao.id_profissional != undefined && preferenciaNotificacao.id_profissional != null &&
+       (!Number.isInteger(Number(preferenciaNotificacao.id_profissional)) || Number(preferenciaNotificacao.id_profissional) <= 0)){
+        message.ERROR_BAD_REQUEST.field = '[ID_PROFISSIONAL] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Valida o paciente quando informado
+    if(preferenciaNotificacao.id_paciente != undefined && preferenciaNotificacao.id_paciente != null &&
+       (!Number.isInteger(Number(preferenciaNotificacao.id_paciente)) || Number(preferenciaNotificacao.id_paciente) <= 0)){
+        message.ERROR_BAD_REQUEST.field = '[ID_PACIENTE] INVÁLIDO'
         return message.ERROR_BAD_REQUEST // 400
     }
 
