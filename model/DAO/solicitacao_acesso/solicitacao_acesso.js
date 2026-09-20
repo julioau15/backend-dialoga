@@ -1,6 +1,6 @@
 /*************************************************************************************
- * Objetivo: Arquivo responsável pela conexão com o banco da tabela tabela1
- * Data: 00/10/2026
+ * Objetivo: Arquivo responsável pela conexão com o banco da tabela solicitacaoAcesso
+ * Data: 20/09/2026
  * Autor: Julio Augusto
  * Versão: 1.0
  * *********************************************************************************/
@@ -10,10 +10,10 @@ const knex = require('knex')
 const knexConfig = require('../../database_config_knex/knexFile.js')
 const knexConex = knex(knexConfig.development)
 
-// insert de tabela1
-const insertTabela2 = async (tabela1) => {
-    let sql = `INSERT INTO tbl_tabela1 (nome)
-               VALUES ('${tabela1.nome}')`
+// insert de solicitacaoAcesso
+const insertSolicitacaoAcesso = async (solicitacaoAcesso) => {
+    let sql = `INSERT INTO tbl_solicitacaoAcesso (nome)
+               VALUES ('${solicitacaoAcesso.nome}')`
 
     try {
         let response = await knexConex.raw(sql)
@@ -25,11 +25,11 @@ const insertTabela2 = async (tabela1) => {
     return false
 }
 
-// update de tabela1
-const updateTabela2 = async (tabela1) => {
-    let sql = `UPDATE tbl_tabela1
-               SET nome = '${tabela1.nome}'
-               WHERE id = ${tabela1.id}`
+// update de solicitacaoAcesso
+const updateSolicitacaoAcesso = async (solicitacaoAcesso) => {
+    let sql = `UPDATE tbl_solicitacaoAcesso
+               SET nome = '${solicitacaoAcesso.nome}'
+               WHERE id = ${solicitacaoAcesso.id}`
     try {
         let response = await knexConex.raw(sql)
 
@@ -40,9 +40,9 @@ const updateTabela2 = async (tabela1) => {
     return false
 }
 
-// select de todas tabela1s
-const selectAllTabela2 = async () => {
-    let sql = `SELECT * FROM tbl_tabela1 ORDER BY id DESC`
+// select de todas solicitacaoAcessos
+const selectAllSolicitacaoAcesso = async () => {
+    let sql = `SELECT * FROM tbl_solicitacaoAcesso ORDER BY id DESC`
     try {
         let response = await knexConex.raw(sql)
 
@@ -54,9 +54,9 @@ const selectAllTabela2 = async () => {
     return false
 }
 
-// select de uma tabela1 pelo id
-const selectByIdTabela2 = async (id) => {
-    let sql = `SELECT * FROM tbl_tabela1
+// select de uma solicitacaoAcesso pelo id
+const selectByIdSolicitacaoAcesso = async (id) => {
+    let sql = `SELECT * FROM tbl_solicitacaoAcesso
                WHERE id = ${id}`
     try {
         let response = await knexConex.raw(sql)
@@ -69,9 +69,9 @@ const selectByIdTabela2 = async (id) => {
     return false
 }
 
-// delete de tabela1
-const deleteTabela2 = async (id) => {
-    let sql = `DELETE FROM tbl_tabela1
+// delete de solicitacaoAcesso
+const deleteSolicitacaoAcesso = async (id) => {
+    let sql = `DELETE FROM tbl_solicitacaoAcesso
                WHERE id = ${id}`
     try {
         let response = await knexConex.raw(sql)
@@ -85,9 +85,9 @@ const deleteTabela2 = async (id) => {
 }
 
 module.exports = {
-    insertTabela2,
-    updateTabela2,
-    selectAllTabela2,
-    selectByIdTabela2,
-    deleteTabela2
+    insertSolicitacaoAcesso,
+    updateSolicitacaoAcesso,
+    selectAllSolicitacaoAcesso,
+    selectByIdSolicitacaoAcesso,
+    deleteSolicitacaoAcesso
 }
