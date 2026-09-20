@@ -1,0 +1,5428 @@
+openapi: 3.0.3
+info:
+  title: Dialoga API
+  description: 'API REST do backend da plataforma Dialoga (monitoramento terapêutico), cobrindo os perfis
+    Paciente, Profissional e Administrador.
+
+
+    Gerado a partir do modelo lógico `BD-lógico-Dialoga_2026.mwb` e validado contra os 16 documentos de
+    Requisitos Funcionais (RF_2026_001 a RF_2026_016). Cada operação referencia os IDs de RF que originaram
+    a rota, para rastreabilidade acadêmica.'
+    
+  version: 1.0.0
+  contact:
+    name: Dialoga — Projeto Profissional de Software, SENAI Jandira
+servers:
+- url: https://api.dialoga.com.br/v1
+  description: Produção (placeholder — ajustar quando o backend for publicado)
+tags:
+- name: Autenticação
+  description: Login, login social e recuperação de senha (RF085-097).
+- name: Cadastro
+  description: Criação de contas de Paciente e Profissional (RF098-119).
+- name: Administradores
+  description: Gestão de contas de administrador (RF01-20).
+- name: Aprovação de Profissionais
+  description: Fila de análise de novos profissionais pelo Admin (RF41-64).
+- name: Perfil
+  description: Consulta e edição do perfil autenticado (RF135-167).
+- name: Pacientes
+  description: Cadastro/consulta de pacientes e sua listagem por um profissional (RF299-316).
+- name: Profissionais
+  description: Cadastro/consulta de profissionais e sua listagem por um paciente (RF317-331).
+- name: Vínculos
+  description: Solicitação, aceite, recusa e encerramento de vínculo paciente-profissional (RF172-188).
+- name: Agenda
+  description: Consultas e disponibilidade de horários (RF021-040).
+- name: Dashboard
+  description: Indicadores resumidos exibidos no painel inicial (RF066-070).
+- name: Registros de Humor
+  description: Formulário diário 'Como você está hoje?' (RF071-084).
+- name: Anotações
+  description: Notas privadas do profissional sobre um paciente (RF221-222, RF310-311).
+- name: Solicitações de Acesso a Indicadores
+  description: Profissional solicita, paciente autoriza por categoria (RF202-207, RF223-227, RF312-313).
+- name: Notificações
+  description: Listagem, marcação de leitura e preferências por categoria (RF120-134).
+- name: Tarefas
+  description: Criação, envio, resposta e acompanhamento de tarefas/questionários (RF257-298).
+- name: Tratamentos
+  description: Medicamentos, horários e confirmação de doses (RF332-361).
+- name: Relatórios
+  description: Indicadores agregados de saúde emocional, sono e aderência (RF189-238).
+- name: Domínios
+  description: 'Tabelas de apoio: especialidades e categorias (usadas por Profissional e Notificação).'
+paths:
+  /auth/login:
+    post:
+      summary: Login por e-mail e senha
+      description: 'Requisitos relacionados: RF85'
+      tags:
+      - Autenticação
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Autenticado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  status_code:
+                    type: integer
+                    example: 200
+                  response:
+                    $ref: '#/components/schemas/LoginResponse'
+                required:
+                - status
+                - status_code
+                - response
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      security: []
+  /auth/login/google:
+    post:
+      summary: Login via Google OAuth
+      description: 'Requisitos relacionados: RF86 — TODO: requer coluna de senha opcional no modelo (ver
+        observações)'
+      tags:
+      - Autenticação
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginGoogleRequest'
+      responses:
+        '200':
+          description: Autenticado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  status_code:
+                    type: integer
+                    example: 200
+                  response:
+                    $ref: '#/components/schemas/LoginResponse'
+                required:
+                - status
+                - status_code
+                - response
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      security: []
+  /auth/logout:
+    post:
+      summary: Encerrar sessão
+      description: 'Requisitos relacionados: RF20, RF64, RF152, RF213'
+      tags:
+      - Autenticação
+      responses:
+        '200':
+          description: Sessão encerrada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  status_code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Sessão encerrada
+                  response:
+                    type: object
+                    nullable: true
+                    example: {}
+                required:
+                - status
+                - status_code
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /auth/recuperar-senha/solicitar:
+    post:
+      summary: Solicitar código de recuperação de senha
+      description: 'Requisitos relacionados: RF87, RF88, RF92, RF93'
+      tags:
+      - Autenticação
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecuperarSenhaSolicitarRequest'
+      responses:
+        '200':
+          description: Código enviado por e-mail
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  status_code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Código enviado por e-mail
+                  response:
+                    type: object
+                    nullable: true
+                    example: {}
+                required:
+                - status
+                - status_code
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      security: []
+  /auth/recuperar-senha/validar-codigo:
+    post:
+      summary: Validar código de recuperação recebido por e-mail
+      description: 'Requisitos relacionados: RF89, RF94, RF95'
+      tags:
+      - Autenticação
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecuperarSenhaValidarCodigoRequest'
+      responses:
+        '200':
+          description: Código válido
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  status_code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Código válido
+                  response:
+                    type: object
+                    nullable: true
+                    example: {}
+                required:
+                - status
+                - status_code
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      security: []
+  /auth/recuperar-senha/redefinir:
+    post:
+      summary: Redefinir senha após validação do código
+      description: 'Requisitos relacionados: RF90, RF96, RF97'
+      tags:
+      - Autenticação
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecuperarSenhaRedefinirRequest'
+      responses:
+        '200':
+          description: Senha redefinida
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  status_code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Senha redefinida
+                  response:
+                    type: object
+                    nullable: true
+                    example: {}
+                required:
+                - status
+                - status_code
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      security: []
+  /pacientes:
+    post:
+      summary: Cadastrar novo paciente
+      description: 'Requisitos relacionados: RF98-106'
+      tags:
+      - Cadastro
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PacienteCadastroRequest'
+      responses:
+        '201':
+          description: Paciente criado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  status_code:
+                    type: integer
+                    example: 201
+                  message:
+                    type: string
+                    example: Registro inserido com sucesso!
+                  response:
+                    $ref: '#/components/schemas/Paciente'
+                required:
+                - status
+                - status_code
+                - response
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      security: []
+  /profissionais:
+    post:
+      summary: Cadastrar novo profissional (aguarda aprovação do Admin)
+      description: 'Requisitos relacionados: RF107-119'
+      tags:
+      - Cadastro
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProfissionalCadastroRequest'
+      responses:
+        '201':
+          description: Profissional criado, com status_aprovacao=Pendente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  status_code:
+                    type: integer
+                    example: 201
+                  message:
+                    type: string
+                    example: Registro inserido com sucesso!
+                  response:
+                    $ref: '#/components/schemas/Profissional'
+                required:
+                - status
+                - status_code
+                - response
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      security: []
+  /administradores:
+    get:
+      summary: Listar/buscar administradores
+      description: 'Requisitos relacionados: RF01-03'
+      tags:
+      - Administradores
+      parameters:
+      - name: busca
+        in: query
+        required: false
+        schema:
+          type: string
+        description: Busca por nome ou e-mail (RF02)
+      responses:
+        '200':
+          description: Lista de administradores
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  status_code:
+                    type: integer
+                    example: 200
+                  response:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Administrador'
+                required:
+                - status
+                - status_code
+                - response
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    post:
+      summary: Criar novo administrador
+      description: 'Requisitos relacionados: RF05-11'
+      tags:
+      - Administradores
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdministradorCriarRequest'
+      responses:
+        '201':
+          description: Administrador criado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  status_code:
+                    type: integer
+                    example: 201
+                  message:
+                    type: string
+                    example: Registro inserido com sucesso!
+                  response:
+                    $ref: '#/components/schemas/Administrador'
+                required:
+                - status
+                - status_code
+                - response
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /administradores/{id}:
+    delete:
+      summary: Remover administrador
+      description: 'Requisitos relacionados: RF12-17'
+      tags:
+      - Administradores
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: Identificador do recurso
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: Administrador removido
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  status_code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Registro apagado com sucesso!
+                  response:
+                    type: object
+                    nullable: true
+                    example: {}
+                required:
+                - status
+                - status_code
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /administradores/me:
+    get:
+      summary: Consultar próprio perfil de administrador
+      description: 'Requisitos relacionados: RF135-141'
+      tags:
+      - Perfil
+      responses:
+        '200':
+          description: Perfil do administrador
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  status_code:
+                    type: integer
+                    example: 200
+                  response:
+                    $ref: '#/components/schemas/Administrador'
+                required:
+                - status
+                - status_code
+                - response
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    put:
+      summary: Editar próprio perfil de administrador
+      description: 'Requisitos relacionados: RF141, RF146-149'
+      tags:
+      - Perfil
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdministradorAtualizarRequest'
+      responses:
+        '200':
+          description: Perfil atualizado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  status_code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Registro atualizado com sucesso!
+                  response:
+                    $ref: '#/components/schemas/Administrador'
+                required:
+                - status
+                - status_code
+                - response
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /administradores/me/senha:
+    put:
+      summary: Alterar senha do administrador autenticado
+      description: 'Requisitos relacionados: RF142-145'
+      tags:
+      - Perfil
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AlterarSenhaRequest'
+      responses:
+        '200':
+          description: Senha alterada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  status_code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Registro atualizado com sucesso!
+                  response:
+                    type: object
+                    nullable: true
+                    example: {}
+                required:
+                - status
+                - status_code
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /aprovacoes-profissionais:
+    get:
+      summary: Listar solicitações de acesso de profissionais
+      description: 'Requisitos relacionados: RF41-48'
+      tags:
+      - Aprovação de Profissionais
+      parameters:
+      - name: status
+        in: query
+        required: false
+        schema:
+          type: string
+          enum:
+          - Pendente
+          - Aprovado
+          - Recusado
+          - Todos
+        description: Filtro de status (RF46)
+      - name: busca
+        in: query
+        required: false
+        schema:
+          type: string
+        description: Busca por nome, e-mail ou especialidade (RF45)
+      responses:
+        '200':
+          description: Lista de solicitações
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  status_code:
+                    type: integer
+                    example: 200
+                  response:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/AprovacaoProfissional'
+                required:
+                - status
+                - status_code
+                - response
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /aprovacoes-profissionais/{id}:
+    get:
+      summary: Detalhar solicitação de acesso de um profissional
+      description: 'Requisitos relacionados: RF49-50'
+      tags:
+      - Aprovação de Profissionais
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: Identificador do recurso
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: Detalhes da solicitação
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  status_code:
+                    type: integer
+                    example: 200
+                  response:
+                    $ref: '#/components/schemas/AprovacaoProfissional'
+                required:
+                - status
+                - status_code
+                - response
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /aprovacoes-profissionais/{id}/aprovar:
+    put:
+      summary: Aprovar profissional
+      description: 'Requisitos relacionados: RF51-56'
+      tags:
+      - Aprovação de Profissionais
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: Identificador do recurso
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: Profissional aprovado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  status_code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Registro atualizado com sucesso!
+                  response:
+                    $ref: '#/components/schemas/AprovacaoProfissional'
+                required:
+                - status
+                - status_code
+                - response
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /aprovacoes-profissionais/{id}/recusar:
+    put:
+      summary: Recusar profissional
+      description: 'Requisitos relacionados: RF52, RF57-60'
+      tags:
+      - Aprovação de Profissionais
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: Identificador do recurso
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: Profissional recusado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  status_code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Registro atualizado com sucesso!
+                  response:
+                    $ref: '#/components/schemas/AprovacaoProfissional'
+                required:
+                - status
+                - status_code
+                - response
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /pacientes/me:
+    get:
+      summary: Consultar próprio perfil de paciente
+      description: 'Requisitos relacionados: RF153'
+      tags:
+      - Perfil
+      responses:
+        '200':
+          description: Perfil do paciente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  status_code:
+                    type: integer
+                    example: 200
+                  response:
+                    $ref: '#/components/schemas/Paciente'
+                required:
+                - status
+                - status_code
+                - response
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    put:
+      summary: Editar próprio perfil de paciente
+      description: 'Requisitos relacionados: RF154, RF157-159'
+      tags:
+      - Perfil
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PacienteAtualizarRequest'
+      responses:
+        '200':
+          description: Perfil atualizado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  status_code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Registro atualizado com sucesso!
+                  response:
+                    $ref: '#/components/schemas/Paciente'
+                required:
+                - status
+                - status_code
+                - response
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /pacientes/me/primeiro-acesso:
+    post:
+      summary: Responder formulário de primeiro acesso
+      description: 'Requisitos relacionados: RF168-171, RF179'
+      tags:
+      - Perfil
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PacientePrimeiroAcessoRequest'
+      responses:
+        '200':
+          description: Primeiro acesso concluído
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  status_code:
+                    type: integer
+                    example: 200
+                  response:
+                    $ref: '#/components/schemas/Paciente'
+                required:
+                - status
+                - status_code
+                - response
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /profissionais/me:
+    get:
+      summary: Consultar próprio perfil de profissional
+      description: 'Requisitos relacionados: RF160'
+      tags:
+      - Perfil
+      responses:
+        '200':
+          description: Perfil do profissional
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  status_code:
+                    type: integer
+                    example: 200
+                  response:
+                    $ref: '#/components/schemas/Profissional'
+                required:
+                - status
+                - status_code
+                - response
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    put:
+      summary: Editar próprio perfil de profissional
+      description: 'Requisitos relacionados: RF161-167'
+      tags:
+      - Perfil
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProfissionalAtualizarRequest'
+      responses:
+        '200':
+          description: Perfil atualizado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  status_code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Registro atualizado com sucesso!
+                  response:
+                    $ref: '#/components/schemas/Profissional'
+                required:
+                - status
+                - status_code
+                - response
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /profissionais/me/pacientes:
+    get:
+      summary: Listar pacientes vinculados ao profissional autenticado
+      description: 'Requisitos relacionados: RF299-301, RF306'
+      tags:
+      - Pacientes
+      parameters:
+      - name: busca
+        in: query
+        required: false
+        schema:
+          type: string
+        description: Busca por nome (RF300)
+      - name: status
+        in: query
+        required: false
+        schema:
+          type: string
+          enum:
+          - Todos
+          - Ativos
+          - Inativos
+        description: Filtro de status (RF301)
+      responses:
+        '200':
+          description: Lista de pacientes
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  status_code:
+                    type: integer
+                    example: 200
+                  response:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PacienteResumo'
+                required:
+                - status
+                - status_code
+                - response
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    post:
+      summary: Adicionar paciente (busca na plataforma ou cadastro externo)
+      description: 'Requisitos relacionados: RF302-305'
+      tags:
+      - Pacientes
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+              - $ref: '#/components/schemas/VinculoCriarRequest'
+              - $ref: '#/components/schemas/PacienteExternoCriarRequest'
+      responses:
+        '201':
+          description: Vínculo criado ou paciente externo cadastrado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  status_code:
+                    type: integer
+                    example: 201
+                  message:
+                    type: string
+                    example: Registro inserido com sucesso!
+                  response:
+                    $ref: '#/components/schemas/Vinculo'
+                required:
+                - status
+                - status_code
+                - response
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /profissionais/me/pacientes/{vinculoId}:
+    delete:
+      summary: Remover paciente da lista de acompanhamento
+      description: 'Requisitos relacionados: RF315, RF326-330'
+      tags:
+      - Pacientes
+      parameters:
+      - name: vinculoId
+        in: path
+        required: true
+        description: Identificador do vínculo
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: Vínculo movido para histórico (status Inativo)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  status_code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Registro apagado com sucesso!
+                  response:
+                    type: object
+                    nullable: true
+                    example: {}
+                required:
+                - status
+                - status_code
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /pacientes/{id}/perfil-profissional:
+    get:
+      summary: Ver perfil detalhado de um paciente (visão do profissional)
+      description: 'Requisitos relacionados: RF214-220, RF307-309'
+      tags:
+      - Pacientes
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: Identificador do recurso
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: Perfil detalhado do paciente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  status_code:
+                    type: integer
+                    example: 200
+                  response:
+                    $ref: '#/components/schemas/Paciente'
+                required:
+                - status
+                - status_code
+                - response
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /pacientes/me/profissionais:
+    get:
+      summary: Listar profissionais vinculados ao paciente autenticado
+      description: 'Requisitos relacionados: RF317-319'
+      tags:
+      - Profissionais
+      parameters:
+      - name: status
+        in: query
+        required: false
+        schema:
+          type: string
+          enum:
+          - Atual
+          - Historico
+        description: Seção da listagem (RF318)
+      responses:
+        '200':
+          description: Lista de profissionais
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  status_code:
+                    type: integer
+                    example: 200
+                  response:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ProfissionalResumo'
+                required:
+                - status
+                - status_code
+                - response
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    post:
+      summary: Adicionar profissional (busca por CPF na plataforma ou cadastro externo)
+      description: 'Requisitos relacionados: RF320-324'
+      tags:
+      - Profissionais
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+              - $ref: '#/components/schemas/VinculoCriarRequest'
+              - $ref: '#/components/schemas/ProfissionalExternoCriarRequest'
+      responses:
+        '201':
+          description: Vínculo criado ou profissional externo cadastrado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  status_code:
+                    type: integer
+                    example: 201
+                  message:
+                    type: string
+                    example: Registro inserido com sucesso!
+                  response:
+                    $ref: '#/components/schemas/Vinculo'
+                required:
+                - status
+                - status_code
+                - response
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /pacientes/me/profissionais/{vinculoId}:
+    delete:
+      summary: Excluir vínculo com profissional (move para Histórico)
+      description: 'Requisitos relacionados: RF326-330'
+      tags:
+      - Profissionais
+      parameters:
+      - name: vinculoId
+        in: path
+        required: true
+        description: Identificador do vínculo
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: Vínculo removido
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  status_code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Registro apagado com sucesso!
+                  response:
+                    type: object
+                    nullable: true
+                    example: {}
+                required:
+                - status
+                - status_code
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /vinculos:
+    get:
+      summary: Listar vínculos do usuário autenticado
+      description: 'Requisitos relacionados: RF172, RF299, RF317'
+      tags:
+      - Vínculos
+      parameters:
+      - name: status
+        in: query
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Lista de vínculos
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  status_code:
+                    type: integer
+                    example: 200
+                  response:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Vinculo'
+                required:
+                - status
+                - status_code
+                - response
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    post:
+      summary: Solicitar vínculo entre paciente e profissional
+      description: 'Requisitos relacionados: RF172-176, RF185, RF305'
+      tags:
+      - Vínculos
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VinculoCriarRequest'
+      responses:
+        '201':
+          description: Solicitação de vínculo criada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  status_code:
+                    type: integer
+                    example: 201
+                  message:
+                    type: string
+                    example: Registro inserido com sucesso!
+                  response:
+                    $ref: '#/components/schemas/Vinculo'
+                required:
+                - status
+                - status_code
+                - response
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /vinculos/{id}:
+    get:
+      summary: Detalhar vínculo
+      description: 'Requisitos relacionados: RF176-177, RF186'
+      tags:
+      - Vínculos
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: Identificador do recurso
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: Detalhes do vínculo
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  status_code:
+                    type: integer
+                    example: 200
+                  response:
+                    $ref: '#/components/schemas/Vinculo'
+                required:
+                - status
+                - status_code
+                - response
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    delete:
+      summary: Excluir vínculo
+      description: 'Requisitos relacionados: RF178, RF188, RF326'
+      tags:
+      - Vínculos
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: Identificador do recurso
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: Vínculo excluído
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  status_code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Registro apagado com sucesso!
+                  response:
+                    type: object
+                    nullable: true
+                    example: {}
+                required:
+                - status
+                - status_code
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /vinculos/{id}/aceitar:
+    put:
+      summary: Aceitar solicitação de vínculo
+      description: 'Requisitos relacionados: RF175'
+      tags:
+      - Vínculos
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: Identificador do recurso
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: Vínculo aceito
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  status_code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Registro atualizado com sucesso!
+                  response:
+                    $ref: '#/components/schemas/Vinculo'
+                required:
+                - status
+                - status_code
+                - response
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /vinculos/{id}/recusar:
+    put:
+      summary: Recusar solicitação de vínculo
+      description: 'Requisitos relacionados: RF185'
+      tags:
+      - Vínculos
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: Identificador do recurso
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: Vínculo recusado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  status_code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Registro atualizado com sucesso!
+                  response:
+                    $ref: '#/components/schemas/Vinculo'
+                required:
+                - status
+                - status_code
+                - response
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /consultas:
+    get:
+      summary: Listar consultas do usuário autenticado
+      description: 'Requisitos relacionados: RF21, RF28, RF31-35'
+      tags:
+      - Agenda
+      parameters:
+      - name: periodo
+        in: query
+        required: false
+        schema:
+          type: string
+          enum:
+          - dia
+          - semana
+          - mes
+        description: Filtro de período (RF33)
+      - name: busca_paciente
+        in: query
+        required: false
+        schema:
+          type: string
+        description: Busca por nome do paciente, uso do profissional (RF33)
+      - name: data
+        in: query
+        required: false
+        schema:
+          type: string
+          format: date
+      responses:
+        '200':
+          description: Lista de consultas
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  status_code:
+                    type: integer
+                    example: 200
+                  response:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Consulta'
+                required:
+                - status
+                - status_code
+                - response
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    post:
+      summary: Cadastrar nova consulta
+      description: 'Requisitos relacionados: RF22-27, RF34'
+      tags:
+      - Agenda
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConsultaCriarRequest'
+      responses:
+        '201':
+          description: Consulta criada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  status_code:
+                    type: integer
+                    example: 201
+                  message:
+                    type: string
+                    example: Registro inserido com sucesso!
+                  response:
+                    $ref: '#/components/schemas/Consulta'
+                required:
+                - status
+                - status_code
+                - response
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /consultas/{id}:
+    get:
+      summary: Detalhar consulta
+      description: 'Requisitos relacionados: RF28, RF35'
+      tags:
+      - Agenda
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: Identificador do recurso
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: Detalhes da consulta
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  status_code:
+                    type: integer
+                    example: 200
+                  response:
+                    $ref: '#/components/schemas/Consulta'
+                required:
+                - status
+                - status_code
+                - response
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    delete:
+      summary: Cancelar/excluir consulta
+      description: 'Requisitos relacionados: RF34'
+      tags:
+      - Agenda
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: Identificador do recurso
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: Consulta removida
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  status_code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Registro apagado com sucesso!
+                  response:
+                    type: object
+                    nullable: true
+                    example: {}
+                required:
+                - status
+                - status_code
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    put:
+      summary: Editar consulta
+      description: 'Requisitos relacionados: RF23-25'
+      tags:
+      - Agenda
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: Identificador do recurso
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConsultaCriarRequest'
+      responses:
+        '200':
+          description: Consulta atualizada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  status_code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Registro atualizado com sucesso!
+                  response:
+                    $ref: '#/components/schemas/Consulta'
+                required:
+                - status
+                - status_code
+                - response
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /profissionais/me/disponibilidades:
+    get:
+      summary: Listar disponibilidades cadastradas
+      description: 'Requisitos relacionados: RF36-38, RF40'
+      tags:
+      - Agenda
+      responses:
+        '200':
+          description: Lista de disponibilidades
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  status_code:
+                    type: integer
+                    example: 200
+                  response:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Disponibilidade'
+                required:
+                - status
+                - status_code
+                - response
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    post:
+      summary: Informar nova disponibilidade
+      description: 'Requisitos relacionados: RF39'
+      tags:
+      - Agenda
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DisponibilidadeCriarRequest'
+      responses:
+        '201':
+          description: Disponibilidade criada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  status_code:
+                    type: integer
+                    example: 201
+                  message:
+                    type: string
+                    example: Registro inserido com sucesso!
+                  response:
+                    $ref: '#/components/schemas/Disponibilidade'
+                required:
+                - status
+                - status_code
+                - response
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /disponibilidades/{id}:
+    delete:
+      summary: Excluir disponibilidade
+      description: 'Requisitos relacionados: RF37, RF40'
+      tags:
+      - Agenda
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: Identificador do recurso
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: Disponibilidade removida
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  status_code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Registro apagado com sucesso!
+                  response:
+                    type: object
+                    nullable: true
+                    example: {}
+                required:
+                - status
+                - status_code
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    put:
+      summary: Editar disponibilidade
+      description: 'Requisitos relacionados: RF37, RF40'
+      tags:
+      - Agenda
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: Identificador do recurso
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DisponibilidadeCriarRequest'
+      responses:
+        '200':
+          description: Disponibilidade atualizada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  status_code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Registro atualizado com sucesso!
+                  response:
+                    $ref: '#/components/schemas/Disponibilidade'
+                required:
+                - status
+                - status_code
+                - response
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /pacientes/me/dashboard:
+    get:
+      summary: Resumo do dashboard do paciente (humor da semana, carrossel)
+      description: 'Requisitos relacionados: RF66-68'
+      tags:
+      - Dashboard
+      responses:
+        '200':
+          description: Dados do dashboard
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /profissionais/me/dashboard:
+    get:
+      summary: Resumo do dashboard do profissional (agenda do dia, carrossel)
+      description: 'Requisitos relacionados: RF69-70'
+      tags:
+      - Dashboard
+      responses:
+        '200':
+          description: Dados do dashboard
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /pacientes/me/registros-humor:
+    get:
+      summary: Listar registros diários de humor do paciente autenticado
+      description: 'Requisitos relacionados: RF82, RF84'
+      tags:
+      - Registros de Humor
+      parameters:
+      - name: inicio
+        in: query
+        required: false
+        schema:
+          type: string
+          format: date
+      - name: fim
+        in: query
+        required: false
+        schema:
+          type: string
+          format: date
+      responses:
+        '200':
+          description: Histórico de registros
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  status_code:
+                    type: integer
+                    example: 200
+                  response:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/RegistroHumor'
+                required:
+                - status
+                - status_code
+                - response
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    post:
+      summary: Salvar registro diário 'Como você está hoje?'
+      description: 'Requisitos relacionados: RF71-81, RF83'
+      tags:
+      - Registros de Humor
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegistroHumorCriarRequest'
+      responses:
+        '201':
+          description: Registro salvo
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  status_code:
+                    type: integer
+                    example: 201
+                  message:
+                    type: string
+                    example: Registro inserido com sucesso!
+                  response:
+                    $ref: '#/components/schemas/RegistroHumor'
+                required:
+                - status
+                - status_code
+                - response
+        '409':
+          description: Já existe registro para o dia atual (RF83)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /pacientes/{id}/anotacoes:
+    get:
+      summary: Listar anotações privadas do profissional sobre o paciente
+      description: 'Requisitos relacionados: RF221-222, RF310, RF234-235'
+      tags:
+      - Anotações
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: Identificador do recurso
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: Lista de anotações
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  status_code:
+                    type: integer
+                    example: 200
+                  response:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Anotacao'
+                required:
+                - status
+                - status_code
+                - response
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    post:
+      summary: Registrar nova anotação privada
+      description: 'Requisitos relacionados: RF221, RF310'
+      tags:
+      - Anotações
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: Identificador do recurso
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnotacaoCriarRequest'
+      responses:
+        '201':
+          description: Anotação criada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  status_code:
+                    type: integer
+                    example: 201
+                  message:
+                    type: string
+                    example: Registro inserido com sucesso!
+                  response:
+                    $ref: '#/components/schemas/Anotacao'
+                required:
+                - status
+                - status_code
+                - response
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /anotacoes/{id}:
+    delete:
+      summary: Excluir anotação
+      description: 'Requisitos relacionados: RF311'
+      tags:
+      - Anotações
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: Identificador do recurso
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: Anotação removida
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  status_code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Registro apagado com sucesso!
+                  response:
+                    type: object
+                    nullable: true
+                    example: {}
+                required:
+                - status
+                - status_code
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    put:
+      summary: Editar anotação
+      description: 'Requisitos relacionados: RF311'
+      tags:
+      - Anotações
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: Identificador do recurso
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnotacaoCriarRequest'
+      responses:
+        '200':
+          description: Anotação atualizada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  status_code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Registro atualizado com sucesso!
+                  response:
+                    $ref: '#/components/schemas/Anotacao'
+                required:
+                - status
+                - status_code
+                - response
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /pacientes/{id}/solicitacoes-acesso:
+    post:
+      summary: Profissional solicita acesso aos indicadores do paciente
+      description: 'Requisitos relacionados: RF223-225, RF312'
+      tags:
+      - Solicitações de Acesso a Indicadores
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: Identificador do recurso
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SolicitacaoAcessoCriarRequest'
+      responses:
+        '201':
+          description: Solicitação enviada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  status_code:
+                    type: integer
+                    example: 201
+                  message:
+                    type: string
+                    example: Registro inserido com sucesso!
+                  response:
+                    $ref: '#/components/schemas/SolicitacaoAcesso'
+                required:
+                - status
+                - status_code
+                - response
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /solicitacoes-acesso:
+    get:
+      summary: Listar solicitações de acesso (enviadas ou recebidas conforme o perfil)
+      description: 'Requisitos relacionados: RF202-203, RF313'
+      tags:
+      - Solicitações de Acesso a Indicadores
+      responses:
+        '200':
+          description: Lista de solicitações
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  status_code:
+                    type: integer
+                    example: 200
+                  response:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/SolicitacaoAcesso'
+                required:
+                - status
+                - status_code
+                - response
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /solicitacoes-acesso/{id}:
+    get:
+      summary: Detalhar solicitação de acesso
+      description: 'Requisitos relacionados: RF204'
+      tags:
+      - Solicitações de Acesso a Indicadores
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: Identificador do recurso
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: Detalhes da solicitação
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  status_code:
+                    type: integer
+                    example: 200
+                  response:
+                    $ref: '#/components/schemas/SolicitacaoAcesso'
+                required:
+                - status
+                - status_code
+                - response
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /solicitacoes-acesso/{id}/aprovar:
+    put:
+      summary: Paciente aprova solicitação, selecionando categorias de dados
+      description: 'Requisitos relacionados: RF205-206'
+      tags:
+      - Solicitações de Acesso a Indicadores
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: Identificador do recurso
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SolicitacaoAcessoAprovarRequest'
+      responses:
+        '200':
+          description: Solicitação aprovada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  status_code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Registro atualizado com sucesso!
+                  response:
+                    $ref: '#/components/schemas/SolicitacaoAcesso'
+                required:
+                - status
+                - status_code
+                - response
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /solicitacoes-acesso/{id}/recusar:
+    put:
+      summary: Paciente recusa solicitação de acesso
+      description: 'Requisitos relacionados: RF207'
+      tags:
+      - Solicitações de Acesso a Indicadores
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: Identificador do recurso
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: Solicitação recusada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  status_code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Registro atualizado com sucesso!
+                  response:
+                    $ref: '#/components/schemas/SolicitacaoAcesso'
+                required:
+                - status
+                - status_code
+                - response
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /notificacoes:
+    get:
+      summary: Listar notificações do usuário autenticado
+      description: 'Requisitos relacionados: RF120-121, RF128-129'
+      tags:
+      - Notificações
+      parameters:
+      - name: aba
+        in: query
+        required: false
+        schema:
+          type: string
+          enum:
+          - nao_lidas
+          - historico
+      responses:
+        '200':
+          description: Lista de notificações
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  status_code:
+                    type: integer
+                    example: 200
+                  response:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Notificacao'
+                required:
+                - status
+                - status_code
+                - response
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /notificacoes/{id}/marcar-lida:
+    put:
+      summary: Marcar notificação individual como lida
+      description: 'Requisitos relacionados: RF124, RF131'
+      tags:
+      - Notificações
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: Identificador do recurso
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: Notificação marcada como lida
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  status_code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Registro atualizado com sucesso!
+                  response:
+                    type: object
+                    nullable: true
+                    example: {}
+                required:
+                - status
+                - status_code
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /notificacoes/marcar-todas-lidas:
+    put:
+      summary: Marcar todas as notificações como lidas
+      description: 'Requisitos relacionados: RF124, RF131'
+      tags:
+      - Notificações
+      responses:
+        '200':
+          description: Todas as notificações marcadas como lidas
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  status_code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Registro atualizado com sucesso!
+                  response:
+                    type: object
+                    nullable: true
+                    example: {}
+                required:
+                - status
+                - status_code
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /preferencias-notificacao:
+    get:
+      summary: Listar preferências de notificação por categoria
+      description: 'Requisitos relacionados: RF125, RF132'
+      tags:
+      - Notificações
+      responses:
+        '200':
+          description: Lista de preferências
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  status_code:
+                    type: integer
+                    example: 200
+                  response:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PreferenciaNotificacao'
+                required:
+                - status
+                - status_code
+                - response
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    put:
+      summary: Salvar preferências de notificação (inclui 'Desligar todas')
+      description: 'Requisitos relacionados: RF125-127, RF132-134'
+      tags:
+      - Notificações
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PreferenciasNotificacaoAtualizarRequest'
+      responses:
+        '200':
+          description: Preferências salvas
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  status_code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Registro atualizado com sucesso!
+                  response:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PreferenciaNotificacao'
+                required:
+                - status
+                - status_code
+                - response
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /tarefas:
+    get:
+      summary: Listar tarefas (abas Todas/Pendentes/Em andamento/Concluídas/Em atraso, ou Enviadas/Rascunhos)
+      description: 'Requisitos relacionados: RF257-261, RF274'
+      tags:
+      - Tarefas
+      parameters:
+      - name: status
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: aba
+        in: query
+        required: false
+        schema:
+          type: string
+          enum:
+          - enviadas
+          - rascunhos
+      responses:
+        '200':
+          description: Lista de tarefas
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  status_code:
+                    type: integer
+                    example: 200
+                  response:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Tarefa'
+                required:
+                - status
+                - status_code
+                - response
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    post:
+      summary: Criar tarefa (formulário, arquivo ou auto-tarefa)
+      description: 'Requisitos relacionados: RF262, RF275-277, RF289'
+      tags:
+      - Tarefas
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TarefaCriarRequest'
+      responses:
+        '201':
+          description: Tarefa criada como rascunho
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  status_code:
+                    type: integer
+                    example: 201
+                  message:
+                    type: string
+                    example: Registro inserido com sucesso!
+                  response:
+                    $ref: '#/components/schemas/Tarefa'
+                required:
+                - status
+                - status_code
+                - response
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /tarefas/{id}:
+    get:
+      summary: Detalhar tarefa
+      description: 'Requisitos relacionados: RF264-265, RF285'
+      tags:
+      - Tarefas
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: Identificador do recurso
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: Detalhes da tarefa
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  status_code:
+                    type: integer
+                    example: 200
+                  response:
+                    $ref: '#/components/schemas/Tarefa'
+                required:
+                - status
+                - status_code
+                - response
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    delete:
+      summary: Excluir tarefa (bloqueado se já houver respostas)
+      description: 'Requisitos relacionados: RF291-292'
+      tags:
+      - Tarefas
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: Identificador do recurso
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: Tarefa removida
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  status_code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Registro apagado com sucesso!
+                  response:
+                    type: object
+                    nullable: true
+                    example: {}
+                required:
+                - status
+                - status_code
+        '409':
+          description: Tarefa já respondida por algum paciente (RF291)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    put:
+      summary: Editar tarefa existente
+      description: 'Requisitos relacionados: RF284, RF290'
+      tags:
+      - Tarefas
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: Identificador do recurso
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TarefaCriarRequest'
+      responses:
+        '200':
+          description: Tarefa atualizada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  status_code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Registro atualizado com sucesso!
+                  response:
+                    $ref: '#/components/schemas/Tarefa'
+                required:
+                - status
+                - status_code
+                - response
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /tarefas/{id}/enviar:
+    post:
+      summary: Enviar tarefa aos pacientes selecionados
+      description: 'Requisitos relacionados: RF287-288'
+      tags:
+      - Tarefas
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: Identificador do recurso
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: Tarefa enviada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  status_code:
+                    type: integer
+                    example: 200
+                  response:
+                    $ref: '#/components/schemas/Tarefa'
+                required:
+                - status
+                - status_code
+                - response
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /tarefas/{id}/perguntas:
+    get:
+      summary: Listar perguntas da tarefa
+      description: 'Requisitos relacionados: RF265-266'
+      tags:
+      - Tarefas
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: Identificador do recurso
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: Lista de perguntas
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  status_code:
+                    type: integer
+                    example: 200
+                  response:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Pergunta'
+                required:
+                - status
+                - status_code
+                - response
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    post:
+      summary: Adicionar pergunta à tarefa
+      description: 'Requisitos relacionados: RF280-283'
+      tags:
+      - Tarefas
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: Identificador do recurso
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PerguntaCriarRequest'
+      responses:
+        '201':
+          description: Pergunta criada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  status_code:
+                    type: integer
+                    example: 201
+                  message:
+                    type: string
+                    example: Registro inserido com sucesso!
+                  response:
+                    $ref: '#/components/schemas/Pergunta'
+                required:
+                - status
+                - status_code
+                - response
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /perguntas/{id}:
+    delete:
+      summary: Excluir pergunta
+      description: 'Requisitos relacionados: RF284'
+      tags:
+      - Tarefas
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: Identificador do recurso
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: Pergunta removida
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  status_code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Registro apagado com sucesso!
+                  response:
+                    type: object
+                    nullable: true
+                    example: {}
+                required:
+                - status
+                - status_code
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    put:
+      summary: Editar pergunta (texto, tipo, ordem, obrigatoriedade)
+      description: 'Requisitos relacionados: RF284'
+      tags:
+      - Tarefas
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: Identificador do recurso
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PerguntaCriarRequest'
+      responses:
+        '200':
+          description: Pergunta atualizada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  status_code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Registro atualizado com sucesso!
+                  response:
+                    $ref: '#/components/schemas/Pergunta'
+                required:
+                - status
+                - status_code
+                - response
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /perguntas/{id}/duplicar:
+    post:
+      summary: Duplicar pergunta
+      description: 'Requisitos relacionados: RF284'
+      tags:
+      - Tarefas
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: Identificador do recurso
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '201':
+          description: Pergunta duplicada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  status_code:
+                    type: integer
+                    example: 201
+                  message:
+                    type: string
+                    example: Registro inserido com sucesso!
+                  response:
+                    $ref: '#/components/schemas/Pergunta'
+                required:
+                - status
+                - status_code
+                - response
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /tarefas-destinatarios:
+    get:
+      summary: Acompanhar respostas dos pacientes (visão do profissional)
+      description: 'Requisitos relacionados: RF293-296'
+      tags:
+      - Tarefas
+      parameters:
+      - name: tarefa_id
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+      - name: busca_paciente
+        in: query
+        required: false
+        schema:
+          type: string
+        description: Busca por nome do paciente (RF294)
+      - name: periodo_inicio
+        in: query
+        required: false
+        schema:
+          type: string
+          format: date
+      - name: periodo_fim
+        in: query
+        required: false
+        schema:
+          type: string
+          format: date
+      - name: status
+        in: query
+        required: false
+        schema:
+          type: string
+          enum:
+          - Concluído
+          - Em andamento
+          - Não preenchido
+      responses:
+        '200':
+          description: Lista de tarefas por destinatário
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  status_code:
+                    type: integer
+                    example: 200
+                  response:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/TarefaDestinatario'
+                required:
+                - status
+                - status_code
+                - response
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /tarefas-destinatarios/{id}:
+    get:
+      summary: Detalhar resposta de um destinatário (dados do paciente, perguntas e respostas)
+      description: 'Requisitos relacionados: RF272, RF297-298'
+      tags:
+      - Tarefas
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: Identificador do recurso
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: Detalhes da resposta
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  status_code:
+                    type: integer
+                    example: 200
+                  response:
+                    $ref: '#/components/schemas/TarefaDestinatario'
+                required:
+                - status
+                - status_code
+                - response
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /tarefas-destinatarios/{id}/respostas:
+    get:
+      summary: Listar respostas já enviadas (somente leitura)
+      description: 'Requisitos relacionados: RF272'
+      tags:
+      - Tarefas
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: Identificador do recurso
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: Lista de respostas
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  status_code:
+                    type: integer
+                    example: 200
+                  response:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Resposta'
+                required:
+                - status
+                - status_code
+                - response
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    post:
+      summary: Salvar rascunho ou enviar respostas da tarefa
+      description: 'Requisitos relacionados: RF266-271, RF273'
+      tags:
+      - Tarefas
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: Identificador do recurso
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RespostasEnviarRequest'
+      responses:
+        '200':
+          description: Respostas salvas/enviadas
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  status_code:
+                    type: integer
+                    example: 200
+                  response:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Resposta'
+                required:
+                - status
+                - status_code
+                - response
+        '409':
+          description: Tarefa já enviada; edição bloqueada (RF271)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /pacientes/me/tratamentos:
+    get:
+      summary: Listar tratamentos cadastrados
+      description: 'Requisitos relacionados: RF332-335'
+      tags:
+      - Tratamentos
+      responses:
+        '200':
+          description: Lista de tratamentos
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  status_code:
+                    type: integer
+                    example: 200
+                  response:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Tratamento'
+                required:
+                - status
+                - status_code
+                - response
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    post:
+      summary: Cadastrar novo tratamento
+      description: 'Requisitos relacionados: RF339-346'
+      tags:
+      - Tratamentos
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TratamentoCriarRequest'
+      responses:
+        '201':
+          description: Tratamento criado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  status_code:
+                    type: integer
+                    example: 201
+                  message:
+                    type: string
+                    example: Registro inserido com sucesso!
+                  response:
+                    $ref: '#/components/schemas/Tratamento'
+                required:
+                - status
+                - status_code
+                - response
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /tratamentos/{id}:
+    delete:
+      summary: Excluir tratamento
+      description: 'Requisitos relacionados: RF357-361'
+      tags:
+      - Tratamentos
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: Identificador do recurso
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: Tratamento removido
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  status_code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Registro apagado com sucesso!
+                  response:
+                    type: object
+                    nullable: true
+                    example: {}
+                required:
+                - status
+                - status_code
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    put:
+      summary: Editar tratamento
+      description: 'Requisitos relacionados: RF349-355'
+      tags:
+      - Tratamentos
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: Identificador do recurso
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TratamentoCriarRequest'
+      responses:
+        '200':
+          description: Tratamento atualizado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  status_code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Registro atualizado com sucesso!
+                  response:
+                    $ref: '#/components/schemas/Tratamento'
+                required:
+                - status
+                - status_code
+                - response
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /tratamentos/{id}/horarios:
+    post:
+      summary: Adicionar horário ao tratamento
+      description: 'Requisitos relacionados: RF334, RF343'
+      tags:
+      - Tratamentos
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: Identificador do recurso
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                horario:
+                  type: string
+                  format: time
+      responses:
+        '201':
+          description: Horário adicionado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  status_code:
+                    type: integer
+                    example: 201
+                  message:
+                    type: string
+                    example: Registro inserido com sucesso!
+                  response:
+                    $ref: '#/components/schemas/HorarioTratamento'
+                required:
+                - status
+                - status_code
+                - response
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /horarios-tratamento/{id}:
+    delete:
+      summary: Remover horário do tratamento
+      description: 'Requisitos relacionados: RF334'
+      tags:
+      - Tratamentos
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: Identificador do recurso
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: Horário removido
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  status_code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Registro apagado com sucesso!
+                  response:
+                    type: object
+                    nullable: true
+                    example: {}
+                required:
+                - status
+                - status_code
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /horarios-tratamento/{id}/registros-dose:
+    get:
+      summary: Listar histórico de doses de um horário (base para aderência, RF237)
+      description: 'Requisitos relacionados: RF237'
+      tags:
+      - Tratamentos
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: Identificador do recurso
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: Histórico de doses
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  status_code:
+                    type: integer
+                    example: 200
+                  response:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/RegistroDose'
+                required:
+                - status
+                - status_code
+                - response
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    post:
+      summary: Confirmar ou registrar dose não tomada
+      description: 'Requisitos relacionados: RF130 (lembrete origina este registro)'
+      tags:
+      - Tratamentos
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: Identificador do recurso
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegistroDoseConfirmarRequest'
+      responses:
+        '201':
+          description: Dose registrada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  status_code:
+                    type: integer
+                    example: 201
+                  message:
+                    type: string
+                    example: Registro inserido com sucesso!
+                  response:
+                    $ref: '#/components/schemas/RegistroDose'
+                required:
+                - status
+                - status_code
+                - response
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /pacientes/me/relatorios:
+    get:
+      summary: Relatório de histórico de saúde emocional (indicadores, sono, tarefas)
+      description: 'Requisitos relacionados: RF189-201, RF208-211'
+      tags:
+      - Relatórios
+      parameters:
+      - name: inicio
+        in: query
+        required: true
+        schema:
+          type: string
+          format: date
+      - name: fim
+        in: query
+        required: true
+        schema:
+          type: string
+          format: date
+      responses:
+        '200':
+          description: Relatório do período
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  status_code:
+                    type: integer
+                    example: 200
+                  response:
+                    $ref: '#/components/schemas/RelatorioPeriodo'
+                required:
+                - status
+                - status_code
+                - response
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /pacientes/{id}/relatorios:
+    get:
+      summary: Relatório de um paciente, visão do profissional (requer solicitação de acesso aprovada)
+      description: 'Requisitos relacionados: RF228-238'
+      tags:
+      - Relatórios
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: Identificador do recurso
+        schema:
+          type: integer
+          format: int64
+      - name: periodo
+        in: query
+        required: false
+        schema:
+          type: string
+          enum:
+          - 7d
+          - 14d
+          - 30d
+        description: Janela de análise (RF228)
+      responses:
+        '200':
+          description: Relatório do período
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  status_code:
+                    type: integer
+                    example: 200
+                  response:
+                    $ref: '#/components/schemas/RelatorioPeriodo'
+                required:
+                - status
+                - status_code
+                - response
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /especialidades:
+    get:
+      summary: Listar especialidades cadastradas
+      description: 'Requisitos relacionados: RF160, RF321'
+      tags:
+      - Domínios
+      responses:
+        '200':
+          description: Lista de especialidades
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  status_code:
+                    type: integer
+                    example: 200
+                  response:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Especialidade'
+                required:
+                - status
+                - status_code
+                - response
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    post:
+      summary: Cadastrar nova especialidade (Admin)
+      description: 'Requisitos relacionados: -'
+      tags:
+      - Domínios
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                especialidade:
+                  type: string
+      responses:
+        '201':
+          description: Especialidade criada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  status_code:
+                    type: integer
+                    example: 201
+                  message:
+                    type: string
+                    example: Registro inserido com sucesso!
+                  response:
+                    $ref: '#/components/schemas/Especialidade'
+                required:
+                - status
+                - status_code
+                - response
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /categorias:
+    get:
+      summary: Listar categorias de notificação
+      description: 'Requisitos relacionados: RF121, RF129, RF125, RF132'
+      tags:
+      - Domínios
+      responses:
+        '200':
+          description: Lista de categorias
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  status_code:
+                    type: integer
+                    example: 200
+                  response:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Categoria'
+                required:
+                - status
+                - status_code
+                - response
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Erro:
+      type: object
+      properties:
+        status:
+          type: boolean
+          example: false
+        status_code:
+          type: integer
+          example: 400
+        message:
+          type: string
+          example: Os dados enviados na requisição não estão corretos.
+      required:
+      - status
+      - status_code
+      - message
+    LoginRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        senha:
+          type: string
+          format: password
+          minLength: 6
+          maxLength: 255
+      required:
+      - email
+      - senha
+    LoginGoogleRequest:
+      type: object
+      properties:
+        id_token_google:
+          type: string
+          description: ID token retornado pelo OAuth do Google (RF86).
+      required:
+      - id_token_google
+    LoginResponse:
+      type: object
+      properties:
+        token_acesso:
+          type: string
+        tipo_perfil:
+          type: string
+          enum:
+          - paciente
+          - profissional
+          - administrador
+        id_usuario:
+          type: integer
+          format: int64
+    RecuperarSenhaSolicitarRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+      required:
+      - email
+    RecuperarSenhaValidarCodigoRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        codigo:
+          type: string
+          minLength: 4
+          maxLength: 4
+          description: Código numérico de 4 dígitos (RF88/RF94).
+      required:
+      - email
+      - codigo
+    RecuperarSenhaRedefinirRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        codigo:
+          type: string
+        nova_senha:
+          type: string
+          format: password
+          minLength: 6
+          maxLength: 255
+      required:
+      - email
+      - codigo
+      - nova_senha
+    Administrador:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        nome_completo:
+          type: string
+          maxLength: 150
+        email:
+          type: string
+          format: email
+          maxLength: 150
+        celular:
+          type: string
+          maxLength: 20
+          nullable: true
+        foto_avatar:
+          type: string
+          nullable: true
+        papel:
+          type: string
+          maxLength: 20
+          example: Admin
+        data_criacao:
+          type: string
+          format: date-time
+    AdministradorCriarRequest:
+      type: object
+      properties:
+        nome_completo:
+          type: string
+          maxLength: 150
+        email:
+          type: string
+          format: email
+        senha_provisoria:
+          type: string
+          description: Enviada por e-mail junto às instruções de acesso (RF07).
+      required:
+      - nome_completo
+      - email
+      - senha_provisoria
+    AdministradorAtualizarRequest:
+      type: object
+      properties:
+        nome_completo:
+          type: string
+          maxLength: 150
+        celular:
+          type: string
+          maxLength: 20
+    AlterarSenhaRequest:
+      type: object
+      properties:
+        senha_atual:
+          type: string
+          format: password
+        nova_senha:
+          type: string
+          format: password
+          minLength: 6
+          maxLength: 255
+        confirmar_nova_senha:
+          type: string
+          format: password
+      required:
+      - senha_atual
+      - nova_senha
+      - confirmar_nova_senha
+    AprovacaoProfissional:
+      type: object
+      description: Solicitação de acesso do profissional à plataforma, analisada por um administrador
+        (RF41-64).
+      properties:
+        id:
+          type: integer
+          format: int64
+        profissional:
+          $ref: '#/components/schemas/ProfissionalResumo'
+        status_aprovacao:
+          type: string
+          enum:
+          - Pendente
+          - Aprovado
+          - Recusado
+        data_decisao:
+          type: string
+          format: date-time
+          nullable: true
+        criado_em:
+          type: string
+          format: date-time
+    Paciente:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        nome_completo:
+          type: string
+          maxLength: 150
+        apelido:
+          type: string
+          maxLength: 80
+          nullable: true
+        data_nascimento:
+          type: string
+          format: date
+          nullable: true
+        celular:
+          type: string
+          maxLength: 20
+          nullable: true
+        email:
+          type: string
+          format: email
+          nullable: true
+        foto_avatar:
+          type: string
+          nullable: true
+        deseja_iniciar_registros:
+          type: boolean
+        primeiro_acesso_concluido:
+          type: boolean
+        status_atividade:
+          type: string
+          maxLength: 20
+          example: Ativo
+        criado_em:
+          type: string
+          format: date-time
+          nullable: true
+    PacienteResumo:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        nome_completo:
+          type: string
+        foto_avatar:
+          type: string
+          nullable: true
+        status_atividade:
+          type: string
+    PacienteCadastroRequest:
+      type: object
+      properties:
+        nome_completo:
+          type: string
+          minLength: 3
+          maxLength: 255
+        celular:
+          type: string
+          pattern: ^[0-9]{11}$
+        email:
+          type: string
+          format: email
+          minLength: 10
+          maxLength: 255
+        senha:
+          type: string
+          format: password
+          minLength: 6
+          maxLength: 255
+        aceite_termos:
+          type: boolean
+      required:
+      - nome_completo
+      - email
+      - senha
+      - aceite_termos
+    PacientePrimeiroAcessoRequest:
+      type: object
+      description: Formulário de perguntas iniciais (RF168-172).
+      properties:
+        apelido:
+          type: string
+          maxLength: 80
+        data_nascimento:
+          type: string
+          format: date
+          nullable: true
+        deseja_iniciar_registros:
+          type: boolean
+        possui_profissional_vinculado:
+          type: boolean
+      required:
+      - deseja_iniciar_registros
+      - possui_profissional_vinculado
+    PacienteAtualizarRequest:
+      type: object
+      properties:
+        nome_completo:
+          type: string
+        apelido:
+          type: string
+        celular:
+          type: string
+    PacienteExternoCriarRequest:
+      type: object
+      description: Cadastro leve de paciente feito pelo profissional, para paciente sem conta na plataforma
+        (RF304). Requer ajuste de modelo — ver observações no topo do documento.
+      properties:
+        nome_completo:
+          type: string
+          minLength: 3
+          maxLength: 255
+      required:
+      - nome_completo
+    Profissional:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        nome_completo:
+          type: string
+          maxLength: 150
+        celular:
+          type: string
+          maxLength: 20
+          nullable: true
+        email:
+          type: string
+          format: email
+        cpf:
+          type: string
+          maxLength: 11
+        crp:
+          type: string
+          maxLength: 20
+        instituicao_clinica:
+          type: string
+          maxLength: 150
+          nullable: true
+        especialidades:
+          type: array
+          items:
+            type: string
+    ProfissionalResumo:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        nome_completo:
+          type: string
+        especialidade:
+          type: string
+          nullable: true
+        instituicao_clinica:
+          type: string
+          nullable: true
+    ProfissionalCadastroRequest:
+      type: object
+      properties:
+        nome_completo:
+          type: string
+          minLength: 3
+          maxLength: 255
+        celular:
+          type: string
+          pattern: ^[0-9]{11}$
+        email:
+          type: string
+          format: email
+        senha:
+          type: string
+          format: password
+          minLength: 6
+          maxLength: 255
+        cpf:
+          type: string
+          pattern: ^[0-9]{11}$
+        crp:
+          type: string
+          minLength: 6
+          maxLength: 12
+        instituicao_clinica:
+          type: string
+          nullable: true
+      required:
+      - nome_completo
+      - email
+      - senha
+      - cpf
+      - crp
+    ProfissionalAtualizarRequest:
+      type: object
+      properties:
+        nome_completo:
+          type: string
+        celular:
+          type: string
+        especialidade_ids:
+          type: array
+          items:
+            type: integer
+            format: int64
+    ProfissionalExternoCriarRequest:
+      type: object
+      description: Cadastro leve de profissional feito pelo paciente, para profissional sem conta na plataforma
+        (RF321). Requer ajuste de modelo — ver observações no topo do documento.
+      properties:
+        nome_completo:
+          type: string
+          minLength: 3
+        especialidade:
+          type: string
+        cpf:
+          type: string
+          nullable: true
+        email:
+          type: string
+          format: email
+          nullable: true
+      required:
+      - nome_completo
+      - especialidade
+    Especialidade:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        especialidade:
+          type: string
+          maxLength: 100
+    Vinculo:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        status:
+          type: string
+          enum:
+          - Pendente
+          - Aceito
+          - Recusado
+          - Inativo
+        origem_cadastro:
+          type: string
+          description: 'Quem originou o vínculo, ex.: ''Paciente'' ou ''Profissional''.'
+          maxLength: 20
+        data_solicitacao:
+          type: string
+          format: date-time
+          nullable: true
+        data_aceite:
+          type: string
+          format: date-time
+          nullable: true
+        data_inicio_acompanhamento:
+          type: string
+          format: date-time
+          nullable: true
+        data_fim:
+          type: string
+          format: date-time
+          nullable: true
+        paciente:
+          $ref: '#/components/schemas/PacienteResumo'
+        profissional:
+          $ref: '#/components/schemas/ProfissionalResumo'
+    VinculoCriarRequest:
+      type: object
+      description: Solicita vínculo entre paciente e profissional (RF172-176, RF302-305).
+      properties:
+        paciente_id:
+          type: integer
+          format: int64
+        profissional_id:
+          type: integer
+          format: int64
+      required:
+      - paciente_id
+      - profissional_id
+    Consulta:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        criado_por:
+          type: string
+          enum:
+          - Paciente
+          - Profissional
+          maxLength: 20
+        nome_da_conculta:
+          type: string
+          maxLength: 150
+          description: Nome da consulta (mantido o nome de coluna original do modelo).
+        especialidade:
+          type: string
+          maxLength: 100
+          nullable: true
+        data:
+          type: string
+          format: date
+        hora:
+          type: string
+          format: time
+        status:
+          type: string
+          maxLength: 20
+          example: Agendada
+        vinculo_id:
+          type: integer
+          format: int64
+    ConsultaCriarRequest:
+      type: object
+      properties:
+        vinculo_id:
+          type: integer
+          format: int64
+          nullable: true
+          description: Opcional quando o paciente ainda não tem profissional vinculado (RF29).
+        nome_da_conculta:
+          type: string
+        nome_profissional:
+          type: string
+          nullable: true
+        especialidade:
+          type: string
+          nullable: true
+        data:
+          type: string
+          format: date
+        hora:
+          type: string
+          format: time
+      required:
+      - nome_da_conculta
+      - data
+      - hora
+    Disponibilidade:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        dias_da_semana:
+          type: array
+          items:
+            type: string
+            enum:
+            - SEG
+            - TER
+            - QUA
+            - QUI
+            - SEX
+            - SAB
+            - DOM
+        hora_inicio:
+          type: string
+          format: time
+        hora_fim:
+          type: string
+          format: time
+        tipo_repeticao:
+          type: string
+          enum:
+          - Sem fim
+          - Período específico
+          maxLength: 20
+        data_inicial:
+          type: string
+          format: date
+          nullable: true
+        data_final:
+          type: string
+          format: date
+          nullable: true
+    DisponibilidadeCriarRequest:
+      type: object
+      properties:
+        dias_da_semana:
+          type: array
+          items:
+            type: string
+        hora_inicio:
+          type: string
+          format: time
+        hora_fim:
+          type: string
+          format: time
+        tipo_repeticao:
+          type: string
+        data_inicial:
+          type: string
+          format: date
+          nullable: true
+        data_final:
+          type: string
+          format: date
+          nullable: true
+      required:
+      - dias_da_semana
+      - hora_inicio
+      - hora_fim
+      - tipo_repeticao
+    RegistroHumor:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        data:
+          type: string
+          format: date
+        sentimento:
+          type: string
+          enum:
+          - Feliz
+          - Triste
+          - Ansioso
+          - Irritado
+          - Calmo
+          - Cansado
+        energia:
+          type: string
+          enum:
+          - Baixa
+          - Média
+          - Alta
+        humor:
+          type: string
+          enum:
+          - Muito bem
+          - Bem
+          - Neutro
+          - Mal
+          - Muito mal
+        padrao_pensamentos:
+          type: string
+          enum:
+          - Positivos
+          - Negativos
+          - Neutros
+          - Acelerados
+          maxLength: 500
+        horas_sono:
+          type: number
+          format: float
+        relato:
+          type: string
+          nullable: true
+        data_criacao:
+          type: string
+          format: date-time
+    RegistroHumorCriarRequest:
+      type: object
+      description: Registro diário; apenas um por dia por paciente (RF83).
+      properties:
+        sentimento:
+          type: string
+        energia:
+          type: string
+        humor:
+          type: string
+        padrao_pensamentos:
+          type: string
+        horas_sono:
+          type: number
+        relato:
+          type: string
+          nullable: true
+      required:
+      - sentimento
+      - energia
+      - humor
+      - padrao_pensamentos
+      - horas_sono
+    Anotacao:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        titulo:
+          type: string
+          maxLength: 200
+        conteudo:
+          type: string
+          maxLength: 1000
+        data_criacao:
+          type: string
+          format: date-time
+        data_edicao:
+          type: string
+          format: date-time
+          nullable: true
+        profissional_id:
+          type: integer
+          format: int64
+        paciente_id:
+          type: integer
+          format: int64
+    AnotacaoCriarRequest:
+      type: object
+      properties:
+        titulo:
+          type: string
+          maxLength: 200
+        conteudo:
+          type: string
+          maxLength: 1000
+      required:
+      - titulo
+      - conteudo
+    CategoriaCompartilhada:
+      type: object
+      properties:
+        categoria:
+          type: string
+          enum:
+          - Sentimento
+          - Energia
+          - Humor
+          - Horas de sono
+          - Acontecimentos
+        autorizado:
+          type: boolean
+    SolicitacaoAcesso:
+      type: object
+      description: Solicitação de um profissional para acessar indicadores de um paciente (RF202-207,
+        RF223-227, RF312-313).
+      properties:
+        id:
+          type: integer
+          format: int64
+        status:
+          type: string
+          enum:
+          - Pendente
+          - Aprovado
+          - Recusado
+        data_solicitacao:
+          type: string
+          format: date-time
+        data_resposta:
+          type: string
+          format: date-time
+          nullable: true
+        profissional:
+          $ref: '#/components/schemas/ProfissionalResumo'
+        paciente:
+          $ref: '#/components/schemas/PacienteResumo'
+        categorias:
+          type: array
+          items:
+            $ref: '#/components/schemas/CategoriaCompartilhada'
+    SolicitacaoAcessoCriarRequest:
+      type: object
+      properties:
+        paciente_id:
+          type: integer
+          format: int64
+      required:
+      - paciente_id
+    SolicitacaoAcessoAprovarRequest:
+      type: object
+      description: Categorias de dados que o paciente autoriza compartilhar (RF205).
+      properties:
+        categorias_autorizadas:
+          type: array
+          items:
+            type: string
+            enum:
+            - Sentimento
+            - Energia
+            - Humor
+            - Horas de sono
+            - Acontecimentos
+      required:
+      - categorias_autorizadas
+    Categoria:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        categoria:
+          type: string
+          maxLength: 20
+          example: Agenda
+        tipo_especifico:
+          type: string
+          maxLength: 50
+          nullable: true
+    Notificacao:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        titulo_mensagem:
+          type: string
+          maxLength: 255
+        lida:
+          type: boolean
+        data_criacao:
+          type: string
+          format: date-time
+        referencia_evento:
+          type: string
+          nullable: true
+          description: Identificador do recurso relacionado (agenda, tarefa ou paciente) usado pelo link
+            'Ver' (RF123).
+        categoria:
+          $ref: '#/components/schemas/Categoria'
+    PreferenciaNotificacao:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        categoria:
+          type: string
+          maxLength: 30
+        tipo_especifico:
+          type: string
+          maxLength: 50
+          nullable: true
+        ativo:
+          type: boolean
+    PreferenciasNotificacaoAtualizarRequest:
+      type: object
+      properties:
+        preferencias:
+          type: array
+          items:
+            type: object
+            properties:
+              categoria:
+                type: string
+              tipo_especifico:
+                type: string
+                nullable: true
+              ativo:
+                type: boolean
+    OpcaoPergunta:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        texto:
+          type: string
+          maxLength: 200
+        ordem:
+          type: integer
+    Pergunta:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        tipo:
+          type: string
+          enum:
+          - Múltipla escolha
+          - Escolha única
+          - Resposta em parágrafo
+          - Escala de emoções
+          - Escala numérica
+          maxLength: 30
+        texto:
+          type: string
+        imagem:
+          type: string
+          nullable: true
+        obrigatoria:
+          type: boolean
+        ordem:
+          type: integer
+        opcoes:
+          type: array
+          items:
+            $ref: '#/components/schemas/OpcaoPergunta'
+    PerguntaCriarRequest:
+      type: object
+      properties:
+        tipo:
+          type: string
+        texto:
+          type: string
+        imagem:
+          type: string
+          nullable: true
+        obrigatoria:
+          type: boolean
+        ordem:
+          type: integer
+        opcoes:
+          type: array
+          items:
+            type: object
+            properties:
+              texto:
+                type: string
+              ordem:
+                type: integer
+      required:
+      - tipo
+      - texto
+      - obrigatoria
+      - ordem
+    Tarefa:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        titulo:
+          type: string
+          maxLength: 200
+        tipo:
+          type: string
+          maxLength: 20
+          description: 'Ex.: ''Formulário'', ''Arquivo'', ''Auto-tarefa'' (RF262, RF289).'
+        instrucoes:
+          type: string
+          nullable: true
+        anexo_arquivo:
+          type: string
+          nullable: true
+        is_rascunho:
+          type: boolean
+        data_criacao:
+          type: string
+          format: date-time
+        data_envio:
+          type: string
+          format: date-time
+          nullable: true
+        criador:
+          type: object
+          description: Exatamente um dos dois é preenchido (autor profissional OU auto-tarefa do paciente).
+          properties:
+            profissional_id:
+              type: integer
+              format: int64
+              nullable: true
+            paciente_id:
+              type: integer
+              format: int64
+              nullable: true
+        perguntas:
+          type: array
+          items:
+            $ref: '#/components/schemas/Pergunta'
+    TarefaCriarRequest:
+      type: object
+      properties:
+        titulo:
+          type: string
+          maxLength: 200
+        tipo:
+          type: string
+        instrucoes:
+          type: string
+          nullable: true
+        anexo_arquivo:
+          type: string
+          nullable: true
+        paciente_ids:
+          type: array
+          items:
+            type: integer
+            format: int64
+          description: Vazio = todos os pacientes vinculados (RF277).
+        prazos_por_paciente:
+          type: array
+          description: Prazo específico por paciente destinatário, opcional (RF278).
+          items:
+            type: object
+            properties:
+              paciente_id:
+                type: integer
+                format: int64
+              prazo:
+                type: string
+                format: date-time
+                nullable: true
+      required:
+      - titulo
+    TarefaDestinatario:
+      type: object
+      description: Vínculo entre uma tarefa e um paciente destinatário, com status individual (RF260-261).
+      properties:
+        id:
+          type: integer
+          format: int64
+        tarefa:
+          $ref: '#/components/schemas/Tarefa'
+        paciente:
+          $ref: '#/components/schemas/PacienteResumo'
+        prazo:
+          type: string
+          format: date-time
+          nullable: true
+        status:
+          type: string
+          enum:
+          - Pendente
+          - Em andamento
+          - Concluída
+          - Em atraso
+        data_conclusao:
+          type: string
+          format: date-time
+          nullable: true
+    Resposta:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        pergunta_id:
+          type: integer
+          format: int64
+        opcao_pergunta_id:
+          type: integer
+          format: int64
+          nullable: true
+        valor:
+          type: string
+          nullable: true
+          description: Usado para texto livre e escalas numéricas.
+        data_envio:
+          type: string
+          format: date-time
+    RespostasEnviarRequest:
+      type: object
+      properties:
+        respostas:
+          type: array
+          items:
+            type: object
+            properties:
+              pergunta_id:
+                type: integer
+                format: int64
+              opcao_pergunta_id:
+                type: integer
+                format: int64
+                nullable: true
+              valor:
+                type: string
+                nullable: true
+        enviar_definitivamente:
+          type: boolean
+          description: false = salvar como rascunho (RF268); true = enviar e bloquear edição (RF270-271).
+      required:
+      - respostas
+      - enviar_definitivamente
+    RegistroDose:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        data_hora_prevista:
+          type: string
+          format: date-time
+        status:
+          type: string
+          maxLength: 25
+          enum:
+          - Pendente
+          - Tomada
+          - Perdida
+        data_hora_confirmacao:
+          type: string
+          format: date-time
+          nullable: true
+    HorarioTratamento:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        horario:
+          type: string
+          format: time
+    Tratamento:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        nome_medicamento:
+          type: string
+          maxLength: 150
+        dosagem:
+          type: string
+          maxLength: 150
+        frequencia:
+          type: string
+          maxLength: 100
+          nullable: true
+        lembrete_ativo:
+          type: boolean
+          nullable: true
+        horarios:
+          type: array
+          items:
+            $ref: '#/components/schemas/HorarioTratamento'
+    TratamentoCriarRequest:
+      type: object
+      properties:
+        nome_medicamento:
+          type: string
+        dosagem:
+          type: string
+        frequencia:
+          type: string
+          nullable: true
+        lembrete_ativo:
+          type: boolean
+        horarios:
+          type: array
+          items:
+            type: string
+            format: time
+      required:
+      - nome_medicamento
+      - dosagem
+    RegistroDoseConfirmarRequest:
+      type: object
+      properties:
+        status:
+          type: string
+          enum:
+          - Tomada
+          - Perdida
+      required:
+      - status
+    IndicadorPeriodo:
+      type: object
+      properties:
+        nome:
+          type: string
+          enum:
+          - Energia
+          - Sentimento
+          - Humor
+          - Pensamentos
+        valor:
+          type: number
+          format: float
+        escala_maxima:
+          type: number
+          format: float
+        faixa:
+          type: string
+          enum:
+          - Positivo
+          - Moderado
+          - Atenção
+    RelatorioPeriodo:
+      type: object
+      description: Agregação calculada a partir de registros de humor, tarefas e doses de tratamento no
+        período (RF189-238). Não corresponde a uma tabela própria do modelo.
+      properties:
+        periodo_inicio:
+          type: string
+          format: date
+        periodo_fim:
+          type: string
+          format: date
+        quantidade_registros:
+          type: integer
+        indicadores:
+          type: array
+          items:
+            $ref: '#/components/schemas/IndicadorPeriodo'
+        horas_sono:
+          type: object
+          properties:
+            media:
+              type: number
+            minimo:
+              type: number
+            maximo:
+              type: number
+        aderencia_tratamento:
+          type: array
+          items:
+            type: object
+            properties:
+              nome_medicamento:
+                type: string
+              percentual:
+                type: number
+  responses:
+    BadRequest:
+      description: Os dados enviados na requisição não estão corretos.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Erro'
+          example:
+            status: false
+            status_code: 400
+            message: Os dados enviados na requisição não estão corretos.
+    Unauthorized:
+      description: Não foi possivel processar requisição. usuário não autorizado.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Erro'
+          example:
+            status: false
+            status_code: 401
+            message: Não foi possivel processar requisição. usuário não autorizado.
+    NotFound:
+      description: Não foi possivel encontrar nenhum registro.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Erro'
+          example:
+            status: false
+            status_code: 404
+            message: Não foi possivel encontrar nenhum registro.
+    Conflict:
+      description: Não foi possivel processar requisição. usuario ou email já cadastrado.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Erro'
+          example:
+            status: false
+            status_code: 409
+            message: Não foi possivel processar requisição. usuario ou email já cadastrado.
+    UnsupportedMediaType:
+      description: Não foi possivel processar a requisição, pois o formato de dados aceito pela API é
+        somente JSON.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Erro'
+          example:
+            status: false
+            status_code: 415
+            message: Não foi possivel processar a requisição, pois o formato de dados aceito pela API
+              é somente JSON.
+    InternalServerError:
+      description: Não foi possivel processar a requisição por conta de erro interno na API.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Erro'
+          example:
+            status: false
+            status_code: 500
+            message: Não foi possivel processar a requisição por conta de erro interno na API.
+security:
+- bearerAuth: []
