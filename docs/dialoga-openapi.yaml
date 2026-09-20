@@ -18,40 +18,48 @@ servers:
 tags:
 - name: Autenticação
   description: Login, login social e recuperação de senha (RF085-097).
-- name: Cadastro
-  description: Criação de contas de Paciente e Profissional (RF098-119).
 - name: Administradores
-  description: Gestão de contas de administrador (RF01-20).
-- name: Aprovação de Profissionais
-  description: Fila de análise de novos profissionais pelo Admin (RF41-64).
-- name: Perfil
-  description: Consulta e edição do perfil autenticado (RF135-167).
+  description: 'Tabela `administrador`: cadastro, listagem e perfil do administrador, incluindo troca de senha (RF01-20, RF135-167).'
+- name: Administrador × Profissional
+  description: 'Tabela `administrador_profissional`: fila de aprovação de novos profissionais pelo Admin (RF41-64).'
 - name: Pacientes
-  description: Cadastro/consulta de pacientes e sua listagem por um profissional (RF299-316).
+  description: 'Tabela `paciente`: cadastro, perfil, dashboard e relatórios do paciente, incluindo a visão do profissional sobre o paciente (RF098-119, RF135-167, RF066-070, RF189-238, RF299-316).'
 - name: Profissionais
-  description: Cadastro/consulta de profissionais e sua listagem por um paciente (RF317-331).
+  description: 'Tabela `profissional`: cadastro, perfil e dashboard do profissional (RF098-119, RF135-167, RF066-070, RF317-331).'
 - name: Vínculos
-  description: Solicitação, aceite, recusa e encerramento de vínculo paciente-profissional (RF172-188).
-- name: Agenda
-  description: Consultas e disponibilidade de horários (RF021-040).
-- name: Dashboard
-  description: Indicadores resumidos exibidos no painel inicial (RF066-070).
+  description: 'Tabela `vinculo`: solicitação, aceite, recusa e listagem do vínculo paciente-profissional, por ambos os lados (RF172-188, RF299-316, RF317-331).'
+- name: Consultas
+  description: 'Tabela `consulta`: agendamento de consultas (RF021-040).'
+- name: Disponibilidades
+  description: 'Tabela `disponibilidade`: horários de disponibilidade cadastrados pelo profissional (RF021-040).'
 - name: Registros de Humor
-  description: Formulário diário 'Como você está hoje?' (RF071-084).
+  description: 'Tabela `registro_humor`: formulário diário ''Como você está hoje?'' (RF071-084).'
 - name: Anotações
-  description: Notas privadas do profissional sobre um paciente (RF221-222, RF310-311).
-- name: Solicitações de Acesso a Indicadores
-  description: Profissional solicita, paciente autoriza por categoria (RF202-207, RF223-227, RF312-313).
+  description: 'Tabela `anotacao`: notas privadas do profissional sobre um paciente (RF221-222, RF310-311).'
+- name: Solicitações de Acesso
+  description: 'Tabela `solicitacao_acesso`: profissional solicita e paciente autoriza acesso a indicadores por categoria (RF202-207, RF223-227, RF312-313).'
 - name: Notificações
-  description: Listagem, marcação de leitura e preferências por categoria (RF120-134).
+  description: 'Tabela `notificacao`: listagem e marcação de leitura de notificações (RF120-134).'
+- name: Preferências de Notificação
+  description: 'Tabela `preferencia_notificacao`: preferências de notificação por categoria, incluindo ''Desligar todas'' (RF120-134).'
 - name: Tarefas
-  description: Criação, envio, resposta e acompanhamento de tarefas/questionários (RF257-298).
+  description: 'Tabela `tarefa`: criação, edição e envio de tarefas/questionários (RF257-298).'
+- name: Perguntas
+  description: 'Tabela `pergunta`: perguntas que compõem uma tarefa (RF257-298).'
+- name: Destinatários de Tarefas
+  description: 'Tabela `tarefa_destinatario`: acompanhamento de tarefas por destinatário, visão do profissional (RF257-298).'
+- name: Respostas
+  description: 'Tabela `resposta`: respostas enviadas pelos pacientes às tarefas (RF257-298).'
 - name: Tratamentos
-  description: Medicamentos, horários e confirmação de doses (RF332-361).
-- name: Relatórios
-  description: Indicadores agregados de saúde emocional, sono e aderência (RF189-238).
-- name: Domínios
-  description: 'Tabelas de apoio: especialidades e categorias (usadas por Profissional e Notificação).'
+  description: 'Tabela `tratamento`: medicamentos em tratamento (RF332-361).'
+- name: Horários de Tratamento
+  description: 'Tabela `horario_tratamento`: horários configurados para um tratamento (RF332-361).'
+- name: Registros de Dose
+  description: 'Tabela `registro_dose`: confirmação de doses tomadas/perdidas (RF332-361).'
+- name: Especialidades
+  description: 'Tabela `especialidade`: domínio de apoio usado pelo cadastro de Profissional.'
+- name: Categorias
+  description: 'Tabela `categoria`: domínio de apoio usado por Notificação e Solicitações de Acesso.'
 paths:
   /auth/login:
     post:
@@ -324,7 +332,7 @@ paths:
       summary: Cadastrar novo paciente
       description: 'Requisitos relacionados: RF98-106'
       tags:
-      - Cadastro
+      - Pacientes
       requestBody:
         required: true
         content:
@@ -372,7 +380,7 @@ paths:
       summary: Cadastrar novo profissional (aguarda aprovação do Admin)
       description: 'Requisitos relacionados: RF107-119'
       tags:
-      - Cadastro
+      - Profissionais
       requestBody:
         required: true
         content:
@@ -553,7 +561,7 @@ paths:
       summary: Consultar próprio perfil de administrador
       description: 'Requisitos relacionados: RF135-141'
       tags:
-      - Perfil
+      - Administradores
       responses:
         '200':
           description: Perfil do administrador
@@ -586,7 +594,7 @@ paths:
       summary: Editar próprio perfil de administrador
       description: 'Requisitos relacionados: RF141, RF146-149'
       tags:
-      - Perfil
+      - Administradores
       requestBody:
         required: true
         content:
@@ -631,7 +639,7 @@ paths:
       summary: Alterar senha do administrador autenticado
       description: 'Requisitos relacionados: RF142-145'
       tags:
-      - Perfil
+      - Administradores
       requestBody:
         required: true
         content:
@@ -677,7 +685,7 @@ paths:
       summary: Listar solicitações de acesso de profissionais
       description: 'Requisitos relacionados: RF41-48'
       tags:
-      - Aprovação de Profissionais
+      - Administrador × Profissional
       parameters:
       - name: status
         in: query
@@ -731,7 +739,7 @@ paths:
       summary: Detalhar solicitação de acesso de um profissional
       description: 'Requisitos relacionados: RF49-50'
       tags:
-      - Aprovação de Profissionais
+      - Administrador × Profissional
       parameters:
       - name: id
         in: path
@@ -773,7 +781,7 @@ paths:
       summary: Aprovar profissional
       description: 'Requisitos relacionados: RF51-56'
       tags:
-      - Aprovação de Profissionais
+      - Administrador × Profissional
       parameters:
       - name: id
         in: path
@@ -818,7 +826,7 @@ paths:
       summary: Recusar profissional
       description: 'Requisitos relacionados: RF52, RF57-60'
       tags:
-      - Aprovação de Profissionais
+      - Administrador × Profissional
       parameters:
       - name: id
         in: path
@@ -863,7 +871,7 @@ paths:
       summary: Consultar próprio perfil de paciente
       description: 'Requisitos relacionados: RF153'
       tags:
-      - Perfil
+      - Pacientes
       responses:
         '200':
           description: Perfil do paciente
@@ -896,7 +904,7 @@ paths:
       summary: Editar próprio perfil de paciente
       description: 'Requisitos relacionados: RF154, RF157-159'
       tags:
-      - Perfil
+      - Pacientes
       requestBody:
         required: true
         content:
@@ -941,7 +949,7 @@ paths:
       summary: Responder formulário de primeiro acesso
       description: 'Requisitos relacionados: RF168-171, RF179'
       tags:
-      - Perfil
+      - Pacientes
       requestBody:
         required: true
         content:
@@ -983,7 +991,7 @@ paths:
       summary: Consultar próprio perfil de profissional
       description: 'Requisitos relacionados: RF160'
       tags:
-      - Perfil
+      - Profissionais
       responses:
         '200':
           description: Perfil do profissional
@@ -1016,7 +1024,7 @@ paths:
       summary: Editar próprio perfil de profissional
       description: 'Requisitos relacionados: RF161-167'
       tags:
-      - Perfil
+      - Profissionais
       requestBody:
         required: true
         content:
@@ -1061,7 +1069,7 @@ paths:
       summary: Listar pacientes vinculados ao profissional autenticado
       description: 'Requisitos relacionados: RF299-301, RF306'
       tags:
-      - Pacientes
+      - Vínculos
       parameters:
       - name: busca
         in: query
@@ -1113,7 +1121,7 @@ paths:
       summary: Adicionar paciente (busca na plataforma ou cadastro externo)
       description: 'Requisitos relacionados: RF302-305'
       tags:
-      - Pacientes
+      - Vínculos
       requestBody:
         required: true
         content:
@@ -1162,7 +1170,7 @@ paths:
       summary: Remover paciente da lista de acompanhamento
       description: 'Requisitos relacionados: RF315, RF326-330'
       tags:
-      - Pacientes
+      - Vínculos
       parameters:
       - name: vinculoId
         in: path
@@ -1250,7 +1258,7 @@ paths:
       summary: Listar profissionais vinculados ao paciente autenticado
       description: 'Requisitos relacionados: RF317-319'
       tags:
-      - Profissionais
+      - Vínculos
       parameters:
       - name: status
         in: query
@@ -1295,7 +1303,7 @@ paths:
       summary: Adicionar profissional (busca por CPF na plataforma ou cadastro externo)
       description: 'Requisitos relacionados: RF320-324'
       tags:
-      - Profissionais
+      - Vínculos
       requestBody:
         required: true
         content:
@@ -1344,7 +1352,7 @@ paths:
       summary: Excluir vínculo com profissional (move para Histórico)
       description: 'Requisitos relacionados: RF326-330'
       tags:
-      - Profissionais
+      - Vínculos
       parameters:
       - name: vinculoId
         in: path
@@ -1653,7 +1661,7 @@ paths:
       summary: Listar consultas do usuário autenticado
       description: 'Requisitos relacionados: RF21, RF28, RF31-35'
       tags:
-      - Agenda
+      - Consultas
       parameters:
       - name: periodo
         in: query
@@ -1711,7 +1719,7 @@ paths:
       summary: Cadastrar nova consulta
       description: 'Requisitos relacionados: RF22-27, RF34'
       tags:
-      - Agenda
+      - Consultas
       requestBody:
         required: true
         content:
@@ -1756,7 +1764,7 @@ paths:
       summary: Detalhar consulta
       description: 'Requisitos relacionados: RF28, RF35'
       tags:
-      - Agenda
+      - Consultas
       parameters:
       - name: id
         in: path
@@ -1797,7 +1805,7 @@ paths:
       summary: Cancelar/excluir consulta
       description: 'Requisitos relacionados: RF34'
       tags:
-      - Agenda
+      - Consultas
       parameters:
       - name: id
         in: path
@@ -1842,7 +1850,7 @@ paths:
       summary: Editar consulta
       description: 'Requisitos relacionados: RF23-25'
       tags:
-      - Agenda
+      - Consultas
       parameters:
       - name: id
         in: path
@@ -1895,7 +1903,7 @@ paths:
       summary: Listar disponibilidades cadastradas
       description: 'Requisitos relacionados: RF36-38, RF40'
       tags:
-      - Agenda
+      - Disponibilidades
       responses:
         '200':
           description: Lista de disponibilidades
@@ -1930,7 +1938,7 @@ paths:
       summary: Informar nova disponibilidade
       description: 'Requisitos relacionados: RF39'
       tags:
-      - Agenda
+      - Disponibilidades
       requestBody:
         required: true
         content:
@@ -1975,7 +1983,7 @@ paths:
       summary: Excluir disponibilidade
       description: 'Requisitos relacionados: RF37, RF40'
       tags:
-      - Agenda
+      - Disponibilidades
       parameters:
       - name: id
         in: path
@@ -2020,7 +2028,7 @@ paths:
       summary: Editar disponibilidade
       description: 'Requisitos relacionados: RF37, RF40'
       tags:
-      - Agenda
+      - Disponibilidades
       parameters:
       - name: id
         in: path
@@ -2073,7 +2081,7 @@ paths:
       summary: Resumo do dashboard do paciente (humor da semana, carrossel)
       description: 'Requisitos relacionados: RF66-68'
       tags:
-      - Dashboard
+      - Pacientes
       responses:
         '200':
           description: Dados do dashboard
@@ -2090,7 +2098,7 @@ paths:
       summary: Resumo do dashboard do profissional (agenda do dia, carrossel)
       description: 'Requisitos relacionados: RF69-70'
       tags:
-      - Dashboard
+      - Profissionais
       responses:
         '200':
           description: Dados do dashboard
@@ -2400,7 +2408,7 @@ paths:
       summary: Profissional solicita acesso aos indicadores do paciente
       description: 'Requisitos relacionados: RF223-225, RF312'
       tags:
-      - Solicitações de Acesso a Indicadores
+      - Solicitações de Acesso
       parameters:
       - name: id
         in: path
@@ -2453,7 +2461,7 @@ paths:
       summary: Listar solicitações de acesso (enviadas ou recebidas conforme o perfil)
       description: 'Requisitos relacionados: RF202-203, RF313'
       tags:
-      - Solicitações de Acesso a Indicadores
+      - Solicitações de Acesso
       responses:
         '200':
           description: Lista de solicitações
@@ -2489,7 +2497,7 @@ paths:
       summary: Detalhar solicitação de acesso
       description: 'Requisitos relacionados: RF204'
       tags:
-      - Solicitações de Acesso a Indicadores
+      - Solicitações de Acesso
       parameters:
       - name: id
         in: path
@@ -2531,7 +2539,7 @@ paths:
       summary: Paciente aprova solicitação, selecionando categorias de dados
       description: 'Requisitos relacionados: RF205-206'
       tags:
-      - Solicitações de Acesso a Indicadores
+      - Solicitações de Acesso
       parameters:
       - name: id
         in: path
@@ -2584,7 +2592,7 @@ paths:
       summary: Paciente recusa solicitação de acesso
       description: 'Requisitos relacionados: RF207'
       tags:
-      - Solicitações de Acesso a Indicadores
+      - Solicitações de Acesso
       parameters:
       - name: id
         in: path
@@ -2758,7 +2766,7 @@ paths:
       summary: Listar preferências de notificação por categoria
       description: 'Requisitos relacionados: RF125, RF132'
       tags:
-      - Notificações
+      - Preferências de Notificação
       responses:
         '200':
           description: Lista de preferências
@@ -2793,7 +2801,7 @@ paths:
       summary: Salvar preferências de notificação (inclui 'Desligar todas')
       description: 'Requisitos relacionados: RF125-127, RF132-134'
       tags:
-      - Notificações
+      - Preferências de Notificação
       requestBody:
         required: true
         content:
@@ -3121,7 +3129,7 @@ paths:
       summary: Listar perguntas da tarefa
       description: 'Requisitos relacionados: RF265-266'
       tags:
-      - Tarefas
+      - Perguntas
       parameters:
       - name: id
         in: path
@@ -3164,7 +3172,7 @@ paths:
       summary: Adicionar pergunta à tarefa
       description: 'Requisitos relacionados: RF280-283'
       tags:
-      - Tarefas
+      - Perguntas
       parameters:
       - name: id
         in: path
@@ -3217,7 +3225,7 @@ paths:
       summary: Excluir pergunta
       description: 'Requisitos relacionados: RF284'
       tags:
-      - Tarefas
+      - Perguntas
       parameters:
       - name: id
         in: path
@@ -3262,7 +3270,7 @@ paths:
       summary: Editar pergunta (texto, tipo, ordem, obrigatoriedade)
       description: 'Requisitos relacionados: RF284'
       tags:
-      - Tarefas
+      - Perguntas
       parameters:
       - name: id
         in: path
@@ -3315,7 +3323,7 @@ paths:
       summary: Duplicar pergunta
       description: 'Requisitos relacionados: RF284'
       tags:
-      - Tarefas
+      - Perguntas
       parameters:
       - name: id
         in: path
@@ -3360,7 +3368,7 @@ paths:
       summary: Acompanhar respostas dos pacientes (visão do profissional)
       description: 'Requisitos relacionados: RF293-296'
       tags:
-      - Tarefas
+      - Destinatários de Tarefas
       parameters:
       - name: tarefa_id
         in: query
@@ -3430,7 +3438,7 @@ paths:
       summary: Detalhar resposta de um destinatário (dados do paciente, perguntas e respostas)
       description: 'Requisitos relacionados: RF272, RF297-298'
       tags:
-      - Tarefas
+      - Destinatários de Tarefas
       parameters:
       - name: id
         in: path
@@ -3472,7 +3480,7 @@ paths:
       summary: Listar respostas já enviadas (somente leitura)
       description: 'Requisitos relacionados: RF272'
       tags:
-      - Tarefas
+      - Respostas
       parameters:
       - name: id
         in: path
@@ -3515,7 +3523,7 @@ paths:
       summary: Salvar rascunho ou enviar respostas da tarefa
       description: 'Requisitos relacionados: RF266-271, RF273'
       tags:
-      - Tarefas
+      - Respostas
       parameters:
       - name: id
         in: path
@@ -3751,7 +3759,7 @@ paths:
       summary: Adicionar horário ao tratamento
       description: 'Requisitos relacionados: RF334, RF343'
       tags:
-      - Tratamentos
+      - Horários de Tratamento
       parameters:
       - name: id
         in: path
@@ -3808,7 +3816,7 @@ paths:
       summary: Remover horário do tratamento
       description: 'Requisitos relacionados: RF334'
       tags:
-      - Tratamentos
+      - Horários de Tratamento
       parameters:
       - name: id
         in: path
@@ -3854,7 +3862,7 @@ paths:
       summary: Listar histórico de doses de um horário (base para aderência, RF237)
       description: 'Requisitos relacionados: RF237'
       tags:
-      - Tratamentos
+      - Registros de Dose
       parameters:
       - name: id
         in: path
@@ -3897,7 +3905,7 @@ paths:
       summary: Confirmar ou registrar dose não tomada
       description: 'Requisitos relacionados: RF130 (lembrete origina este registro)'
       tags:
-      - Tratamentos
+      - Registros de Dose
       parameters:
       - name: id
         in: path
@@ -3950,7 +3958,7 @@ paths:
       summary: Relatório de histórico de saúde emocional (indicadores, sono, tarefas)
       description: 'Requisitos relacionados: RF189-201, RF208-211'
       tags:
-      - Relatórios
+      - Pacientes
       parameters:
       - name: inicio
         in: query
@@ -3997,7 +4005,7 @@ paths:
       summary: Relatório de um paciente, visão do profissional (requer solicitação de acesso aprovada)
       description: 'Requisitos relacionados: RF228-238'
       tags:
-      - Relatórios
+      - Pacientes
       parameters:
       - name: id
         in: path
@@ -4049,7 +4057,7 @@ paths:
       summary: Listar especialidades cadastradas
       description: 'Requisitos relacionados: RF160, RF321'
       tags:
-      - Domínios
+      - Especialidades
       responses:
         '200':
           description: Lista de especialidades
@@ -4084,7 +4092,7 @@ paths:
       summary: Cadastrar nova especialidade (Admin)
       description: 'Requisitos relacionados: -'
       tags:
-      - Domínios
+      - Especialidades
       requestBody:
         required: true
         content:
@@ -4132,7 +4140,7 @@ paths:
       summary: Listar categorias de notificação
       description: 'Requisitos relacionados: RF121, RF129, RF125, RF132'
       tags:
-      - Domínios
+      - Categorias
       responses:
         '200':
           description: Lista de categorias
