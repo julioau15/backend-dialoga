@@ -32,7 +32,7 @@ const insertPaciente = async (paciente) => {
 
         if(response) return response[0].insertId 
 
-    } catch (error) {}
+    } catch (error) { console.log(error) }
 
     return false
 }
@@ -70,7 +70,7 @@ const updatePaciente = async (paciente) => {
 
         if(response) return response
 
-    } catch (error) {}
+    } catch (error) { console.log(error) }
 
     return false
 }
@@ -98,7 +98,7 @@ const selectAllPaciente = async () => {
 
         if(response) return response[0]
  
-    } catch (error) {}
+    } catch (error) { console.log(error) }
 
     return false
 }
@@ -126,7 +126,7 @@ const selectByIdPaciente = async (id) => {
 
         if(response) return response[0]
         
-    } catch (error) {}
+    } catch (error) { console.log(error) }
 
     return false
 }
@@ -141,7 +141,7 @@ const deletePaciente = async (id) => {
 
         if(response) return response
  
-    } catch (error) {}
+    } catch (error) { console.log(error) }
 
     return false
 }

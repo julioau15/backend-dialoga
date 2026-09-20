@@ -26,7 +26,7 @@ const insertTarefaDestinatario = async (tarefaDestinatario) => {
 
         if(response) return response[0].insertId 
 
-    } catch (error) {}
+    } catch (error) { console.log(error) }
 
     return false
 }
@@ -52,7 +52,7 @@ const updateTarefaDestinatario = async (tarefaDestinatario) => {
 
         if(response) return response
 
-    } catch (error) {}
+    } catch (error) { console.log(error) }
 
     return false
 }
@@ -74,7 +74,7 @@ const selectAllTarefaDestinatario = async () => {
 
         if(response) return response[0]
  
-    } catch (error) {}
+    } catch (error) { console.log(error) }
 
     return false
 }
@@ -96,7 +96,7 @@ const selectByIdTarefaDestinatario = async (id) => {
 
         if(response) return response[0]
         
-    } catch (error) {}
+    } catch (error) { console.log(error) }
 
     return false
 }
@@ -111,7 +111,7 @@ const deleteTarefaDestinatario = async (id) => {
 
         if(response) return response
  
-    } catch (error) {}
+    } catch (error) { console.log(error) }
 
     return false
 }

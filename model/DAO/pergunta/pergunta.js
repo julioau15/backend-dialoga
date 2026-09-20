@@ -27,7 +27,7 @@ const insertPergunta = async (pergunta) => {
 
         if(response) return response[0].insertId 
 
-    } catch (error) {}
+    } catch (error) { console.log(error) }
 
     return false
 }
@@ -55,7 +55,7 @@ const updatePergunta = async (pergunta) => {
 
         if(response) return response
 
-    } catch (error) {}
+    } catch (error) { console.log(error) }
 
     return false
 }
@@ -78,7 +78,7 @@ const selectAllPergunta = async () => {
 
         if(response) return response[0]
  
-    } catch (error) {}
+    } catch (error) { console.log(error) }
 
     return false
 }
@@ -101,7 +101,7 @@ const selectByIdPergunta = async (id) => {
 
         if(response) return response[0]
         
-    } catch (error) {}
+    } catch (error) { console.log(error) }
 
     return false
 }
@@ -116,7 +116,7 @@ const deletePergunta = async (id) => {
 
         if(response) return response
  
-    } catch (error) {}
+    } catch (error) { console.log(error) }
 
     return false
 }

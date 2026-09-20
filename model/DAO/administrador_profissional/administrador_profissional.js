@@ -26,7 +26,7 @@ const insertAdministradorProfissional = async (administradorProfissional) => {
 
         if(response) return response[0].insertId 
 
-    } catch (error) {}
+    } catch (error) { console.log(error) }
 
     return false
 }
@@ -52,7 +52,7 @@ const updateAdministradorProfissional = async (administradorProfissional) => {
 
         if(response) return response
 
-    } catch (error) {}
+    } catch (error) { console.log(error) }
 
     return false
 }
@@ -74,7 +74,7 @@ const selectAllAdministradorProfissional = async () => {
 
         if(response) return response[0]
  
-    } catch (error) {}
+    } catch (error) { console.log(error) }
 
     return false
 }
@@ -96,7 +96,7 @@ const selectByIdAdministradorProfissional = async (id) => {
 
         if(response) return response[0]
         
-    } catch (error) {}
+    } catch (error) { console.log(error) }
 
     return false
 }
@@ -111,7 +111,7 @@ const deleteAdministradorProfissional = async (id) => {
 
         if(response) return response
  
-    } catch (error) {}
+    } catch (error) { console.log(error) }
 
     return false
 }

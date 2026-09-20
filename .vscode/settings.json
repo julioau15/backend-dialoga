@@ -1,6 +1,6 @@
 {
     "chat.tools.terminal.autoApprove": {
-        "/^node --check model/DAO/adminstrador/adminstrador\\.js$/": {
+        "/^node --check model/DAO/administrador/administrador\\.js$/": {
             "approve": true,
             "matchCommandLine": true
         }

@@ -26,7 +26,7 @@ const insertTratamento = async (tratamento) => {
 
         if(response) return response[0].insertId 
 
-    } catch (error) {}
+    } catch (error) { console.log(error) }
 
     return false
 }
@@ -52,7 +52,7 @@ const updateTratamento = async (tratamento) => {
 
         if(response) return response
 
-    } catch (error) {}
+    } catch (error) { console.log(error) }
 
     return false
 }
@@ -74,7 +74,7 @@ const selectAllTratamento = async () => {
 
         if(response) return response[0]
  
-    } catch (error) {}
+    } catch (error) { console.log(error) }
 
     return false
 }
@@ -96,7 +96,7 @@ const selectByIdTratamento = async (id) => {
 
         if(response) return response[0]
         
-    } catch (error) {}
+    } catch (error) { console.log(error) }
 
     return false
 }
@@ -111,7 +111,7 @@ const deleteTratamento = async (id) => {
 
         if(response) return response
  
-    } catch (error) {}
+    } catch (error) { console.log(error) }
 
     return false
 }

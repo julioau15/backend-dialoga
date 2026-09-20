@@ -20,7 +20,7 @@ const insertProfissionalEspecialidade = async (profissionalEspecialidade) => {
 
         if(response) return response[0].insertId 
 
-    } catch (error) {}
+    } catch (error) { console.log(error) }
 
     return false
 }
@@ -36,7 +36,7 @@ const updateProfissionalEspecialidade = async (profissionalEspecialidade) => {
 
         if(response) return response
 
-    } catch (error) {}
+    } catch (error) { console.log(error) }
 
     return false
 }
@@ -55,7 +55,7 @@ const selectAllProfissionalEspecialidade = async () => {
 
         if(response) return response[0]
  
-    } catch (error) {}
+    } catch (error) { console.log(error) }
 
     return false
 }
@@ -74,7 +74,7 @@ const selectByIdProfissionalEspecialidade = async (id) => {
 
         if(response) return response[0]
         
-    } catch (error) {}
+    } catch (error) { console.log(error) }
 
     return false
 }
@@ -89,7 +89,7 @@ const deleteProfissionalEspecialidade = async (id) => {
 
         if(response) return response
  
-    } catch (error) {}
+    } catch (error) { console.log(error) }
 
     return false
 }

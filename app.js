@@ -27,7 +27,7 @@ app.use(cors(corsOptions))
 // ******** ROTAS ***********
 // Import das rotas
 const administradorProfissionalRouter = require('./routes/administrador_profissional.routes.js')
-const adminstradorRouter = require('./routes/adminstrador.routes.js')
+const administradorRouter = require('./routes/administrador.routes.js')
 const anotacaoRouter = require('./routes/anotacao.routes.js')
 const categoriaRouter = require('./routes/categoria.routes.js')
 const categoriaCompartilhadaRouter = require('./routes/categoria_compartilhada.routes.js')
@@ -53,7 +53,7 @@ const vinculoRouter = require('./routes/vinculo.routes.js')
 
 // Rotas da API
 app.use('/v1/dialoga/aprovacoes-profissionais', cors(), administradorProfissionalRouter)
-app.use('/v1/dialoga/administradores', cors(), adminstradorRouter)
+app.use('/v1/dialoga/administradores', cors(), administradorRouter)
 app.use('/v1/dialoga/anotacoes', cors(), anotacaoRouter)
 app.use('/v1/dialoga/categorias', cors(), categoriaRouter)
 app.use('/v1/dialoga/categorias-compartilhadas', cors(), categoriaCompartilhadaRouter)

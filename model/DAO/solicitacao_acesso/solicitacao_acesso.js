@@ -26,7 +26,7 @@ const insertSolicitacaoAcesso = async (solicitacaoAcesso) => {
 
         if(response) return response[0].insertId 
 
-    } catch (error) {}
+    } catch (error) { console.log(error) }
 
     return false
 }
@@ -52,7 +52,7 @@ const updateSolicitacaoAcesso = async (solicitacaoAcesso) => {
 
         if(response) return response
 
-    } catch (error) {}
+    } catch (error) { console.log(error) }
 
     return false
 }
@@ -74,7 +74,7 @@ const selectAllSolicitacaoAcesso = async () => {
 
         if(response) return response[0]
  
-    } catch (error) {}
+    } catch (error) { console.log(error) }
 
     return false
 }
@@ -96,7 +96,7 @@ const selectByIdSolicitacaoAcesso = async (id) => {
 
         if(response) return response[0]
         
-    } catch (error) {}
+    } catch (error) { console.log(error) }
 
     return false
 }
@@ -111,7 +111,7 @@ const deleteSolicitacaoAcesso = async (id) => {
 
         if(response) return response
  
-    } catch (error) {}
+    } catch (error) { console.log(error) }
 
     return false
 }

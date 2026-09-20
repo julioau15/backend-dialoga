@@ -24,7 +24,7 @@ const insertCategoriaCompartilhada = async (categoriaCompartilhada) => {
 
         if(response) return response[0].insertId 
 
-    } catch (error) {}
+    } catch (error) { console.log(error) }
 
     return false
 }
@@ -46,7 +46,7 @@ const updateCategoriaCompartilhada = async (categoriaCompartilhada) => {
 
         if(response) return response
 
-    } catch (error) {}
+    } catch (error) { console.log(error) }
 
     return false
 }
@@ -66,7 +66,7 @@ const selectAllCategoriaCompartilhada = async () => {
 
         if(response) return response[0]
  
-    } catch (error) {}
+    } catch (error) { console.log(error) }
 
     return false
 }
@@ -86,7 +86,7 @@ const selectByIdCategoriaCompartilhada = async (id) => {
 
         if(response) return response[0]
         
-    } catch (error) {}
+    } catch (error) { console.log(error) }
 
     return false
 }
@@ -101,7 +101,7 @@ const deleteCategoriaCompartilhada = async (id) => {
 
         if(response) return response
  
-    } catch (error) {}
+    } catch (error) { console.log(error) }
 
     return false
 }

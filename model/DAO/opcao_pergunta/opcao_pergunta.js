@@ -20,7 +20,7 @@ const insertOpcaoPergunta = async (opcaoPergunta) => {
 
         if(response) return response[0].insertId 
 
-    } catch (error) {}
+    } catch (error) { console.log(error) }
 
     return false
 }
@@ -37,7 +37,7 @@ const updateOpcaoPergunta = async (opcaoPergunta) => {
 
         if(response) return response
 
-    } catch (error) {}
+    } catch (error) { console.log(error) }
 
     return false
 }
@@ -57,7 +57,7 @@ const selectAllOpcaoPergunta = async () => {
 
         if(response) return response[0]
  
-    } catch (error) {}
+    } catch (error) { console.log(error) }
 
     return false
 }
@@ -77,7 +77,7 @@ const selectByIdOpcaoPergunta = async (id) => {
 
         if(response) return response[0]
         
-    } catch (error) {}
+    } catch (error) { console.log(error) }
 
     return false
 }
@@ -92,7 +92,7 @@ const deleteOpcaoPergunta = async (id) => {
 
         if(response) return response
  
-    } catch (error) {}
+    } catch (error) { console.log(error) }
 
     return false
 }

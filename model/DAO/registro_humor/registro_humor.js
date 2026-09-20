@@ -20,7 +20,7 @@ const insertRegistroHumor = async (registroHumor) => {
 
         if(response) return response[0].insertId 
 
-    } catch (error) {}
+    } catch (error) { console.log(error) }
 
     return false
 }
@@ -43,7 +43,7 @@ const updateRegistroHumor = async (registroHumor) => {
 
         if(response) return response
 
-    } catch (error) {}
+    } catch (error) { console.log(error) }
 
     return false
 }
@@ -69,7 +69,7 @@ const selectAllRegistroHumor = async () => {
 
         if(response) return response[0]
  
-    } catch (error) {}
+    } catch (error) { console.log(error) }
 
     return false
 }
@@ -95,7 +95,7 @@ const selectByIdRegistroHumor = async (id) => {
 
         if(response) return response[0]
         
-    } catch (error) {}
+    } catch (error) { console.log(error) }
 
     return false
 }
@@ -110,7 +110,7 @@ const deleteRegistroHumor = async (id) => {
 
         if(response) return response
  
-    } catch (error) {}
+    } catch (error) { console.log(error) }
 
     return false
 }

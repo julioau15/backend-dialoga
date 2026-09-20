@@ -6,7 +6,7 @@
  * *********************************************************************************/
 
 const config_message = require('../module/configMessages.js')
-const administradorDAO = require('../../model/DAO/adminstrador/adminstrador.js')
+const administradorDAO = require('../../model/DAO/administrador/administrador.js')
 
 // inserir nova administrador
 const inserirNovaAdministrador = async (administrador, contentType) => {

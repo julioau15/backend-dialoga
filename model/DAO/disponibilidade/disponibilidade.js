@@ -28,7 +28,7 @@ const insertDisponibilidade = async (disponibilidade) => {
 
         if(response) return response[0].insertId 
 
-    } catch (error) {}
+    } catch (error) { console.log(error) }
 
     return false
 }
@@ -58,7 +58,7 @@ const updateDisponibilidade = async (disponibilidade) => {
 
         if(response) return response
 
-    } catch (error) {}
+    } catch (error) { console.log(error) }
 
     return false
 }
@@ -82,7 +82,7 @@ const selectAllDisponibilidade = async () => {
 
         if(response) return response[0]
  
-    } catch (error) {}
+    } catch (error) { console.log(error) }
 
     return false
 }
@@ -106,7 +106,7 @@ const selectByIdDisponibilidade = async (id) => {
 
         if(response) return response[0]
         
-    } catch (error) {}
+    } catch (error) { console.log(error) }
 
     return false
 }
@@ -121,7 +121,7 @@ const deleteDisponibilidade = async (id) => {
 
         if(response) return response
  
-    } catch (error) {}
+    } catch (error) { console.log(error) }
 
     return false
 }
