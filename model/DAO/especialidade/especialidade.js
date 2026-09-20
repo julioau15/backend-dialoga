@@ -12,11 +12,11 @@ const knexConex = knex(knexConfig.development)
 
 // insert de especialidade
 const insertEspecialidade = async (especialidade) => {
-    let sql = `INSERT INTO tbl_especialidade (nome)
-               VALUES ('${especialidade.nome}')`
+    let sql = `INSERT INTO tbl_especialidade (especialidade)
+               VALUES (?)`
 
     try {
-        let response = await knexConex.raw(sql)
+        let response = await knexConex.raw(sql, [especialidade.especialidade])
 
         if(response) return response[0].insertId 
 
@@ -28,10 +28,10 @@ const insertEspecialidade = async (especialidade) => {
 // update de especialidade
 const updateEspecialidade = async (especialidade) => {
     let sql = `UPDATE tbl_especialidade
-               SET nome = '${especialidade.nome}'
-               WHERE id = ${especialidade.id}`
+               SET especialidade = ?
+               WHERE id = ?`
     try {
-        let response = await knexConex.raw(sql)
+        let response = await knexConex.raw(sql, [especialidade.especialidade, especialidade.id])
 
         if(response) return response
 
@@ -42,7 +42,11 @@ const updateEspecialidade = async (especialidade) => {
 
 // select de todas especialidades
 const selectAllEspecialidade = async () => {
-    let sql = `SELECT * FROM tbl_especialidade ORDER BY id DESC`
+    let sql = `SELECT
+                   id,
+                   especialidade
+               FROM tbl_especialidade
+               ORDER BY id DESC`
     try {
         let response = await knexConex.raw(sql)
 
@@ -56,10 +60,13 @@ const selectAllEspecialidade = async () => {
 
 // select de uma especialidade pelo id
 const selectByIdEspecialidade = async (id) => {
-    let sql = `SELECT * FROM tbl_especialidade
-               WHERE id = ${id}`
+    let sql = `SELECT
+                   id,
+                   especialidade
+               FROM tbl_especialidade
+               WHERE id = ?`
     try {
-        let response = await knexConex.raw(sql)
+        let response = await knexConex.raw(sql, [id])
 
 
         if(response) return response[0]
@@ -72,9 +79,9 @@ const selectByIdEspecialidade = async (id) => {
 // delete de especialidade
 const deleteEspecialidade = async (id) => {
     let sql = `DELETE FROM tbl_especialidade
-               WHERE id = ${id}`
+               WHERE id = ?`
     try {
-        let response = await knexConex.raw(sql)
+        let response = await knexConex.raw(sql, [id])
 
 
         if(response) return response

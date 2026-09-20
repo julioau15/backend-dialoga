@@ -12,11 +12,17 @@ const knexConex = knex(knexConfig.development)
 
 // insert de tarefaDestinatario
 const insertTarefaDestinatario = async (tarefaDestinatario) => {
-    let sql = `INSERT INTO tbl_tarefa_destinatario (nome)
-               VALUES ('${tarefaDestinatario.nome}')`
+    let sql = `INSERT INTO tbl_tarefa_destinatario (prazo, status, data_conclusao, id_tarefa, id_paciente)
+               VALUES (?, ?, ?, ?, ?)`
 
     try {
-        let response = await knexConex.raw(sql)
+        let response = await knexConex.raw(sql, [
+            tarefaDestinatario.prazo,
+            tarefaDestinatario.status,
+            tarefaDestinatario.data_conclusao,
+            tarefaDestinatario.id_tarefa,
+            tarefaDestinatario.id_paciente
+        ])
 
         if(response) return response[0].insertId 
 
@@ -28,10 +34,21 @@ const insertTarefaDestinatario = async (tarefaDestinatario) => {
 // update de tarefaDestinatario
 const updateTarefaDestinatario = async (tarefaDestinatario) => {
     let sql = `UPDATE tbl_tarefa_destinatario
-               SET nome = '${tarefaDestinatario.nome}'
-               WHERE id = ${tarefaDestinatario.id}`
+               SET prazo = ?,
+                   status = ?,
+                   data_conclusao = ?,
+                   id_tarefa = ?,
+                   id_paciente = ?
+               WHERE id = ?`
     try {
-        let response = await knexConex.raw(sql)
+        let response = await knexConex.raw(sql, [
+            tarefaDestinatario.prazo,
+            tarefaDestinatario.status,
+            tarefaDestinatario.data_conclusao,
+            tarefaDestinatario.id_tarefa,
+            tarefaDestinatario.id_paciente,
+            tarefaDestinatario.id
+        ])
 
         if(response) return response
 
@@ -42,7 +59,15 @@ const updateTarefaDestinatario = async (tarefaDestinatario) => {
 
 // select de todas tarefaDestinatarios
 const selectAllTarefaDestinatario = async () => {
-    let sql = `SELECT * FROM tbl_tarefa_destinatario ORDER BY id DESC`
+    let sql = `SELECT
+                   id,
+                   prazo,
+                   status,
+                   data_conclusao,
+                   id_tarefa,
+                   id_paciente
+               FROM tbl_tarefa_destinatario
+               ORDER BY id DESC`
     try {
         let response = await knexConex.raw(sql)
 
@@ -56,10 +81,17 @@ const selectAllTarefaDestinatario = async () => {
 
 // select de uma tarefaDestinatario pelo id
 const selectByIdTarefaDestinatario = async (id) => {
-    let sql = `SELECT * FROM tbl_tarefa_destinatario
-               WHERE id = ${id}`
+    let sql = `SELECT
+                   id,
+                   prazo,
+                   status,
+                   data_conclusao,
+                   id_tarefa,
+                   id_paciente
+               FROM tbl_tarefa_destinatario
+               WHERE id = ?`
     try {
-        let response = await knexConex.raw(sql)
+        let response = await knexConex.raw(sql, [id])
 
 
         if(response) return response[0]
@@ -72,9 +104,9 @@ const selectByIdTarefaDestinatario = async (id) => {
 // delete de tarefaDestinatario
 const deleteTarefaDestinatario = async (id) => {
     let sql = `DELETE FROM tbl_tarefa_destinatario
-               WHERE id = ${id}`
+               WHERE id = ?`
     try {
-        let response = await knexConex.raw(sql)
+        let response = await knexConex.raw(sql, [id])
 
 
         if(response) return response

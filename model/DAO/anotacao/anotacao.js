@@ -12,11 +12,18 @@ const knexConex = knex(knexConfig.development)
 
 // insert de anotacao
 const insertAnotacao = async (anotacao) => {
-    let sql = `INSERT INTO tbl_anotacao (nome)
-               VALUES ('${anotacao.nome}')`
+    let sql = `INSERT INTO tbl_anotacao (titulo, conteudo, data_criacao, data_edicao, id_profissional, id_paciente)
+               VALUES (?, ?, ?, ?, ?, ?)`
 
     try {
-        let response = await knexConex.raw(sql)
+        let response = await knexConex.raw(sql, [
+            anotacao.titulo,
+            anotacao.conteudo,
+            anotacao.data_criacao,
+            anotacao.data_edicao,
+            anotacao.id_profissional,
+            anotacao.id_paciente
+        ])
 
         if(response) return response[0].insertId 
 
@@ -28,10 +35,23 @@ const insertAnotacao = async (anotacao) => {
 // update de anotacao
 const updateAnotacao = async (anotacao) => {
     let sql = `UPDATE tbl_anotacao
-               SET nome = '${anotacao.nome}'
-               WHERE id = ${anotacao.id}`
+               SET titulo = ?,
+                   conteudo = ?,
+                   data_criacao = ?,
+                   data_edicao = ?,
+                   id_profissional = ?,
+                   id_paciente = ?
+               WHERE id = ?`
     try {
-        let response = await knexConex.raw(sql)
+        let response = await knexConex.raw(sql, [
+            anotacao.titulo,
+            anotacao.conteudo,
+            anotacao.data_criacao,
+            anotacao.data_edicao,
+            anotacao.id_profissional,
+            anotacao.id_paciente,
+            anotacao.id
+        ])
 
         if(response) return response
 
@@ -42,7 +62,16 @@ const updateAnotacao = async (anotacao) => {
 
 // select de todas anotacaos
 const selectAllAnotacao = async () => {
-    let sql = `SELECT * FROM tbl_anotacao ORDER BY id DESC`
+    let sql = `SELECT
+                   id,
+                   titulo,
+                   conteudo,
+                   data_criacao,
+                   data_edicao,
+                   id_profissional,
+                   id_paciente
+               FROM tbl_anotacao
+               ORDER BY id DESC`
     try {
         let response = await knexConex.raw(sql)
 
@@ -56,10 +85,18 @@ const selectAllAnotacao = async () => {
 
 // select de uma anotacao pelo id
 const selectByIdAnotacao = async (id) => {
-    let sql = `SELECT * FROM tbl_anotacao
-               WHERE id = ${id}`
+    let sql = `SELECT
+                   id,
+                   titulo,
+                   conteudo,
+                   data_criacao,
+                   data_edicao,
+                   id_profissional,
+                   id_paciente
+               FROM tbl_anotacao
+               WHERE id = ?`
     try {
-        let response = await knexConex.raw(sql)
+        let response = await knexConex.raw(sql, [id])
 
 
         if(response) return response[0]
@@ -72,9 +109,9 @@ const selectByIdAnotacao = async (id) => {
 // delete de anotacao
 const deleteAnotacao = async (id) => {
     let sql = `DELETE FROM tbl_anotacao
-               WHERE id = ${id}`
+               WHERE id = ?`
     try {
-        let response = await knexConex.raw(sql)
+        let response = await knexConex.raw(sql, [id])
 
 
         if(response) return response

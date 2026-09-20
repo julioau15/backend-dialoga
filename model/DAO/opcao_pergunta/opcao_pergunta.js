@@ -12,11 +12,11 @@ const knexConex = knex(knexConfig.development)
 
 // insert de opcaoPergunta
 const insertOpcaoPergunta = async (opcaoPergunta) => {
-    let sql = `INSERT INTO tbl_opcao_pergunta (nome)
-               VALUES ('${opcaoPergunta.nome}')`
+    let sql = `INSERT INTO tbl_opcao_pergunta (texto, ordem, id_pergunta)
+               VALUES (?, ?, ?)`
 
     try {
-        let response = await knexConex.raw(sql)
+        let response = await knexConex.raw(sql, [opcaoPergunta.texto, opcaoPergunta.ordem, opcaoPergunta.id_pergunta])
 
         if(response) return response[0].insertId 
 
@@ -28,10 +28,12 @@ const insertOpcaoPergunta = async (opcaoPergunta) => {
 // update de opcaoPergunta
 const updateOpcaoPergunta = async (opcaoPergunta) => {
     let sql = `UPDATE tbl_opcao_pergunta
-               SET nome = '${opcaoPergunta.nome}'
-               WHERE id = ${opcaoPergunta.id}`
+               SET texto = ?,
+                   ordem = ?,
+                   id_pergunta = ?
+               WHERE id = ?`
     try {
-        let response = await knexConex.raw(sql)
+        let response = await knexConex.raw(sql, [opcaoPergunta.texto, opcaoPergunta.ordem, opcaoPergunta.id_pergunta, opcaoPergunta.id])
 
         if(response) return response
 
@@ -42,7 +44,13 @@ const updateOpcaoPergunta = async (opcaoPergunta) => {
 
 // select de todas opcaoPerguntas
 const selectAllOpcaoPergunta = async () => {
-    let sql = `SELECT * FROM tbl_opcao_pergunta ORDER BY id DESC`
+    let sql = `SELECT
+                   id,
+                   texto,
+                   ordem,
+                   id_pergunta
+               FROM tbl_opcao_pergunta
+               ORDER BY id DESC`
     try {
         let response = await knexConex.raw(sql)
 
@@ -56,10 +64,15 @@ const selectAllOpcaoPergunta = async () => {
 
 // select de uma opcaoPergunta pelo id
 const selectByIdOpcaoPergunta = async (id) => {
-    let sql = `SELECT * FROM tbl_opcao_pergunta
-               WHERE id = ${id}`
+    let sql = `SELECT
+                   id,
+                   texto,
+                   ordem,
+                   id_pergunta
+               FROM tbl_opcao_pergunta
+               WHERE id = ?`
     try {
-        let response = await knexConex.raw(sql)
+        let response = await knexConex.raw(sql, [id])
 
 
         if(response) return response[0]
@@ -72,9 +85,9 @@ const selectByIdOpcaoPergunta = async (id) => {
 // delete de opcaoPergunta
 const deleteOpcaoPergunta = async (id) => {
     let sql = `DELETE FROM tbl_opcao_pergunta
-               WHERE id = ${id}`
+               WHERE id = ?`
     try {
-        let response = await knexConex.raw(sql)
+        let response = await knexConex.raw(sql, [id])
 
 
         if(response) return response

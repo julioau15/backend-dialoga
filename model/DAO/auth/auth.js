@@ -12,11 +12,20 @@ const knexConex = knex(knexConfig.development)
 // valida o usuario adm
 const selectAuthAdministrador = async (usuario) => {
 
-    let sql = `SELECT *
+    let sql = `SELECT
+                   id,
+                   nome_completo,
+                   email,
+                   senha_hash,
+                   senha_provisoria,
+                   celular,
+                   foto_avatar,
+                   papel,
+                   data_criacao
                FROM tbl_administrador
-               WHERE email = '${usuario.email}'`
+               WHERE email = ?`
 
-    let response = await knexConex.raw(sql)
+    let response = await knexConex.raw(sql, [usuario.email])
 
     if(response)
         return response[0]
@@ -27,11 +36,21 @@ const selectAuthAdministrador = async (usuario) => {
 // valida o usuario profissional
 const selectAuthProfissional = async (usuario) => {
 
-    let sql = `SELECT *
+    let sql = `SELECT
+                   id,
+                   nome_completo,
+                   email,
+                   cpf,
+                   crp,
+                   senha_hash,
+                   celular,
+                   instituicao_clinica,
+                   foto_avatar,
+                   papel
                FROM tbl_profissional
-               WHERE email = '${usuario.email}'`
+               WHERE email = ?`
 
-    let response = await knexConex.raw(sql)
+    let response = await knexConex.raw(sql, [usuario.email])
 
     if(response)
         return response[0]
@@ -42,11 +61,23 @@ const selectAuthProfissional = async (usuario) => {
 // valida o usuario paciente
 const selectAuthPaciente = async (usuario) => {
 
-    let sql = `SELECT *
+    let sql = `SELECT
+                   id,
+                   nome_completo,
+                   apelido,
+                   data_nascimento,
+                   celular,
+                   email,
+                   senha_hash,
+                   foto_avatar,
+                   deseja_iniciar_registros,
+                   primeiro_acesso_concluido,
+                   status_atividade,
+                   criado_em
                FROM tbl_paciente
-               WHERE email = '${usuario.email}'`
+               WHERE email = ?`
 
-    let response = await knexConex.raw(sql)
+    let response = await knexConex.raw(sql, [usuario.email])
 
     if(response)
         return response[0]

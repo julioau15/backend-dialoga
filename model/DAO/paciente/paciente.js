@@ -12,11 +12,23 @@ const knexConex = knex(knexConfig.development)
 
 // insert de paciente
 const insertPaciente = async (paciente) => {
-    let sql = `INSERT INTO tbl_paciente (nome)
-               VALUES ('${paciente.nome}')`
+    let sql = `INSERT INTO tbl_paciente (nome_completo, apelido, data_nascimento, celular, email, senha_hash, foto_avatar, deseja_iniciar_registros, primeiro_acesso_concluido, status_atividade, criado_em)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
 
     try {
-        let response = await knexConex.raw(sql)
+        let response = await knexConex.raw(sql, [
+            paciente.nome_completo,
+            paciente.apelido,
+            paciente.data_nascimento,
+            paciente.celular,
+            paciente.email,
+            paciente.senha_hash,
+            paciente.foto_avatar,
+            paciente.deseja_iniciar_registros,
+            paciente.primeiro_acesso_concluido,
+            paciente.status_atividade,
+            paciente.criado_em
+        ])
 
         if(response) return response[0].insertId 
 
@@ -28,10 +40,33 @@ const insertPaciente = async (paciente) => {
 // update de paciente
 const updatePaciente = async (paciente) => {
     let sql = `UPDATE tbl_paciente
-               SET nome = '${paciente.nome}'
-               WHERE id = ${paciente.id}`
+               SET nome_completo = ?,
+                   apelido = ?,
+                   data_nascimento = ?,
+                   celular = ?,
+                   email = ?,
+                   senha_hash = ?,
+                   foto_avatar = ?,
+                   deseja_iniciar_registros = ?,
+                   primeiro_acesso_concluido = ?,
+                   status_atividade = ?,
+                   criado_em = ?
+               WHERE id = ?`
     try {
-        let response = await knexConex.raw(sql)
+        let response = await knexConex.raw(sql, [
+            paciente.nome_completo,
+            paciente.apelido,
+            paciente.data_nascimento,
+            paciente.celular,
+            paciente.email,
+            paciente.senha_hash,
+            paciente.foto_avatar,
+            paciente.deseja_iniciar_registros,
+            paciente.primeiro_acesso_concluido,
+            paciente.status_atividade,
+            paciente.criado_em,
+            paciente.id
+        ])
 
         if(response) return response
 
@@ -42,7 +77,21 @@ const updatePaciente = async (paciente) => {
 
 // select de todas pacientes
 const selectAllPaciente = async () => {
-    let sql = `SELECT * FROM tbl_paciente ORDER BY id DESC`
+    let sql = `SELECT
+                   id,
+                   nome_completo,
+                   apelido,
+                   data_nascimento,
+                   celular,
+                   email,
+                   senha_hash,
+                   foto_avatar,
+                   deseja_iniciar_registros,
+                   primeiro_acesso_concluido,
+                   status_atividade,
+                   criado_em
+               FROM tbl_paciente
+               ORDER BY id DESC`
     try {
         let response = await knexConex.raw(sql)
 
@@ -56,10 +105,23 @@ const selectAllPaciente = async () => {
 
 // select de uma paciente pelo id
 const selectByIdPaciente = async (id) => {
-    let sql = `SELECT * FROM tbl_paciente
-               WHERE id = ${id}`
+    let sql = `SELECT
+                   id,
+                   nome_completo,
+                   apelido,
+                   data_nascimento,
+                   celular,
+                   email,
+                   senha_hash,
+                   foto_avatar,
+                   deseja_iniciar_registros,
+                   primeiro_acesso_concluido,
+                   status_atividade,
+                   criado_em
+               FROM tbl_paciente
+               WHERE id = ?`
     try {
-        let response = await knexConex.raw(sql)
+        let response = await knexConex.raw(sql, [id])
 
 
         if(response) return response[0]
@@ -72,9 +134,9 @@ const selectByIdPaciente = async (id) => {
 // delete de paciente
 const deletePaciente = async (id) => {
     let sql = `DELETE FROM tbl_paciente
-               WHERE id = ${id}`
+               WHERE id = ?`
     try {
-        let response = await knexConex.raw(sql)
+        let response = await knexConex.raw(sql, [id])
 
 
         if(response) return response

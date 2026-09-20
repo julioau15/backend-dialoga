@@ -12,11 +12,21 @@ const knexConex = knex(knexConfig.development)
 
 // insert de tarefa
 const insertTarefa = async (tarefa) => {
-    let sql = `INSERT INTO tbl_tarefa (nome)
-               VALUES ('${tarefa.nome}')`
+    let sql = `INSERT INTO tbl_tarefa (titulo, tipo, instrucoes, anexo_arquivo, is_rascunho, data_criacao, data_envio, id_profissional_criador, id_paciente_criador)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
 
     try {
-        let response = await knexConex.raw(sql)
+        let response = await knexConex.raw(sql, [
+            tarefa.titulo,
+            tarefa.tipo,
+            tarefa.instrucoes,
+            tarefa.anexo_arquivo,
+            tarefa.is_rascunho,
+            tarefa.data_criacao,
+            tarefa.data_envio,
+            tarefa.id_profissional_criador,
+            tarefa.id_paciente_criador
+        ])
 
         if(response) return response[0].insertId 
 
@@ -28,10 +38,29 @@ const insertTarefa = async (tarefa) => {
 // update de tarefa
 const updateTarefa = async (tarefa) => {
     let sql = `UPDATE tbl_tarefa
-               SET nome = '${tarefa.nome}'
-               WHERE id = ${tarefa.id}`
+               SET titulo = ?,
+                   tipo = ?,
+                   instrucoes = ?,
+                   anexo_arquivo = ?,
+                   is_rascunho = ?,
+                   data_criacao = ?,
+                   data_envio = ?,
+                   id_profissional_criador = ?,
+                   id_paciente_criador = ?
+               WHERE id = ?`
     try {
-        let response = await knexConex.raw(sql)
+        let response = await knexConex.raw(sql, [
+            tarefa.titulo,
+            tarefa.tipo,
+            tarefa.instrucoes,
+            tarefa.anexo_arquivo,
+            tarefa.is_rascunho,
+            tarefa.data_criacao,
+            tarefa.data_envio,
+            tarefa.id_profissional_criador,
+            tarefa.id_paciente_criador,
+            tarefa.id
+        ])
 
         if(response) return response
 
@@ -42,7 +71,19 @@ const updateTarefa = async (tarefa) => {
 
 // select de todas tarefas
 const selectAllTarefa = async () => {
-    let sql = `SELECT * FROM tbl_tarefa ORDER BY id DESC`
+    let sql = `SELECT
+                   id,
+                   titulo,
+                   tipo,
+                   instrucoes,
+                   anexo_arquivo,
+                   is_rascunho,
+                   data_criacao,
+                   data_envio,
+                   id_profissional_criador,
+                   id_paciente_criador
+               FROM tbl_tarefa
+               ORDER BY id DESC`
     try {
         let response = await knexConex.raw(sql)
 
@@ -56,10 +97,21 @@ const selectAllTarefa = async () => {
 
 // select de uma tarefa pelo id
 const selectByIdTarefa = async (id) => {
-    let sql = `SELECT * FROM tbl_tarefa
-               WHERE id = ${id}`
+    let sql = `SELECT
+                   id,
+                   titulo,
+                   tipo,
+                   instrucoes,
+                   anexo_arquivo,
+                   is_rascunho,
+                   data_criacao,
+                   data_envio,
+                   id_profissional_criador,
+                   id_paciente_criador
+               FROM tbl_tarefa
+               WHERE id = ?`
     try {
-        let response = await knexConex.raw(sql)
+        let response = await knexConex.raw(sql, [id])
 
 
         if(response) return response[0]
@@ -72,9 +124,9 @@ const selectByIdTarefa = async (id) => {
 // delete de tarefa
 const deleteTarefa = async (id) => {
     let sql = `DELETE FROM tbl_tarefa
-               WHERE id = ${id}`
+               WHERE id = ?`
     try {
-        let response = await knexConex.raw(sql)
+        let response = await knexConex.raw(sql, [id])
 
 
         if(response) return response

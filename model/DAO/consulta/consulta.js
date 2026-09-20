@@ -12,11 +12,19 @@ const knexConex = knex(knexConfig.development)
 
 // insert de consulta
 const insertConsulta = async (consulta) => {
-    let sql = `INSERT INTO tbl_consulta (nome)
-               VALUES ('${consulta.nome}')`
+    let sql = `INSERT INTO tbl_consulta (criado_por, nome_da_conculta, especialidade, data, hora, status, id_vinculo)
+               VALUES (?, ?, ?, ?, ?, ?, ?)`
 
     try {
-        let response = await knexConex.raw(sql)
+        let response = await knexConex.raw(sql, [
+            consulta.criado_por,
+            consulta.nome_da_conculta,
+            consulta.especialidade,
+            consulta.data,
+            consulta.hora,
+            consulta.status,
+            consulta.id_vinculo
+        ])
 
         if(response) return response[0].insertId 
 
@@ -28,10 +36,25 @@ const insertConsulta = async (consulta) => {
 // update de consulta
 const updateConsulta = async (consulta) => {
     let sql = `UPDATE tbl_consulta
-               SET nome = '${consulta.nome}'
-               WHERE id = ${consulta.id}`
+               SET criado_por = ?,
+                   nome_da_conculta = ?,
+                   especialidade = ?,
+                   data = ?,
+                   hora = ?,
+                   status = ?,
+                   id_vinculo = ?
+               WHERE id = ?`
     try {
-        let response = await knexConex.raw(sql)
+        let response = await knexConex.raw(sql, [
+            consulta.criado_por,
+            consulta.nome_da_consulta,
+            consulta.especialidade,
+            consulta.data,
+            consulta.hora,
+            consulta.status,
+            consulta.id_vinculo,
+            consulta.id
+        ])
 
         if(response) return response
 
@@ -42,7 +65,17 @@ const updateConsulta = async (consulta) => {
 
 // select de todas consultas
 const selectAllConsulta = async () => {
-    let sql = `SELECT * FROM tbl_consulta ORDER BY id DESC`
+    let sql = `SELECT
+                   id,
+                   criado_por,
+                   nome_da_conculta,
+                   especialidade,
+                   data,
+                   hora,
+                   status,
+                   id_vinculo
+               FROM tbl_consulta
+               ORDER BY id DESC`
     try {
         let response = await knexConex.raw(sql)
 
@@ -56,10 +89,19 @@ const selectAllConsulta = async () => {
 
 // select de uma consulta pelo id
 const selectByIdConsulta = async (id) => {
-    let sql = `SELECT * FROM tbl_consulta
-               WHERE id = ${id}`
+    let sql = `SELECT
+                   id,
+                   criado_por,
+                   nome_da_conculta,
+                   especialidade,
+                   data,
+                   hora,
+                   status,
+                   id_vinculo
+               FROM tbl_consulta
+               WHERE id = ?`
     try {
-        let response = await knexConex.raw(sql)
+        let response = await knexConex.raw(sql, [id])
 
 
         if(response) return response[0]
@@ -72,9 +114,9 @@ const selectByIdConsulta = async (id) => {
 // delete de consulta
 const deleteConsulta = async (id) => {
     let sql = `DELETE FROM tbl_consulta
-               WHERE id = ${id}`
+               WHERE id = ?`
     try {
-        let response = await knexConex.raw(sql)
+        let response = await knexConex.raw(sql, [id])
 
 
         if(response) return response

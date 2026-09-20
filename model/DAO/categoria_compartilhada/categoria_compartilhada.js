@@ -12,11 +12,15 @@ const knexConex = knex(knexConfig.development)
 
 // insert de categoriaCompartilhada
 const insertCategoriaCompartilhada = async (categoriaCompartilhada) => {
-    let sql = `INSERT INTO tbl_categoria_compartilhada (nome)
-               VALUES ('${categoriaCompartilhada.nome}')`
+    let sql = `INSERT INTO tbl_categoria_compartilhada (categoria, autorizado, id_solicitacao_acesso)
+               VALUES (?, ?, ?)`
 
     try {
-        let response = await knexConex.raw(sql)
+        let response = await knexConex.raw(sql, [
+            categoriaCompartilhada.categoria,
+            categoriaCompartilhada.autorizado,
+            categoriaCompartilhada.id_solicitacao_acesso
+        ])
 
         if(response) return response[0].insertId 
 
@@ -28,10 +32,17 @@ const insertCategoriaCompartilhada = async (categoriaCompartilhada) => {
 // update de categoriaCompartilhada
 const updateCategoriaCompartilhada = async (categoriaCompartilhada) => {
     let sql = `UPDATE tbl_categoria_compartilhada
-               SET nome = '${categoriaCompartilhada.nome}'
-               WHERE id = ${categoriaCompartilhada.id}`
+               SET categoria = ?,
+                   autorizado = ?,
+                   id_solicitacao_acesso = ?
+               WHERE id = ?`
     try {
-        let response = await knexConex.raw(sql)
+        let response = await knexConex.raw(sql, [
+            categoriaCompartilhada.categoria,
+            categoriaCompartilhada.autorizado,
+            categoriaCompartilhada.id_solicitacao_acesso,
+            categoriaCompartilhada.id
+        ])
 
         if(response) return response
 
@@ -42,7 +53,13 @@ const updateCategoriaCompartilhada = async (categoriaCompartilhada) => {
 
 // select de todas categoriaCompartilhadas
 const selectAllCategoriaCompartilhada = async () => {
-    let sql = `SELECT * FROM tbl_categoria_compartilhada ORDER BY id DESC`
+    let sql = `SELECT
+                   id,
+                   categoria,
+                   autorizado,
+                   id_solicitacao_acesso
+               FROM tbl_categoria_compartilhada
+               ORDER BY id DESC`
     try {
         let response = await knexConex.raw(sql)
 
@@ -56,10 +73,15 @@ const selectAllCategoriaCompartilhada = async () => {
 
 // select de uma categoriaCompartilhada pelo id
 const selectByIdCategoriaCompartilhada = async (id) => {
-    let sql = `SELECT * FROM tbl_categoria_compartilhada
-               WHERE id = ${id}`
+    let sql = `SELECT
+                   id,
+                   categoria,
+                   autorizado,
+                   id_solicitacao_acesso
+               FROM tbl_categoria_compartilhada
+               WHERE id = ?`
     try {
-        let response = await knexConex.raw(sql)
+        let response = await knexConex.raw(sql, [id])
 
 
         if(response) return response[0]
@@ -72,9 +94,9 @@ const selectByIdCategoriaCompartilhada = async (id) => {
 // delete de categoriaCompartilhada
 const deleteCategoriaCompartilhada = async (id) => {
     let sql = `DELETE FROM tbl_categoria_compartilhada
-               WHERE id = ${id}`
+               WHERE id = ?`
     try {
-        let response = await knexConex.raw(sql)
+        let response = await knexConex.raw(sql, [id])
 
 
         if(response) return response

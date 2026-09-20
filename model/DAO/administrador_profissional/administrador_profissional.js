@@ -12,11 +12,17 @@ const knexConex = knex(knexConfig.development)
 
 // insert de administradorProfissional
 const insertAdministradorProfissional = async (administradorProfissional) => {
-    let sql = `INSERT INTO tbl_administrador_profissional (nome)
-               VALUES ('${administradorProfissional.nome}')`
+    let sql = `INSERT INTO tbl_administrador_profissional (status_aprovacao, data_decisao, criado_em, id_profissional, id_administrador)
+               VALUES (?, ?, ?, ?, ?)`
 
     try {
-        let response = await knexConex.raw(sql)
+        let response = await knexConex.raw(sql, [
+            administradorProfissional.status_aprovacao,
+            administradorProfissional.data_decisao,
+            administradorProfissional.criado_em,
+            administradorProfissional.id_profissional,
+            administradorProfissional.id_administrador
+        ])
 
         if(response) return response[0].insertId 
 
@@ -28,10 +34,21 @@ const insertAdministradorProfissional = async (administradorProfissional) => {
 // update de administradorProfissional
 const updateAdministradorProfissional = async (administradorProfissional) => {
     let sql = `UPDATE tbl_administrador_profissional
-               SET nome = '${administradorProfissional.nome}'
-               WHERE id = ${administradorProfissional.id}`
+               SET status_aprovacao = ?,
+                   data_decisao = ?,
+                   criado_em = ?,
+                   id_profissional = ?,
+                   id_administrador = ?
+               WHERE id = ?`
     try {
-        let response = await knexConex.raw(sql)
+        let response = await knexConex.raw(sql, [
+            administradorProfissional.status_aprovacao,
+            administradorProfissional.data_decisao,
+            administradorProfissional.criado_em,
+            administradorProfissional.id_profissional,
+            administradorProfissional.id_administrador,
+            administradorProfissional.id
+        ])
 
         if(response) return response
 
@@ -42,7 +59,15 @@ const updateAdministradorProfissional = async (administradorProfissional) => {
 
 // select de todas administradorProfissionals
 const selectAllAdministradorProfissional = async () => {
-    let sql = `SELECT * FROM tbl_administrador_profissional ORDER BY id DESC`
+    let sql = `SELECT
+                   id,
+                   status_aprovacao,
+                   data_decisao,
+                   criado_em,
+                   id_profissional,
+                   id_administrador
+               FROM tbl_administrador_profissional
+               ORDER BY id DESC`
     try {
         let response = await knexConex.raw(sql)
 
@@ -56,10 +81,17 @@ const selectAllAdministradorProfissional = async () => {
 
 // select de uma administradorProfissional pelo id
 const selectByIdAdministradorProfissional = async (id) => {
-    let sql = `SELECT * FROM tbl_administrador_profissional
-               WHERE id = ${id}`
+    let sql = `SELECT
+                   id,
+                   status_aprovacao,
+                   data_decisao,
+                   criado_em,
+                   id_profissional,
+                   id_administrador
+               FROM tbl_administrador_profissional
+               WHERE id = ?`
     try {
-        let response = await knexConex.raw(sql)
+        let response = await knexConex.raw(sql, [id])
 
 
         if(response) return response[0]
@@ -72,9 +104,9 @@ const selectByIdAdministradorProfissional = async (id) => {
 // delete de administradorProfissional
 const deleteAdministradorProfissional = async (id) => {
     let sql = `DELETE FROM tbl_administrador_profissional
-               WHERE id = ${id}`
+               WHERE id = ?`
     try {
-        let response = await knexConex.raw(sql)
+        let response = await knexConex.raw(sql, [id])
 
 
         if(response) return response

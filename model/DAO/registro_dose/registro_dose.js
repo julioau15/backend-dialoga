@@ -12,11 +12,11 @@ const knexConex = knex(knexConfig.development)
 
 // insert de registroDose
 const insertRegistroDose = async (registroDose) => {
-    let sql = `INSERT INTO tbl_registro_dose (nome)
-               VALUES ('${registroDose.nome}')`
+    let sql = `INSERT INTO tbl_registro_dose (data_hora_prevista, status, data_hora_confirmacao, id_horario_tratamento)
+               VALUES (?, ?, ?, ?)`
 
     try {
-        let response = await knexConex.raw(sql)
+        let response = await knexConex.raw(sql, [registroDose.data_hora_prevista, registroDose.status, registroDose.data_hora_confirmacao, registroDose.id_horario_tratamento])
 
         if(response) return response[0].insertId 
 
@@ -28,10 +28,13 @@ const insertRegistroDose = async (registroDose) => {
 // update de registroDose
 const updateRegistroDose = async (registroDose) => {
     let sql = `UPDATE tbl_registro_dose
-               SET nome = '${registroDose.nome}'
-               WHERE id = ${registroDose.id}`
+               SET data_hora_prevista = ?,
+                   status = ?,
+                   data_hora_confirmacao = ?,
+                   id_horario_tratamento = ?
+               WHERE id = ?`
     try {
-        let response = await knexConex.raw(sql)
+        let response = await knexConex.raw(sql, [registroDose.data_hora_prevista, registroDose.status, registroDose.data_hora_confirmacao, registroDose.id_horario_tratamento, registroDose.id])
 
         if(response) return response
 
@@ -42,7 +45,14 @@ const updateRegistroDose = async (registroDose) => {
 
 // select de todas registroDoses
 const selectAllRegistroDose = async () => {
-    let sql = `SELECT * FROM tbl_registro_dose ORDER BY id DESC`
+    let sql = `SELECT
+                   id,
+                   data_hora_prevista,
+                   status,
+                   data_hora_confirmacao,
+                   id_horario_tratamento
+               FROM tbl_registro_dose
+               ORDER BY id DESC`
     try {
         let response = await knexConex.raw(sql)
 
@@ -56,10 +66,16 @@ const selectAllRegistroDose = async () => {
 
 // select de uma registroDose pelo id
 const selectByIdRegistroDose = async (id) => {
-    let sql = `SELECT * FROM tbl_registro_dose
-               WHERE id = ${id}`
+    let sql = `SELECT
+                   id,
+                   data_hora_prevista,
+                   status,
+                   data_hora_confirmacao,
+                   id_horario_tratamento
+               FROM tbl_registro_dose
+               WHERE id = ?`
     try {
-        let response = await knexConex.raw(sql)
+        let response = await knexConex.raw(sql, [id])
 
 
         if(response) return response[0]
@@ -72,9 +88,9 @@ const selectByIdRegistroDose = async (id) => {
 // delete de registroDose
 const deleteRegistroDose = async (id) => {
     let sql = `DELETE FROM tbl_registro_dose
-               WHERE id = ${id}`
+               WHERE id = ?`
     try {
-        let response = await knexConex.raw(sql)
+        let response = await knexConex.raw(sql, [id])
 
 
         if(response) return response

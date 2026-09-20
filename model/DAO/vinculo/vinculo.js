@@ -12,11 +12,20 @@ const knexConex = knex(knexConfig.development)
 
 // insert de vinculo
 const insertVinculo = async (vinculo) => {
-    let sql = `INSERT INTO tbl_vinculo (nome)
-               VALUES ('${vinculo.nome}')`
+    let sql = `INSERT INTO tbl_vinculo (status, origem_cadastro, data_solicitacao, data_aceite, data_inicio_acompanhamento, data_fim, id_profissional, id_paciente)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
 
     try {
-        let response = await knexConex.raw(sql)
+        let response = await knexConex.raw(sql, [
+            vinculo.status,
+            vinculo.origem_cadastro,
+            vinculo.data_solicitacao,
+            vinculo.data_aceite,
+            vinculo.data_inicio_acompanhamento,
+            vinculo.data_fim,
+            vinculo.id_profissional,
+            vinculo.id_paciente
+        ])
 
         if(response) return response[0].insertId 
 
@@ -28,10 +37,27 @@ const insertVinculo = async (vinculo) => {
 // update de vinculo
 const updateVinculo = async (vinculo) => {
     let sql = `UPDATE tbl_vinculo
-               SET nome = '${vinculo.nome}'
-               WHERE id = ${vinculo.id}`
+               SET status = ?,
+                   origem_cadastro = ?,
+                   data_solicitacao = ?,
+                   data_aceite = ?,
+                   data_inicio_acompanhamento = ?,
+                   data_fim = ?,
+                   id_profissional = ?,
+                   id_paciente = ?
+               WHERE id = ?`
     try {
-        let response = await knexConex.raw(sql)
+        let response = await knexConex.raw(sql, [
+            vinculo.status,
+            vinculo.origem_cadastro,
+            vinculo.data_solicitacao,
+            vinculo.data_aceite,
+            vinculo.data_inicio_acompanhamento,
+            vinculo.data_fim,
+            vinculo.id_profissional,
+            vinculo.id_paciente,
+            vinculo.id
+        ])
 
         if(response) return response
 
@@ -42,7 +68,18 @@ const updateVinculo = async (vinculo) => {
 
 // select de todas vinculos
 const selectAllVinculo = async () => {
-    let sql = `SELECT * FROM tbl_vinculo ORDER BY id DESC`
+    let sql = `SELECT
+                   id,
+                   status,
+                   origem_cadastro,
+                   data_solicitacao,
+                   data_aceite,
+                   data_inicio_acompanhamento,
+                   data_fim,
+                   id_profissional,
+                   id_paciente
+               FROM tbl_vinculo
+               ORDER BY id DESC`
     try {
         let response = await knexConex.raw(sql)
 
@@ -56,10 +93,20 @@ const selectAllVinculo = async () => {
 
 // select de uma vinculo pelo id
 const selectByIdVinculo = async (id) => {
-    let sql = `SELECT * FROM tbl_vinculo
-               WHERE id = ${id}`
+    let sql = `SELECT
+                   id,
+                   status,
+                   origem_cadastro,
+                   data_solicitacao,
+                   data_aceite,
+                   data_inicio_acompanhamento,
+                   data_fim,
+                   id_profissional,
+                   id_paciente
+               FROM tbl_vinculo
+               WHERE id = ?`
     try {
-        let response = await knexConex.raw(sql)
+        let response = await knexConex.raw(sql, [id])
 
 
         if(response) return response[0]
@@ -72,9 +119,9 @@ const selectByIdVinculo = async (id) => {
 // delete de vinculo
 const deleteVinculo = async (id) => {
     let sql = `DELETE FROM tbl_vinculo
-               WHERE id = ${id}`
+               WHERE id = ?`
     try {
-        let response = await knexConex.raw(sql)
+        let response = await knexConex.raw(sql, [id])
 
 
         if(response) return response
