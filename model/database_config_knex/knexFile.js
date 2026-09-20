@@ -5,7 +5,7 @@ module.exports = {
         host: 'localhost',
         user: 'root',
         password: 'bcd127',
-        database: '',
+        database: 'db_dialoga',
         port: 3306, 
         charset: 'utf8mb4'
       },

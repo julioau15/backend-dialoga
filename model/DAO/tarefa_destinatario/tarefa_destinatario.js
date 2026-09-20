@@ -12,7 +12,7 @@ const knexConex = knex(knexConfig.development)
 
 // insert de tarefaDestinatario
 const insertTarefaDestinatario = async (tarefaDestinatario) => {
-    let sql = `INSERT INTO tbl_tarefaDestinatario (nome)
+    let sql = `INSERT INTO tbl_tarefa_destinatario (nome)
                VALUES ('${tarefaDestinatario.nome}')`
 
     try {
@@ -27,7 +27,7 @@ const insertTarefaDestinatario = async (tarefaDestinatario) => {
 
 // update de tarefaDestinatario
 const updateTarefaDestinatario = async (tarefaDestinatario) => {
-    let sql = `UPDATE tbl_tarefaDestinatario
+    let sql = `UPDATE tbl_tarefa_destinatario
                SET nome = '${tarefaDestinatario.nome}'
                WHERE id = ${tarefaDestinatario.id}`
     try {
@@ -42,7 +42,7 @@ const updateTarefaDestinatario = async (tarefaDestinatario) => {
 
 // select de todas tarefaDestinatarios
 const selectAllTarefaDestinatario = async () => {
-    let sql = `SELECT * FROM tbl_tarefaDestinatario ORDER BY id DESC`
+    let sql = `SELECT * FROM tbl_tarefa_destinatario ORDER BY id DESC`
     try {
         let response = await knexConex.raw(sql)
 
@@ -56,7 +56,7 @@ const selectAllTarefaDestinatario = async () => {
 
 // select de uma tarefaDestinatario pelo id
 const selectByIdTarefaDestinatario = async (id) => {
-    let sql = `SELECT * FROM tbl_tarefaDestinatario
+    let sql = `SELECT * FROM tbl_tarefa_destinatario
                WHERE id = ${id}`
     try {
         let response = await knexConex.raw(sql)
@@ -71,7 +71,7 @@ const selectByIdTarefaDestinatario = async (id) => {
 
 // delete de tarefaDestinatario
 const deleteTarefaDestinatario = async (id) => {
-    let sql = `DELETE FROM tbl_tarefaDestinatario
+    let sql = `DELETE FROM tbl_tarefa_destinatario
                WHERE id = ${id}`
     try {
         let response = await knexConex.raw(sql)

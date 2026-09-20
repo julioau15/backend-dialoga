@@ -12,7 +12,7 @@ const knexConex = knex(knexConfig.development)
 
 // insert de profissionalEspecialidade
 const insertProfissionalEspecialidade = async (profissionalEspecialidade) => {
-    let sql = `INSERT INTO tbl_profissionalEspecialidade (nome)
+    let sql = `INSERT INTO tbl_profissional_especialidade (nome)
                VALUES ('${profissionalEspecialidade.nome}')`
 
     try {
@@ -27,7 +27,7 @@ const insertProfissionalEspecialidade = async (profissionalEspecialidade) => {
 
 // update de profissionalEspecialidade
 const updateProfissionalEspecialidade = async (profissionalEspecialidade) => {
-    let sql = `UPDATE tbl_profissionalEspecialidade
+    let sql = `UPDATE tbl_profissional_especialidade
                SET nome = '${profissionalEspecialidade.nome}'
                WHERE id = ${profissionalEspecialidade.id}`
     try {
@@ -42,7 +42,7 @@ const updateProfissionalEspecialidade = async (profissionalEspecialidade) => {
 
 // select de todas profissionalEspecialidades
 const selectAllProfissionalEspecialidade = async () => {
-    let sql = `SELECT * FROM tbl_profissionalEspecialidade ORDER BY id DESC`
+    let sql = `SELECT * FROM tbl_profissional_especialidade ORDER BY id DESC`
     try {
         let response = await knexConex.raw(sql)
 
@@ -56,7 +56,7 @@ const selectAllProfissionalEspecialidade = async () => {
 
 // select de uma profissionalEspecialidade pelo id
 const selectByIdProfissionalEspecialidade = async (id) => {
-    let sql = `SELECT * FROM tbl_profissionalEspecialidade
+    let sql = `SELECT * FROM tbl_profissional_especialidade
                WHERE id = ${id}`
     try {
         let response = await knexConex.raw(sql)
@@ -71,7 +71,7 @@ const selectByIdProfissionalEspecialidade = async (id) => {
 
 // delete de profissionalEspecialidade
 const deleteProfissionalEspecialidade = async (id) => {
-    let sql = `DELETE FROM tbl_profissionalEspecialidade
+    let sql = `DELETE FROM tbl_profissional_especialidade
                WHERE id = ${id}`
     try {
         let response = await knexConex.raw(sql)

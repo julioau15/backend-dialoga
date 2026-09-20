@@ -12,7 +12,7 @@ const knexConex = knex(knexConfig.development)
 
 // insert de registroHumor
 const insertRegistroHumor = async (registroHumor) => {
-    let sql = `INSERT INTO tbl_registroHumor (nome)
+    let sql = `INSERT INTO tbl_registro_humor (nome)
                VALUES ('${registroHumor.nome}')`
 
     try {
@@ -27,7 +27,7 @@ const insertRegistroHumor = async (registroHumor) => {
 
 // update de registroHumor
 const updateRegistroHumor = async (registroHumor) => {
-    let sql = `UPDATE tbl_registroHumor
+    let sql = `UPDATE tbl_registro_humor
                SET nome = '${registroHumor.nome}'
                WHERE id = ${registroHumor.id}`
     try {
@@ -42,7 +42,7 @@ const updateRegistroHumor = async (registroHumor) => {
 
 // select de todas registroHumors
 const selectAllRegistroHumor = async () => {
-    let sql = `SELECT * FROM tbl_registroHumor ORDER BY id DESC`
+    let sql = `SELECT * FROM tbl_registro_humor ORDER BY id DESC`
     try {
         let response = await knexConex.raw(sql)
 
@@ -56,7 +56,7 @@ const selectAllRegistroHumor = async () => {
 
 // select de uma registroHumor pelo id
 const selectByIdRegistroHumor = async (id) => {
-    let sql = `SELECT * FROM tbl_registroHumor
+    let sql = `SELECT * FROM tbl_registro_humor
                WHERE id = ${id}`
     try {
         let response = await knexConex.raw(sql)
@@ -71,7 +71,7 @@ const selectByIdRegistroHumor = async (id) => {
 
 // delete de registroHumor
 const deleteRegistroHumor = async (id) => {
-    let sql = `DELETE FROM tbl_registroHumor
+    let sql = `DELETE FROM tbl_registro_humor
                WHERE id = ${id}`
     try {
         let response = await knexConex.raw(sql)

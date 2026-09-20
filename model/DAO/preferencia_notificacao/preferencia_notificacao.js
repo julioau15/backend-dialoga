@@ -12,7 +12,7 @@ const knexConex = knex(knexConfig.development)
 
 // insert de preferenciaNotificacao
 const insertPreferenciaNotificacao = async (preferenciaNotificacao) => {
-    let sql = `INSERT INTO tbl_preferenciaNotificacao (nome)
+    let sql = `INSERT INTO tbl_preferencia_notificacao (nome)
                VALUES ('${preferenciaNotificacao.nome}')`
 
     try {
@@ -27,7 +27,7 @@ const insertPreferenciaNotificacao = async (preferenciaNotificacao) => {
 
 // update de preferenciaNotificacao
 const updatePreferenciaNotificacao = async (preferenciaNotificacao) => {
-    let sql = `UPDATE tbl_preferenciaNotificacao
+    let sql = `UPDATE tbl_preferencia_notificacao
                SET nome = '${preferenciaNotificacao.nome}'
                WHERE id = ${preferenciaNotificacao.id}`
     try {
@@ -42,7 +42,7 @@ const updatePreferenciaNotificacao = async (preferenciaNotificacao) => {
 
 // select de todas preferenciaNotificacaos
 const selectAllPreferenciaNotificacao = async () => {
-    let sql = `SELECT * FROM tbl_preferenciaNotificacao ORDER BY id DESC`
+    let sql = `SELECT * FROM tbl_preferencia_notificacao ORDER BY id DESC`
     try {
         let response = await knexConex.raw(sql)
 
@@ -56,7 +56,7 @@ const selectAllPreferenciaNotificacao = async () => {
 
 // select de uma preferenciaNotificacao pelo id
 const selectByIdPreferenciaNotificacao = async (id) => {
-    let sql = `SELECT * FROM tbl_preferenciaNotificacao
+    let sql = `SELECT * FROM tbl_preferencia_notificacao
                WHERE id = ${id}`
     try {
         let response = await knexConex.raw(sql)
@@ -71,7 +71,7 @@ const selectByIdPreferenciaNotificacao = async (id) => {
 
 // delete de preferenciaNotificacao
 const deletePreferenciaNotificacao = async (id) => {
-    let sql = `DELETE FROM tbl_preferenciaNotificacao
+    let sql = `DELETE FROM tbl_preferencia_notificacao
                WHERE id = ${id}`
     try {
         let response = await knexConex.raw(sql)
