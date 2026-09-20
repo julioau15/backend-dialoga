@@ -1,5 +1,5 @@
 /*************************************************************************************
- * Objetivo: Arquivo responsável pelo gerenciamento de rotas de tabela1
+ * Objetivo: Arquivo responsável pelo gerenciamento de rotas de registroHumor
  * Data: 20/09/2026
  * Autor: Julio Augusto
  * Versão: 1.0
@@ -11,53 +11,53 @@ const router = express.Router()
 const bodyParser = require('body-parser')
 const bodyParserJSON = bodyParser.json()
 
-const { 
-    inserirNovaTabela2,
-    atualizarTabela2,
-    listarTabela2,
-    buscarTabela2,
-    excluirTabela2
-} = require('../controller/tabela1/controllerTabela2.js')
+const {
+    inserirNovaRegistroHumor,
+    atualizarRegistroHumor,
+    listarRegistroHumor,
+    buscarRegistroHumor,
+    excluirRegistroHumor
+} = require('../controller/registro_humor/controller_registro_humor.js')
 
-// ---------------- tabela1 -----------------
+// ---------------- registroHumor -----------------
 
-// endpoint para inserir tabela1
+// endpoint para inserir registroHumor
 router.post('/',bodyParserJSON, async (req,res) => {
     // recebe o conteudo dentro do body da requisição
     let dados = req.body
     let contentType = req.headers['content-type']
 
-    let result = await inserirNovaTabela2(dados,contentType)
+    let result = await inserirNovaRegistroHumor(dados,contentType)
     res.status(result.status_code).json(result)
 })
 
-// endpoint para retornar todas tabela1s
+// endpoint para retornar todas registroHumors
 router.get('/', async (req,res) => {
-    let result = await listarTabela2()
+    let result = await listarRegistroHumor()
     res.status(result.status_code).json(result)
 })
 
-// endpoint para buscar um tabela1 pelo id
+// endpoint para buscar um registroHumor pelo id
 router.get('/:id', async (req,res) => {
     let id = req.params.id
-    let result = await buscarTabela2(id)
+    let result = await buscarRegistroHumor(id)
     res.status(result.status_code).json(result)
 })
 
-// endpoint para atualizar uma tabela1 pelo id
+// endpoint para atualizar um registroHumor pelo id
 router.put('/:id', bodyParserJSON, async (req,res) => {
     let id          = req.params.id                 // Recebe o id por parametro
     let dados       = req.body                      // Recebe os dados do body da requisição
     let contentType = req.headers['content-type']   // Recebe o ContentType do header da requisição
     
-    let result      = await atualizarTabela2(dados, id, contentType)
+    let result      = await atualizarRegistroHumor(dados, id, contentType)
     res.status(result.status_code).json(result)
 })
 
-// endpoint para deletar uma tabela1 pelo id
+// endpoint para deletar um registroHumor pelo id
 router.delete('/:id', async (req,res) => {
     let id = req.params.id
-    let result = await excluirTabela2(id)
+    let result = await excluirRegistroHumor(id)
     res.status(result.status_code).json(result)
 })
 
