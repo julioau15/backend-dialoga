@@ -7,6 +7,8 @@
 
 const config_message = require('../module/configMessages.js')
 const profissionalDAO = require('../../model/DAO/profissional/profissional.js')
+const bcrypt = require('../../services/bcrypt.js')
+const { decodeJWT } = require('../../middleware/middlewareJWT.js')
 
 // inserir nova profissional
 const inserirNovaProfissional = async (profissional, contentType) => {
@@ -14,6 +16,8 @@ const inserirNovaProfissional = async (profissional, contentType) => {
     try {
         let validar = await validarDados(profissional, contentType)
         if(validar) return validar // 400 ou 415
+
+        profissional.senha_hash = await bcrypt.criarHash(profissional.senha_hash)
 
         let result = await profissionalDAO.insertProfissional(profissional)
 
@@ -36,6 +40,8 @@ const atualizarProfissional = async (profissional, id, contentType) => {
 
         let resultBuscarId = await buscarProfissional(id)
         if(!resultBuscarId.status) return resultBuscarId // 400 e 404
+
+        profissional.senha_hash = await bcrypt.criarHash(profissional.senha_hash)
 
         profissional.id = Number(id)
         let result = await profissionalDAO.updateProfissional(profissional)
@@ -104,6 +110,23 @@ const excluirProfissional = async (id) => {
         if(!result) return message.ERROR_INTERNAL_SERVER_MODEL // 500
 
         return await montarMensagem(message, message.SUCESS_DELETE_ITEM)
+
+    } catch (error) {console.log(error)}
+    return message.ERROR_INTERNAL_SERVER_CONTROLLER // 500
+}
+
+const buscarProfissionalByToken = async (token) => {
+    let message = JSON.parse(JSON.stringify(config_message))
+
+    try {
+
+        let decodedToken = await decodeJWT(token)
+        if(!decodedToken.status) return message.ERROR_INVALID_TOKEN // 401
+
+        let idProfissional = decodedToken.decode.id
+        let resultBuscarId = await buscarProfissional(idProfissional)
+
+        return resultBuscarId // 200 ou 400 ou 404
 
     } catch (error) {console.log(error)}
     return message.ERROR_INTERNAL_SERVER_CONTROLLER // 500
@@ -209,5 +232,6 @@ module.exports = {
     atualizarProfissional,
     listarProfissional,
     buscarProfissional,
-    excluirProfissional
+    excluirProfissional,
+    buscarProfissionalByToken
 }

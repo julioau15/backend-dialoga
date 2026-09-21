@@ -60,20 +60,10 @@ const selectAuthProfissional = async (usuario) => {
 
 // valida o usuario paciente
 const selectAuthPaciente = async (usuario) => {
+    console.log('usuario', usuario)
 
     let sql = `SELECT
-                   id,
-                   nome_completo,
-                   apelido,
-                   data_nascimento,
-                   celular,
-                   email,
-                   senha_hash,
-                   foto_avatar,
-                   deseja_iniciar_registros,
-                   primeiro_acesso_concluido,
-                   status_atividade,
-                   criado_em
+                   *
                FROM tbl_paciente
                WHERE email = ?`
 

@@ -16,7 +16,8 @@ const {
     atualizarPaciente,
     listarPaciente,
     buscarPaciente,
-    excluirPaciente
+    excluirPaciente,
+    buscarPacienteByToken
 } = require('../controller/paciente/controller_paciente.js')
 
 // ---------------- paciente -----------------
@@ -28,6 +29,13 @@ router.post('/',bodyParserJSON, async (req,res) => {
     let contentType = req.headers['content-type']
 
     let result = await inserirNovaPaciente(dados,contentType)
+    res.status(result.status_code).json(result)
+})
+
+// endpoint para retornar um paciente pelo token
+router.get('/me', async (req,res) => {
+    let token = req.headers['x-access-token']
+    let result = await buscarPacienteByToken(token)
     res.status(result.status_code).json(result)
 })
 

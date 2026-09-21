@@ -1,13 +1,13 @@
 /**************************************************************************************
  * Objetivo: Arquivo responsável pela configuração e padronização das mensagens da API
- * Data: 20/09/2026
+ * Data: 21/09/2026
  * Autor: Julio Augusto
  * Versão: 1.0
  *************************************************************************************/
 
 // Padronização de cabeçalho para retorno dos endpoints da API
 const DEFAULT_MESSAGE = {
-    "api_description":  "API para gerenciar o controle.",
+    "api_description":  "API para gerenciar o controle da empresa Dialoga.",
     "developer"      :  "Julio Augusto.",
     "version"        :  "1.0",
     "status"         :  Boolean,
@@ -37,6 +37,12 @@ const ERROR_CONTENT_TYPE = { "status": false, "status_code": 415, "message": "N�
 
 const ERROR_NOT_FOUND = { "status": false, "status_code": 404, "message": "Não foi possivel encontrar nenhum registro."}
 
+const ERROR_UNAUTHORIZED = { "status": false, "status_code": 401, "message": "Não foi possivel processar requisição. usuário não autorizado."}
+
+const ERROR_CONFLICT = { "status": false, "status_code": 409, "message": "Não foi possivel processar requisição. usuario ou email já cadastrado."}
+
+const ERROR_INVALID_TOKEN = { "status": false, "status_code": 401, "message": "Não foi possivel processar requisição. Token inválido."}
+
 
 module.exports = {
     DEFAULT_MESSAGE,
@@ -49,5 +55,8 @@ module.exports = {
     SUCESS_RESPONSE,
     SUCESS_UPDATE_ITEM,
     SUCESS_DELETE_ITEM,
-    SUCESS_CREATED_ITEM_WARNING
+    SUCESS_CREATED_ITEM_WARNING,
+    ERROR_UNAUTHORIZED,
+    ERROR_CONFLICT,
+    ERROR_INVALID_TOKEN
 }

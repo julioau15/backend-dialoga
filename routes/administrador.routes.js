@@ -16,7 +16,8 @@ const {
     atualizarAdministrador,
     listarAdministrador,
     buscarAdministrador,
-    excluirAdministrador
+    excluirAdministrador,
+    buscarAdministradorByToken
 } = require('../controller/administrador/controller_administrador.js')
 
 // ---------------- administrador -----------------
@@ -28,6 +29,13 @@ router.post('/',bodyParserJSON, async (req,res) => {
     let contentType = req.headers['content-type']
 
     let result = await inserirNovaAdministrador(dados,contentType)
+    res.status(result.status_code).json(result)
+})
+
+// endpoint para retornar um adiministrador pelo token
+router.get('/me', async (req,res) => {
+    let token = req.headers['x-access-token']
+    let result = await buscarAdministradorByToken(token)
     res.status(result.status_code).json(result)
 })
 

@@ -7,6 +7,8 @@
 
 const config_message = require('../module/configMessages.js')
 const administradorDAO = require('../../model/DAO/administrador/administrador.js')
+const bcrypt = require('../../services/bcrypt.js')
+const { decodeJWT } = require('../../middleware/middlewareJWT.js')
 
 // inserir nova administrador
 const inserirNovaAdministrador = async (administrador, contentType) => {
@@ -14,6 +16,8 @@ const inserirNovaAdministrador = async (administrador, contentType) => {
     try {
         let validar = await validarDados(administrador, contentType)
         if(validar) return validar // 400 ou 415
+
+        administrador.senha_hash = await bcrypt.criarHash(administrador.senha_hash)
 
         let result = await administradorDAO.insertAdministrador(administrador)
 
@@ -36,6 +40,8 @@ const atualizarAdministrador = async (administrador, id, contentType) => {
 
         let resultBuscarId = await buscarAdministrador(id)
         if(!resultBuscarId.status) return resultBuscarId // 400 e 404
+
+        administrador.senha_hash = await bcrypt.criarHash(administrador.senha_hash)
 
         administrador.id = Number(id)
         let result = await administradorDAO.updateAdministrador(administrador)
@@ -104,6 +110,25 @@ const excluirAdministrador = async (id) => {
         if(!result) return message.ERROR_INTERNAL_SERVER_MODEL // 500
 
         return await montarMensagem(message, message.SUCESS_DELETE_ITEM)
+
+    } catch (error) {console.log(error)}
+    return message.ERROR_INTERNAL_SERVER_CONTROLLER // 500
+}
+
+const buscarAdministradorByToken = async (token) => {
+    let message = JSON.parse(JSON.stringify(config_message))
+
+    try {
+
+        let decodedToken = await decodeJWT(token)
+        if(!decodedToken.status) return message.ERROR_INVALID_TOKEN
+
+        let idAdministrador = decodedToken.decode.id
+
+        let resultBuscarId = await buscarAdministrador(idAdministrador)
+        if(!resultBuscarId.status) return resultBuscarId // 400 e 404
+
+        return resultBuscarId
 
     } catch (error) {console.log(error)}
     return message.ERROR_INTERNAL_SERVER_CONTROLLER // 500
@@ -207,5 +232,6 @@ module.exports = {
     atualizarAdministrador,
     listarAdministrador,
     buscarAdministrador,
-    excluirAdministrador
+    excluirAdministrador,
+    buscarAdministradorByToken
 }

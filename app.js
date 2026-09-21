@@ -24,6 +24,30 @@ const corsOptions = {
 
 app.use(cors(corsOptions))
 
+const config_message = require('./controller/module/configMessages.js')
+
+// Recebe o token encaminhado nas requisições e solicitar as validações
+const verifyJWT = async (req, res, next) => {
+    let message = JSON.parse(JSON.stringify(config_message))
+    let mensagem = message.ERROR_UNAUTHORIZED
+    mensagem.message = "Token inválido."
+
+    // import da biblioteca para validação dos tokens
+    const jwt = require('./middleware/middlewareJWT.js')
+
+    // recebe o token encaminhado no header da requisição
+    let token = req.headers['x-access-token']
+
+    // valida a autencidade do token
+    const autenticidadeToken = await jwt.validateJWT(token)
+
+    // valida se a requisição podera continuar
+    if(autenticidadeToken.status) 
+        next()
+    else
+        return res.status(mensagem.status_code).json(mensagem).end()
+}
+
 // ******** ROTAS ***********
 // Import das rotas
 const administradorProfissionalRouter = require('./routes/administrador_profissional.routes.js')
@@ -50,32 +74,34 @@ const tarefaRouter = require('./routes/tarefa.routes.js')
 const tarefaDestinatarioRouter = require('./routes/tarefa_destinatario.routes.js')
 const tratamentoRouter = require('./routes/tratamento.routes.js')
 const vinculoRouter = require('./routes/vinculo.routes.js')
+const authRouter = require('./routes/auth.routes.js')
 
 // Rotas da API
-app.use('/v1/dialoga/aprovacoes-profissionais', cors(), administradorProfissionalRouter)
-app.use('/v1/dialoga/administradores', cors(), administradorRouter)
-app.use('/v1/dialoga/anotacoes', cors(), anotacaoRouter)
-app.use('/v1/dialoga/categorias', cors(), categoriaRouter)
-app.use('/v1/dialoga/categorias-compartilhadas', cors(), categoriaCompartilhadaRouter)
-app.use('/v1/dialoga/consultas', cors(), consultaRouter)
-app.use('/v1/dialoga/disponibilidades', cors(), disponibilidadeRouter)
-app.use('/v1/dialoga/especialidades', cors(), especialidadeRouter)
-app.use('/v1/dialoga/horarios-tratamento', cors(), horarioTratamentoRouter)
-app.use('/v1/dialoga/notificacoes', cors(), notificacaoRouter)
-app.use('/v1/dialoga/opcoes-pergunta', cors(), opcaoPerguntaRouter)
+app.use('/v1/dialoga/aprovacoes-profissionais', cors(), verifyJWT, administradorProfissionalRouter)
+app.use('/v1/dialoga/administradores', cors(), verifyJWT, administradorRouter)
+app.use('/v1/dialoga/anotacoes', cors(), verifyJWT, anotacaoRouter)
+app.use('/v1/dialoga/categorias', cors(), verifyJWT, categoriaRouter)
+app.use('/v1/dialoga/categorias-compartilhadas', cors(), verifyJWT, categoriaCompartilhadaRouter)
+app.use('/v1/dialoga/consultas', cors(), verifyJWT, consultaRouter)
+app.use('/v1/dialoga/disponibilidades', cors(), verifyJWT, disponibilidadeRouter)
+app.use('/v1/dialoga/especialidades', cors(), verifyJWT, especialidadeRouter)
+app.use('/v1/dialoga/horarios-tratamento', cors(), verifyJWT, horarioTratamentoRouter)
+app.use('/v1/dialoga/notificacoes', cors(), verifyJWT, notificacaoRouter)
+app.use('/v1/dialoga/opcoes-pergunta', cors(), verifyJWT, opcaoPerguntaRouter)
 app.use('/v1/dialoga/pacientes', cors(), pacienteRouter)
-app.use('/v1/dialoga/perguntas', cors(), perguntaRouter)
-app.use('/v1/dialoga/preferencias-notificacao', cors(), preferenciaNotificacaoRouter)
-app.use('/v1/dialoga/profissionais', cors(), profissionalRouter)
-app.use('/v1/dialoga/profissionais-especialidade', cors(), profissionalEspecialidadeRouter)
-app.use('/v1/dialoga/registros-dose', cors(), registroDoseRouter)
-app.use('/v1/dialoga/registros-humor', cors(), registroHumorRouter)
-app.use('/v1/dialoga/respostas', cors(), respostaRouter)
-app.use('/v1/dialoga/solicitacoes-acesso', cors(), solicitacaoAcessoRouter)
-app.use('/v1/dialoga/tarefas', cors(), tarefaRouter)
-app.use('/v1/dialoga/tarefas-destinatario', cors(), tarefaDestinatarioRouter)
-app.use('/v1/dialoga/tratamentos', cors(), tratamentoRouter)
-app.use('/v1/dialoga/vinculos', cors(), vinculoRouter)
+app.use('/v1/dialoga/perguntas', cors(), verifyJWT, perguntaRouter)
+app.use('/v1/dialoga/preferencias-notificacao', cors(), verifyJWT, preferenciaNotificacaoRouter)
+app.use('/v1/dialoga/profissionais', cors(), verifyJWT, profissionalRouter)
+app.use('/v1/dialoga/profissionais-especialidade', cors(), verifyJWT, profissionalEspecialidadeRouter)
+app.use('/v1/dialoga/registros-dose', cors(), verifyJWT, registroDoseRouter)
+app.use('/v1/dialoga/registros-humor', cors(), verifyJWT, registroHumorRouter)
+app.use('/v1/dialoga/respostas', cors(), verifyJWT, respostaRouter)
+app.use('/v1/dialoga/solicitacoes-acesso', cors(), verifyJWT, solicitacaoAcessoRouter)
+app.use('/v1/dialoga/tarefas', cors(), verifyJWT, tarefaRouter)
+app.use('/v1/dialoga/tarefas-destinatario', cors(), verifyJWT, tarefaDestinatarioRouter)
+app.use('/v1/dialoga/tratamentos', cors(), verifyJWT, tratamentoRouter)
+app.use('/v1/dialoga/vinculos', cors(), verifyJWT, vinculoRouter)
+app.use('/v1/dialoga/auth', cors(), authRouter)
 
 // inicializar a API para receber requisições
 app.listen(port, () => {

@@ -7,6 +7,8 @@
 
 const config_message = require('../module/configMessages.js')
 const pacienteDAO = require('../../model/DAO/paciente/paciente.js')
+const bycrypt = require('../../services/bcrypt.js')
+const { decodeJWT } = require('../../middleware/middlewareJWT.js')
 
 // inserir nova paciente
 const inserirNovaPaciente = async (paciente, contentType) => {
@@ -14,6 +16,8 @@ const inserirNovaPaciente = async (paciente, contentType) => {
     try {
         let validar = await validarDados(paciente, contentType)
         if(validar) return validar // 400 ou 415
+
+        paciente.senha_hash = await bycrypt.criarHash(paciente.senha_hash)
 
         let result = await pacienteDAO.insertPaciente(paciente)
 
@@ -36,6 +40,8 @@ const atualizarPaciente = async (paciente, id, contentType) => {
 
         let resultBuscarId = await buscarPaciente(id)
         if(!resultBuscarId.status) return resultBuscarId // 400 e 404
+
+        paciente.senha_hash = await bycrypt.criarHash(paciente.senha_hash)
 
         paciente.id = Number(id)
         let result = await pacienteDAO.updatePaciente(paciente)
@@ -109,6 +115,23 @@ const excluirPaciente = async (id) => {
     return message.ERROR_INTERNAL_SERVER_CONTROLLER // 500
 }
 
+const buscarPacienteByToken = async (token) => {
+    let message = JSON.parse(JSON.stringify(config_message))
+
+    try {
+
+        let decodedToken = await decodeJWT(token)
+        if(!decodedToken.status) return message.ERROR_INVALID_TOKEN // 401
+
+        let idPaciente = decodedToken.decode.id
+        let resultBuscarId = await buscarPaciente(idPaciente)
+
+        return resultBuscarId // 200 ou 400 ou 404
+
+    } catch (error) {console.log(error)}
+    return message.ERROR_INTERNAL_SERVER_CONTROLLER // 500
+}
+
 const validarDados = async (paciente, contentType) => {
     let message = JSON.parse(JSON.stringify(config_message))
 
@@ -151,7 +174,7 @@ const validarDados = async (paciente, contentType) => {
 
     // Valida a senha hash opcional
     if(paciente.senha_hash != undefined && paciente.senha_hash != null &&
-       (typeof paciente.senha_hash != 'string' || paciente.senha_hash.length > 255)){
+       (typeof paciente.senha_hash != 'string' || paciente.senha_hash.length > 30)){
         message.ERROR_BAD_REQUEST.field = '[SENHA_HASH] INVÁLIDO'
         return message.ERROR_BAD_REQUEST // 400
     }
@@ -223,5 +246,6 @@ module.exports = {
     atualizarPaciente,
     listarPaciente,
     buscarPaciente,
-    excluirPaciente
+    excluirPaciente,
+    buscarPacienteByToken
 }

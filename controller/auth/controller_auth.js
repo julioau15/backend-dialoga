@@ -17,55 +17,64 @@ const controllerAdministrador = require('../administrador/controller_administrad
 const autenticarUsuario = async (usuario, contentType) => {
 
     let message = JSON.parse(JSON.stringify(config_message))
+    const administrador = 0
+    const profissional = 1
+    const paciente = 2
 
     try {
-        const validarUsuario = await validarDados(usuario, contentType)
-        if(validarUsuario) return validarUsuario
-        
-        // define qual função no DAO será chamada de acordo com o tipo de usuário
-        let dadosUsuario = 
-        usuario.tipo_usuario == administrador ?
-            await authDAO.selectAuthAministrador(usuario) :
-        usuario.tipo_usuario == profissional ?
-            await authDAO.selectAuthProfissional(usuario) :
-        usuario.tipo_usuario == paciente ?
-            await authDAO.selectAuthPaciente(usuario) :
-        null
 
+        // valida os dados do usuário e o formato da requisição
+        const validarUsuario = await validarDados(usuario, contentType)
+        if (validarUsuario) return validarUsuario
+
+        // define qual função no DAO será chamada de acordo com o tipo de usuário
+        let dadosUsuario =
+            usuario.nivel == administrador ?
+                await authDAO.selectAuthAministrador(usuario) :
+            usuario.nivel == profissional ?
+                await authDAO.selectAuthProfissional(usuario) :
+            usuario.nivel == paciente ?
+                await authDAO.selectAuthPaciente(usuario) :
+            null
+
+        // verifica se o usuário foi encontrado
         if (!dadosUsuario || dadosUsuario.length < 1)
             return message.ERROR_UNAUTHORIZED
 
-        const validarSenha = await bcrypt.validarSenha(usuario.senha, dadosUsuario[0].senha)
-        if(!validarSenha) return message.ERROR_UNAUTHORIZED
+        // valida a senha informada com a senha armazenada no banco
+        const validarSenha = await bcrypt.validarSenha(
+            usuario.senha,
+            dadosUsuario[0].senha_hash
+        )
 
-        let validarToken = await jwt.validateJWT(dadosUsuario[0].token)
-        if(validarToken.status) return await montarMensagem(message,message.SUCESS_RESPONSE,dadosUsuario)
+        if (!validarSenha)
+            return message.ERROR_UNAUTHORIZED
 
-        // se o token estiver expirado ou for o primeiro login cria um novo e salva no banco
-        if(validarToken['error']['expiredAt'] || dadosUsuario[0].token == null){
-            let tokenUser = await jwt.createJWT(dadosUsuario[0].id) // gera token JWT
-
-            dadosUsuario[0].token = tokenUser
-
-            let dadosUpdateUsuario =
-            usuario.tipo_usuario == administrador ?
-                await controllerAdministrador.atualizarAdministrador(dadosUsuario[0],dadosUsuario[0].id,'application/json') :
-            usuario.tipo_usuario == profissional ?
-                await controllerProfissional.atualizarProfissional(dadosUsuario[0],dadosUsuario[0].id,'application/json') :
-            usuario.tipo_usuario == paciente ?
-                await controllerPaciente.atualizarPaciente(dadosUsuario[0],dadosUsuario[0].id,'application/json') :
-            null 
-
-            return await montarMensagem(message,message.SUCESS_RESPONSE,dadosUsuario)
+        // cria os dados que serão armazenados dentro do JWT
+        const payload = {
+            id: dadosUsuario[0].id,
+            email: dadosUsuario[0].email,
+            nivel: dadosUsuario[0].nivel
         }
-       
-        return message.ERROR_UNAUTHORIZED
+
+        // gera o token JWT
+        const token = await jwt.createJWT(payload)
+
+        // adiciona o token apenas na resposta
+        dadosUsuario[0].token = token
+
+        return await montarMensagem(
+            message,
+            message.SUCESS_RESPONSE,
+            dadosUsuario
+        )
 
     } catch (error) {
-        console.log(error)
-    }
 
-    return message.ERROR_INTERNAL_SERVER_CONTROLLER
+        console.log(error)
+
+        return message.ERROR_INTERNAL_SERVER_CONTROLLER
+    }
 }
 
 const validarDados = async (usuario, contentType) => {
@@ -94,8 +103,8 @@ const validarDados = async (usuario, contentType) => {
     }
 
     // Valida o tipo de usuário
-    if(typeof(usuario.tipo_usuario) != 'string' || usuario.tipo_usuario.trim() == '' || usuario.tipo_usuario.length > 20){
-        message.ERROR_BAD_REQUEST.field = '[TIPO_USUARIO] INVÁLIDO'
+    if(typeof(usuario.nivel) != 'number' || String(usuario.nivel).length > 1){
+        message.ERROR_BAD_REQUEST.field = '[NIVEL] INVÁLIDO'
         return message.ERROR_BAD_REQUEST // 400
     }
 

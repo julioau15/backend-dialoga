@@ -16,7 +16,8 @@ const {
     atualizarProfissional,
     listarProfissional,
     buscarProfissional,
-    excluirProfissional
+    excluirProfissional,
+    buscarProfissionalByToken
 } = require('../controller/profissional/controller_profissional.js')
 
 // ---------------- profissional -----------------
@@ -28,6 +29,13 @@ router.post('/',bodyParserJSON, async (req,res) => {
     let contentType = req.headers['content-type']
 
     let result = await inserirNovaProfissional(dados,contentType)
+    res.status(result.status_code).json(result)
+})
+
+// endpoint para retornar um profissional pelo token
+router.get('/me', async (req,res) => {
+    let token = req.headers['x-access-token']
+    let result = await buscarProfissionalByToken(token)
     res.status(result.status_code).json(result)
 })
 
