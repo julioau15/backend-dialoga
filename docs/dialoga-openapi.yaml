@@ -336,7 +336,7 @@ paths:
       requestBody:
         required: true
         content:
-          application/json:
+          multipart/form-data:
             schema:
               $ref: '#/components/schemas/PacienteCadastroRequest'
       responses:
@@ -384,7 +384,7 @@ paths:
       requestBody:
         required: true
         content:
-          application/json:
+          multipart/form-data:
             schema:
               $ref: '#/components/schemas/ProfissionalCadastroRequest'
       responses:
@@ -474,7 +474,7 @@ paths:
       requestBody:
         required: true
         content:
-          application/json:
+          multipart/form-data:
             schema:
               $ref: '#/components/schemas/AdministradorCriarRequest'
       responses:
@@ -592,13 +592,13 @@ paths:
           $ref: '#/components/responses/InternalServerError'
     put:
       summary: Editar próprio perfil de administrador
-      description: 'Requisitos relacionados: RF141, RF146-149'
+      description: 'Requisitos relacionados: RF141, RF142-149'
       tags:
       - Administradores
       requestBody:
         required: true
         content:
-          application/json:
+          multipart/form-data:
             schema:
               $ref: '#/components/schemas/AdministradorAtualizarRequest'
       responses:
@@ -624,52 +624,6 @@ paths:
                 - status
                 - status_code
                 - response
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '415':
-          $ref: '#/components/responses/UnsupportedMediaType'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-  /administradores/me/senha:
-    put:
-      summary: Alterar senha do administrador autenticado
-      description: 'Requisitos relacionados: RF142-145'
-      tags:
-      - Administradores
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/AlterarSenhaRequest'
-      responses:
-        '200':
-          description: Senha alterada
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  status:
-                    type: boolean
-                    example: true
-                  status_code:
-                    type: integer
-                    example: 200
-                  message:
-                    type: string
-                    example: Registro atualizado com sucesso!
-                  response:
-                    type: object
-                    nullable: true
-                    example: {}
-                required:
-                - status
-                - status_code
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -908,7 +862,7 @@ paths:
       requestBody:
         required: true
         content:
-          application/json:
+          multipart/form-data:
             schema:
               $ref: '#/components/schemas/PacienteAtualizarRequest'
       responses:
@@ -1028,7 +982,7 @@ paths:
       requestBody:
         required: true
         content:
-          application/json:
+          multipart/form-data:
             schema:
               $ref: '#/components/schemas/ProfissionalAtualizarRequest'
       responses:
@@ -2074,40 +2028,6 @@ paths:
           $ref: '#/components/responses/NotFound'
         '415':
           $ref: '#/components/responses/UnsupportedMediaType'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-  /pacientes/me/dashboard:
-    get:
-      summary: Resumo do dashboard do paciente (humor da semana, carrossel)
-      description: 'Requisitos relacionados: RF66-68'
-      tags:
-      - Pacientes
-      responses:
-        '200':
-          description: Dados do dashboard
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-  /profissionais/me/dashboard:
-    get:
-      summary: Resumo do dashboard do profissional (agenda do dia, carrossel)
-      description: 'Requisitos relacionados: RF69-70'
-      tags:
-      - Profissionais
-      responses:
-        '200':
-          description: Dados do dashboard
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '404':
-          $ref: '#/components/responses/NotFound'
         '500':
           $ref: '#/components/responses/InternalServerError'
   /pacientes/me/registros-humor:
@@ -3953,53 +3873,6 @@ paths:
           $ref: '#/components/responses/UnsupportedMediaType'
         '500':
           $ref: '#/components/responses/InternalServerError'
-  /pacientes/me/relatorios:
-    get:
-      summary: Relatório de histórico de saúde emocional (indicadores, sono, tarefas)
-      description: 'Requisitos relacionados: RF189-201, RF208-211'
-      tags:
-      - Pacientes
-      parameters:
-      - name: inicio
-        in: query
-        required: true
-        schema:
-          type: string
-          format: date
-      - name: fim
-        in: query
-        required: true
-        schema:
-          type: string
-          format: date
-      responses:
-        '200':
-          description: Relatório do período
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  status:
-                    type: boolean
-                    example: true
-                  status_code:
-                    type: integer
-                    example: 200
-                  response:
-                    $ref: '#/components/schemas/RelatorioPeriodo'
-                required:
-                - status
-                - status_code
-                - response
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
   /pacientes/{id}/relatorios:
     get:
       summary: Relatório de um paciente, visão do profissional (requer solicitação de acesso aprovada)
@@ -4305,6 +4178,15 @@ components:
         email:
           type: string
           format: email
+        celular:
+          type: string
+          maxLength: 20
+          nullable: true
+        foto_avatar:
+          type: string
+          format: binary
+          nullable: true
+          description: Arquivo de imagem do avatar (multipart/form-data).
         senha_provisoria:
           type: string
           description: Enviada por e-mail junto às instruções de acesso (RF07).
@@ -4321,24 +4203,18 @@ components:
         celular:
           type: string
           maxLength: 20
-    AlterarSenhaRequest:
-      type: object
-      properties:
-        senha_atual:
+        foto_avatar:
           type: string
-          format: password
+          format: binary
+          nullable: true
+          description: Arquivo de imagem do avatar (multipart/form-data).
         nova_senha:
           type: string
           format: password
           minLength: 6
           maxLength: 255
-        confirmar_nova_senha:
-          type: string
-          format: password
-      required:
-      - senha_atual
-      - nova_senha
-      - confirmar_nova_senha
+          nullable: true
+          description: Opcional; quando enviada, substitui a senha atual do administrador (RF142-145).
     AprovacaoProfissional:
       type: object
       description: Solicitação de acesso do profissional à plataforma, analisada por um administrador
@@ -4435,6 +4311,11 @@ components:
           format: password
           minLength: 6
           maxLength: 255
+        foto_avatar:
+          type: string
+          format: binary
+          nullable: true
+          description: Arquivo de imagem do avatar (multipart/form-data), opcional no cadastro.
         aceite_termos:
           type: boolean
       required:
@@ -4469,6 +4350,11 @@ components:
           type: string
         celular:
           type: string
+        foto_avatar:
+          type: string
+          format: binary
+          nullable: true
+          description: Arquivo de imagem do avatar (multipart/form-data).
     PacienteExternoCriarRequest:
       type: object
       description: Cadastro leve de paciente feito pelo profissional, para paciente sem conta na plataforma
@@ -4552,12 +4438,24 @@ components:
         instituicao_clinica:
           type: string
           nullable: true
+        especialidade_ids:
+          type: array
+          items:
+            type: integer
+            format: int64
+          description: Especialidades selecionadas no cadastro (RF107-119).
+        foto_avatar:
+          type: string
+          format: binary
+          nullable: true
+          description: Arquivo de imagem do avatar (multipart/form-data), opcional no cadastro.
       required:
       - nome_completo
       - email
       - senha
       - cpf
       - crp
+      - especialidade_ids
     ProfissionalAtualizarRequest:
       type: object
       properties:
@@ -4565,6 +4463,11 @@ components:
           type: string
         celular:
           type: string
+        foto_avatar:
+          type: string
+          format: binary
+          nullable: true
+          description: Arquivo de imagem do avatar (multipart/form-data).
         especialidade_ids:
           type: array
           items:

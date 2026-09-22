@@ -10,6 +10,10 @@ const express = require('express')
 const router = express.Router()
 const bodyParser = require('body-parser')
 const bodyParserJSON = bodyParser.json()
+const multer = require('multer') // upload de arquivos
+
+// instancia para criar um objeto com as caracteristicas do multer
+const upload = multer()
 
 const {
     inserirNovaAdministrador,
@@ -17,18 +21,33 @@ const {
     listarAdministrador,
     buscarAdministrador,
     excluirAdministrador,
-    buscarAdministradorByToken
+    buscarAdministradorByToken, 
+    editarAdministradorByToken
 } = require('../controller/administrador/controller_administrador.js')
+
+const formatarJson = async (dados) => {
+    const administrador = {
+        nome_completo      : dados.nome_completo,
+        email              : dados.email,
+        celular            : dados.celular,
+        senha_provisoria   : dados.senha_provisoria
+    }
+
+    return administrador
+}
 
 // ---------------- administrador -----------------
 
 // endpoint para inserir administrador
-router.post('/',bodyParserJSON, async (req,res) => {
-    // recebe o conteudo dentro do body da requisição
-    let dados = req.body
+router.post('/',upload.single('foto_avatar'), async (req,res) => {
+    const dados = req.body
+    const foto_avatar = req.file
+    
+    const administrador = await formatarJson(dados)
+
     let contentType = req.headers['content-type']
 
-    let result = await inserirNovaAdministrador(dados,contentType)
+    let result = await inserirNovaAdministrador(administrador,foto_avatar,contentType)
     res.status(result.status_code).json(result)
 })
 
@@ -53,12 +72,28 @@ router.get('/:id', async (req,res) => {
 })
 
 // endpoint para atualizar um administrador pelo id
-router.put('/:id', bodyParserJSON, async (req,res) => {
+router.put('/:id', upload.single('foto_avatar'), async (req,res) => {
     let id          = req.params.id                 // Recebe o id por parametro
     let dados       = req.body                      // Recebe os dados do body da requisição
     let contentType = req.headers['content-type']   // Recebe o ContentType do header da requisição
-    
-    let result      = await atualizarAdministrador(dados, id, contentType)
+
+    const administrador = await formatarJson(dados)
+    let foto_avatar = req.file
+
+    let result      = await atualizarAdministrador(administrador, id, foto_avatar, contentType)
+    res.status(result.status_code).json(result)
+})
+
+// endpoint para atualizar um administrador pelo token
+router.put('/me', upload.single('foto_avatar'), async (req,res) => {
+    let token = req.headers['x-access-token']
+    let dados = req.body
+    let contentType = req.headers['content-type']
+
+    const administrador = await formatarJson(dados)
+    let foto_avatar = req.file
+
+    let result = await editarAdministradorByToken(administrador, token, foto_avatar, contentType)
     res.status(result.status_code).json(result)
 })
 

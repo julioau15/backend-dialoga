@@ -11,13 +11,13 @@ const bcrypt = require('../../services/bcrypt.js')
 const { decodeJWT } = require('../../middleware/middlewareJWT.js')
 
 // inserir nova administrador
-const inserirNovaAdministrador = async (administrador, contentType) => {
+const inserirNovaAdministrador = async (administrador,foto_avatar, contentType) => {
     let message = JSON.parse(JSON.stringify(config_message))
     try {
         let validar = await validarDados(administrador, contentType)
         if(validar) return validar // 400 ou 415
 
-        administrador.senha_hash = await bcrypt.criarHash(administrador.senha_hash)
+        administrador.senha_hash = await bcrypt.criarHash(administrador.senha_provisoria)
 
         let result = await administradorDAO.insertAdministrador(administrador)
 
@@ -31,7 +31,7 @@ const inserirNovaAdministrador = async (administrador, contentType) => {
 }
 
 // atualizar administrador
-const atualizarAdministrador = async (administrador, id, contentType) => {
+const atualizarAdministrador = async (administrador, id, foto_avatar, contentType) => {
     let message = JSON.parse(JSON.stringify(config_message))
 
     try {
@@ -41,7 +41,7 @@ const atualizarAdministrador = async (administrador, id, contentType) => {
         let resultBuscarId = await buscarAdministrador(id)
         if(!resultBuscarId.status) return resultBuscarId // 400 e 404
 
-        administrador.senha_hash = await bcrypt.criarHash(administrador.senha_hash)
+        administrador.senha_hash = await bcrypt.criarHash(administrador?.senha_provisoria)
 
         administrador.id = Number(id)
         let result = await administradorDAO.updateAdministrador(administrador)
@@ -134,12 +134,38 @@ const buscarAdministradorByToken = async (token) => {
     return message.ERROR_INTERNAL_SERVER_CONTROLLER // 500
 }
 
+const editarAdministradorByToken = async (dados, token, foto_avatar, contentType) => {
+    let message = JSON.parse(JSON.stringify(config_message))
+
+    try {
+
+        let decodedToken = await decodeJWT(token)
+        if(!decodedToken.status) return message.ERROR_INVALID_TOKEN
+
+        let idAdministrador = decodedToken.decode.id
+
+        let resultBuscarId = await buscarAdministrador(idAdministrador)
+        if(!resultBuscarId.status) return resultBuscarId // 400 e 404
+
+        if(dados?.nova_senha != undefined && dados?.nova_senha != null){
+            dados.senha_hash = await bcrypt.criarHash(dados.nova_senha)
+        }
+
+        let resultEditar = await atualizarAdministrador(dados, idAdministrador, foto_avatar, contentType)
+        if(!resultEditar.status) return resultEditar // 400, 404, 415 ou 500
+
+        return resultEditar
+
+    } catch (error) {console.log(error)}
+    return message.ERROR_INTERNAL_SERVER_CONTROLLER // 500
+}
+
 const validarDados = async (administrador, contentType) => {
     let message = JSON.parse(JSON.stringify(config_message))
 
     // Valida se o formato de dados é JSON
     // Rejeita requisições com conteúdo incompatível
-    if(String(contentType).toLowerCase() != 'application/json') return message.ERROR_CONTENT_TYPE // Status code 415
+    if(String(contentType).toLowerCase() != 'application/json' && !String(contentType).toLowerCase().includes('multipart/form-data')) return message.ERROR_CONTENT_TYPE // Status code 415
 
     // Garante que o administrador foi informado como objeto
     if(administrador == undefined || administrador == null || typeof administrador != 'object'){
@@ -159,16 +185,10 @@ const validarDados = async (administrador, contentType) => {
         return message.ERROR_BAD_REQUEST
     }
 
-    // Valida papel obrigatório
-    if(typeof administrador.papel != 'string' || administrador.papel.trim() == '' || administrador.papel.length > 20){
-        message.ERROR_BAD_REQUEST.field = '[PAPEL] INVÁLIDO'
-        return message.ERROR_BAD_REQUEST
-    }
-
-    // Valida senha hash opcional
-    if(administrador.senha_hash != undefined && administrador.senha_hash != null &&
-       (typeof administrador.senha_hash != 'string' || administrador.senha_hash.length > 255)){
-        message.ERROR_BAD_REQUEST.field = '[SENHA_HASH] INVÁLIDO'
+     // Valida nova senha
+    if(administrador?.nova_senha != undefined && administrador?.nova_senha != null &&
+       (typeof administrador?.nova_senha != 'string' || administrador?.nova_senha.length > 30)){
+        message.ERROR_BAD_REQUEST.field = '[NOVA_SENHA] INVÁLIDA'
         return message.ERROR_BAD_REQUEST
     }
 
@@ -190,14 +210,6 @@ const validarDados = async (administrador, contentType) => {
     if(administrador.senha_provisoria != undefined && administrador.senha_provisoria != null &&
        ![0, 1, true, false].includes(administrador.senha_provisoria)){
         message.ERROR_BAD_REQUEST.field = '[SENHA_PROVISORIA] INVÁLIDO'
-        return message.ERROR_BAD_REQUEST
-    }
-
-    // Valida data de criação obrigatória
-    if(administrador.data_criacao == undefined || administrador.data_criacao == null ||
-       (typeof administrador.data_criacao != 'string' && !(administrador.data_criacao instanceof Date)) ||
-       String(administrador.data_criacao).trim() == ''){
-        message.ERROR_BAD_REQUEST.field = '[DATA_CRIACAO] INVÁLIDO'
         return message.ERROR_BAD_REQUEST
     }
 
@@ -233,5 +245,6 @@ module.exports = {
     listarAdministrador,
     buscarAdministrador,
     excluirAdministrador,
-    buscarAdministradorByToken
+    buscarAdministradorByToken,
+    editarAdministradorByToken
 }

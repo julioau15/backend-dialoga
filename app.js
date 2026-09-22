@@ -9,6 +9,8 @@
 // - npm install
 // - npm run dev
 
+require('dotenv').config()
+
 // IMPORT das dependências para criar a API
 const express = require('express')
 const cors = require('cors')
@@ -88,7 +90,7 @@ app.use('/v1/dialoga/especialidades', cors(), verifyJWT, especialidadeRouter)
 app.use('/v1/dialoga/horarios-tratamento', cors(), verifyJWT, horarioTratamentoRouter)
 app.use('/v1/dialoga/notificacoes', cors(), verifyJWT, notificacaoRouter)
 app.use('/v1/dialoga/opcoes-pergunta', cors(), verifyJWT, opcaoPerguntaRouter)
-app.use('/v1/dialoga/pacientes', cors(), pacienteRouter)
+app.use('/v1/dialoga/pacientes', cors(), verifyJWT, pacienteRouter)
 app.use('/v1/dialoga/perguntas', cors(), verifyJWT, perguntaRouter)
 app.use('/v1/dialoga/preferencias-notificacao', cors(), verifyJWT, preferenciaNotificacaoRouter)
 app.use('/v1/dialoga/profissionais', cors(), verifyJWT, profissionalRouter)

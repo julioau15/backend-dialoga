@@ -13,18 +13,15 @@ const knexConex = knex(knexConfig.development)
 // insert de administrador
 const insertAdministrador = async (administrador) => {
     let sql = `INSERT INTO tbl_administrador (nome_completo, email, senha_hash, senha_provisoria, celular, foto_avatar, papel, data_criacao)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+               VALUES (?, ?, ?, 1, ?, ?, 'admin', date_format(now(), '%Y-%m-%d %H:%i:%s'))`
 
     try {
         let response = await knexConex.raw(sql, [
             administrador.nome_completo,
             administrador.email,
             administrador.senha_hash,
-            administrador.senha_provisoria,
-            administrador.celular,
-            administrador.foto_avatar,
-            administrador.papel,
-            administrador.data_criacao
+            administrador.celular || null,
+            administrador.foto_avatar || null
         ])
 
         if(response) return response[0].insertId 
@@ -38,24 +35,17 @@ const insertAdministrador = async (administrador) => {
 const updateAdministrador = async (administrador) => {
     let sql = `UPDATE tbl_administrador
                SET nome_completo = ?,
-                   email = ?,
                    senha_hash = ?,
-                   senha_provisoria = ?,
                    celular = ?,
                    foto_avatar = ?,
-                   papel = ?,
-                   data_criacao = ?
+                   senha_provisoria = 0
                WHERE id = ?`
     try {
         let response = await knexConex.raw(sql, [
             administrador.nome_completo,
-            administrador.email,
             administrador.senha_hash,
-            administrador.senha_provisoria,
-            administrador.celular,
-            administrador.foto_avatar,
-            administrador.papel,
-            administrador.data_criacao,
+            administrador.celular || null,
+            administrador.foto_avatar || null,
             administrador.id
         ])
 

@@ -11,13 +11,13 @@ const bycrypt = require('../../services/bcrypt.js')
 const { decodeJWT } = require('../../middleware/middlewareJWT.js')
 
 // inserir nova paciente
-const inserirNovaPaciente = async (paciente, contentType) => {
+const inserirNovaPaciente = async (paciente,foto_avatar, contentType) => {
     let message = JSON.parse(JSON.stringify(config_message))
     try {
         let validar = await validarDados(paciente, contentType)
         if(validar) return validar // 400 ou 415
 
-        paciente.senha_hash = await bycrypt.criarHash(paciente.senha_hash)
+        paciente.senha_hash = await bycrypt.criarHash(paciente.senha)
 
         let result = await pacienteDAO.insertPaciente(paciente)
 
@@ -31,7 +31,7 @@ const inserirNovaPaciente = async (paciente, contentType) => {
 }
 
 // atualizar paciente
-const atualizarPaciente = async (paciente, id, contentType) => {
+const atualizarPaciente = async (paciente, id, foto_avatar, contentType) => {
     let message = JSON.parse(JSON.stringify(config_message))
 
     try {
@@ -40,8 +40,6 @@ const atualizarPaciente = async (paciente, id, contentType) => {
 
         let resultBuscarId = await buscarPaciente(id)
         if(!resultBuscarId.status) return resultBuscarId // 400 e 404
-
-        paciente.senha_hash = await bycrypt.criarHash(paciente.senha_hash)
 
         paciente.id = Number(id)
         let result = await pacienteDAO.updatePaciente(paciente)
@@ -132,12 +130,28 @@ const buscarPacienteByToken = async (token) => {
     return message.ERROR_INTERNAL_SERVER_CONTROLLER // 500
 }
 
+const editarPacienteByToken = async (paciente, token, foto_avatar, contentType) => {
+    let message = JSON.parse(JSON.stringify(config_message))
+
+    try {
+        let decodedToken = await decodeJWT(token)
+        if(!decodedToken.status) return message.ERROR_INVALID_TOKEN // 401
+
+        let idPaciente = decodedToken.decode.id
+        let resultEditar = await atualizarPaciente(paciente, idPaciente, foto_avatar, contentType)
+
+        return resultEditar // 200 ou 400 ou 404
+
+    } catch (error) {console.log(error)}
+    return message.ERROR_INTERNAL_SERVER_CONTROLLER // 500
+}
+
 const validarDados = async (paciente, contentType) => {
     let message = JSON.parse(JSON.stringify(config_message))
 
     // Valida se o formato de dados é JSON
     // Valida o formato da requisição
-    if(String(contentType).toLowerCase() != 'application/json') return message.ERROR_CONTENT_TYPE // Status code 415
+    if(String(contentType).toLowerCase() != 'application/json' && !String(contentType).toLowerCase().includes('multipart/form-data')) return message.ERROR_CONTENT_TYPE // Status code 415
 
     // Garante que o objeto foi informado
     if(paciente == undefined || paciente == null || typeof paciente != 'object'){
@@ -165,17 +179,17 @@ const validarDados = async (paciente, contentType) => {
         return message.ERROR_BAD_REQUEST // 400
     }
 
-    // Valida o e-mail opcional
-    if(paciente.email != undefined && paciente.email != null &&
+    // Valida o e-mail
+    if(paciente.email != undefined || paciente.email != null ||
        (typeof paciente.email != 'string' || paciente.email.length > 150)){
         message.ERROR_BAD_REQUEST.field = '[EMAIL] INVÁLIDO'
         return message.ERROR_BAD_REQUEST // 400
     }
 
-    // Valida a senha hash opcional
-    if(paciente.senha_hash != undefined && paciente.senha_hash != null &&
-       (typeof paciente.senha_hash != 'string' || paciente.senha_hash.length > 30)){
-        message.ERROR_BAD_REQUEST.field = '[SENHA_HASH] INVÁLIDO'
+    // Valida a senha 
+    if(paciente.senha != undefined || paciente.senha != null ||
+       (typeof paciente.senha != 'string' || paciente.senha.length > 30)){
+        message.ERROR_BAD_REQUEST.field = '[SENHA] INVÁLIDO'
         return message.ERROR_BAD_REQUEST // 400
     }
 
@@ -186,33 +200,9 @@ const validarDados = async (paciente, contentType) => {
         return message.ERROR_BAD_REQUEST // 400
     }
 
-    // Valida o indicador de início dos registros
-    if(![0, 1, true, false].includes(paciente.deseja_iniciar_registros)){
-        message.ERROR_BAD_REQUEST.field = '[DESEJA_INICIAR_REGISTROS] INVÁLIDO'
-        return message.ERROR_BAD_REQUEST // 400
-    }
-
-    // Valida o indicador do primeiro acesso
-    if(![0, 1, true, false].includes(paciente.primeiro_acesso_concluido)){
-        message.ERROR_BAD_REQUEST.field = '[PRIMEIRO_ACESSO_CONCLUIDO] INVÁLIDO'
-        return message.ERROR_BAD_REQUEST // 400
-    }
-
-    // Valida o status da atividade
-    if(typeof paciente.status_atividade != 'string' || paciente.status_atividade.trim() == '' || paciente.status_atividade.length > 20){
-        message.ERROR_BAD_REQUEST.field = '[STATUS_ATIVIDADE] INVÁLIDO'
-        return message.ERROR_BAD_REQUEST // 400
-    }
-
     // Valida a data de nascimento opcional
     if(paciente.data_nascimento != undefined && paciente.data_nascimento != null && String(paciente.data_nascimento).trim() == ''){
         message.ERROR_BAD_REQUEST.field = '[DATA_NASCIMENTO] INVÁLIDO'
-        return message.ERROR_BAD_REQUEST // 400
-    }
-
-    // Valida a data de criação opcional
-    if(paciente.criado_em != undefined && paciente.criado_em != null && String(paciente.criado_em).trim() == ''){
-        message.ERROR_BAD_REQUEST.field = '[CRIADO_EM] INVÁLIDO'
         return message.ERROR_BAD_REQUEST // 400
     }
 
@@ -247,5 +237,6 @@ module.exports = {
     listarPaciente,
     buscarPaciente,
     excluirPaciente,
-    buscarPacienteByToken
+    buscarPacienteByToken,
+    editarPacienteByToken
 }

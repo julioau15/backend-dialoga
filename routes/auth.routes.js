@@ -19,7 +19,6 @@ const bodyParserJSON = bodyParser.json()
 const {
     autenticarUsuario,
     autenticarUsuarioGoogle,
-    deslogarUsuario,
     solicitarRecuperarSenhaUsuario,
     validarCodigoUsuario,
     redefinirSenhaUsuario
@@ -41,16 +40,6 @@ router.post('/login', bodyParserJSON, async (req,res) => {
     let contentType = req.headers['content-type']
 
     let result = await autenticarUsuario(dados, contentType)
-
-    res.status(result.status_code).json(result)
-})
-
-// endpoint para deslogar usuario
-router.post('/logout', bodyParserJSON, async (req,res) => {
-    let dados = req.body
-    let contentType = req.headers['content-type']
-
-    let result = await deslogarUsuario(dados, contentType)
 
     res.status(result.status_code).json(result)
 })

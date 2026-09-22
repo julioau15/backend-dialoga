@@ -12,22 +12,16 @@ const knexConex = knex(knexConfig.development)
 
 // insert de paciente
 const insertPaciente = async (paciente) => {
-    let sql = `INSERT INTO tbl_paciente (nome_completo, apelido, data_nascimento, celular, email, senha_hash, foto_avatar, deseja_iniciar_registros, primeiro_acesso_concluido, status_atividade, criado_em)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    let sql = `INSERT INTO tbl_paciente (nome_completo, celular, email, senha_hash, foto_avatar, primeiro_acesso_concluido, status_atividade, criado_em)
+               VALUES (?, ?, ?, ?, ?, false, 1, date_format(now(), '%Y-%m-%d %H:%i:%s'))`
 
     try {
         let response = await knexConex.raw(sql, [
             paciente.nome_completo,
-            paciente.apelido,
-            paciente.data_nascimento,
-            paciente.celular,
+            paciente.celular || null,
             paciente.email,
             paciente.senha_hash,
-            paciente.foto_avatar,
-            paciente.deseja_iniciar_registros,
-            paciente.primeiro_acesso_concluido,
-            paciente.status_atividade,
-            paciente.criado_em
+            paciente.foto_avatar || null
         ])
 
         if(response) return response[0].insertId 
@@ -48,23 +42,18 @@ const updatePaciente = async (paciente) => {
                    senha_hash = ?,
                    foto_avatar = ?,
                    deseja_iniciar_registros = ?,
-                   primeiro_acesso_concluido = ?,
-                   status_atividade = ?,
-                   criado_em = ?
+                   primeiro_acesso_concluido = 1
                WHERE id = ?`
     try {
         let response = await knexConex.raw(sql, [
             paciente.nome_completo,
-            paciente.apelido,
-            paciente.data_nascimento,
-            paciente.celular,
+            paciente.apelido || null,
+            paciente.data_nascimento || null,
+            paciente.celular || null,
             paciente.email,
             paciente.senha_hash,
-            paciente.foto_avatar,
+            paciente.foto_avatar || null,
             paciente.deseja_iniciar_registros,
-            paciente.primeiro_acesso_concluido,
-            paciente.status_atividade,
-            paciente.criado_em,
             paciente.id
         ])
 

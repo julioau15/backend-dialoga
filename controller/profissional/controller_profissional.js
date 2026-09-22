@@ -11,13 +11,13 @@ const bcrypt = require('../../services/bcrypt.js')
 const { decodeJWT } = require('../../middleware/middlewareJWT.js')
 
 // inserir nova profissional
-const inserirNovaProfissional = async (profissional, contentType) => {
+const inserirNovaProfissional = async (profissional, foto_avatar, contentType) => {
     let message = JSON.parse(JSON.stringify(config_message))
     try {
         let validar = await validarDados(profissional, contentType)
         if(validar) return validar // 400 ou 415
 
-        profissional.senha_hash = await bcrypt.criarHash(profissional.senha_hash)
+        profissional.senha_hash = await bcrypt.criarHash(profissional.senha)
 
         let result = await profissionalDAO.insertProfissional(profissional)
 
@@ -31,7 +31,7 @@ const inserirNovaProfissional = async (profissional, contentType) => {
 }
 
 // atualizar profissional
-const atualizarProfissional = async (profissional, id, contentType) => {
+const atualizarProfissional = async (profissional, id, foto_avatar, contentType) => {
     let message = JSON.parse(JSON.stringify(config_message))
 
     try {
@@ -40,8 +40,6 @@ const atualizarProfissional = async (profissional, id, contentType) => {
 
         let resultBuscarId = await buscarProfissional(id)
         if(!resultBuscarId.status) return resultBuscarId // 400 e 404
-
-        profissional.senha_hash = await bcrypt.criarHash(profissional.senha_hash)
 
         profissional.id = Number(id)
         let result = await profissionalDAO.updateProfissional(profissional)
@@ -132,12 +130,38 @@ const buscarProfissionalByToken = async (token) => {
     return message.ERROR_INTERNAL_SERVER_CONTROLLER // 500
 }
 
+const editarProfissionalByToken = async (profissional, token, foto_avatar, contentType) => {
+    let message = JSON.parse(JSON.stringify(config_message))
+
+    try {
+
+        let decodedToken = await decodeJWT(token)
+        if(!decodedToken.status) return message.ERROR_INVALID_TOKEN // 401
+
+        let idProfissional = decodedToken.decode.id
+        let resultBuscarId = await buscarProfissional(idProfissional)
+        if(!resultBuscarId.status) return resultBuscarId // 400 e 404
+
+        let validar = await validarDados(profissional, contentType)
+        if(validar) return validar // 400 ou 415
+
+        profissional.id = Number(idProfissional)
+        let result = await profissionalDAO.updateProfissional(profissional)
+
+        if(!result) return message.ERROR_INTERNAL_SERVER_MODEL // 500
+
+        return await montarMensagem(message, message.SUCESS_UPDATE_ITEM, profissional)
+
+    } catch (error) {console.log(error)}
+    return message.ERROR_INTERNAL_SERVER_CONTROLLER // 500
+}
+
 const validarDados = async (profissional, contentType) => {
     let message = JSON.parse(JSON.stringify(config_message))
 
     // Valida se o formato de dados é JSON
     // Valida o formato da requisição
-    if(String(contentType).toLowerCase() != 'application/json') return message.ERROR_CONTENT_TYPE // Status code 415
+    if(String(contentType).toLowerCase() != 'application/json' && !String(contentType).toLowerCase().includes('multipart/form-data')) return message.ERROR_CONTENT_TYPE // Status code 415
 
     // Garante que o objeto foi informado
     if(profissional == undefined || profissional == null || typeof profissional != 'object'){
@@ -170,9 +194,9 @@ const validarDados = async (profissional, contentType) => {
     }
 
     // Valida a senha hash opcional
-    if(profissional.senha_hash != undefined && profissional.senha_hash != null &&
-       (typeof profissional.senha_hash != 'string' || profissional.senha_hash.length > 255)){
-        message.ERROR_BAD_REQUEST.field = '[SENHA_HASH] INVÁLIDO'
+    if(profissional.senha != undefined && profissional.senha != null &&
+       (typeof profissional.senha != 'string' || profissional.senha.length > 30)){
+        message.ERROR_BAD_REQUEST.field = '[SENHA] INVÁLIDO'
         return message.ERROR_BAD_REQUEST // 400
     }
 
@@ -193,12 +217,6 @@ const validarDados = async (profissional, contentType) => {
     // Valida o avatar opcional
     if(profissional.foto_avatar != undefined && profissional.foto_avatar != null && typeof profissional.foto_avatar != 'string'){
         message.ERROR_BAD_REQUEST.field = '[FOTO_AVATAR] INVÁLIDO'
-        return message.ERROR_BAD_REQUEST // 400
-    }
-
-    // Valida o papel
-    if(typeof profissional.papel != 'string' || profissional.papel.trim() == '' || profissional.papel.length > 20){
-        message.ERROR_BAD_REQUEST.field = '[PAPEL] INVÁLIDO'
         return message.ERROR_BAD_REQUEST // 400
     }
 
@@ -226,12 +244,12 @@ const montarMensagem = async (base,status,response = null) => {
     return base.DEFAULT_MESSAGE // 200 ou 201
 }
 
-
 module.exports = {
     inserirNovaProfissional,
     atualizarProfissional,
     listarProfissional,
     buscarProfissional,
     excluirProfissional,
-    buscarProfissionalByToken
+    buscarProfissionalByToken,
+    editarProfissionalByToken
 }

@@ -13,7 +13,7 @@ const knexConex = knex(knexConfig.development)
 // insert de profissional
 const insertProfissional = async (profissional) => {
     let sql = `INSERT INTO tbl_profissional (nome_completo, email, cpf, crp, senha_hash, celular, instituicao_clinica, foto_avatar, papel)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'profissional')`
 
     try {
         let response = await knexConex.raw(sql, [
@@ -22,10 +22,9 @@ const insertProfissional = async (profissional) => {
             profissional.cpf,
             profissional.crp,
             profissional.senha_hash,
-            profissional.celular,
-            profissional.instituicao_clinica,
-            profissional.foto_avatar,
-            profissional.papel
+            profissional.celular || null,
+            profissional.instituicao_clinica || null,
+            profissional.foto_avatar || null
         ])
 
         if(response) return response[0].insertId 
@@ -39,26 +38,14 @@ const insertProfissional = async (profissional) => {
 const updateProfissional = async (profissional) => {
     let sql = `UPDATE tbl_profissional
                SET nome_completo = ?,
-                   email = ?,
-                   cpf = ?,
-                   crp = ?,
-                   senha_hash = ?,
                    celular = ?,
-                   instituicao_clinica = ?,
                    foto_avatar = ?,
-                   papel = ?
                WHERE id = ?`
     try {
         let response = await knexConex.raw(sql, [
             profissional.nome_completo,
-            profissional.email,
-            profissional.cpf,
-            profissional.crp,
-            profissional.senha_hash,
-            profissional.celular,
-            profissional.instituicao_clinica,
-            profissional.foto_avatar,
-            profissional.papel,
+            profissional.celular || null,
+            profissional.foto_avatar || null,
             profissional.id
         ])
 
