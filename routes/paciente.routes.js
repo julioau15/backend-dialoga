@@ -27,10 +27,10 @@ const {
 
 const formatarJson = async (dados) => {
     const paciente = {
-        nome_completo     : dados.nome_completo,
-        email             : dados.email,
-        celular           : dados.celular,
-        senha             : dados.senha
+        nome_completo     : String(dados.nome_completo),
+        email             : String(dados.email),
+        celular           : String(dados.celular),
+        senha             : String(dados.senha)
     }
 
     return paciente

@@ -9,17 +9,11 @@ const config_message = require('../module/configMessages.js')
 const authDAO = require('../../model/DAO/auth/auth.js')
 const jwt = require('../../middleware/middlewareJWT.js')
 const bcrypt = require('../../services/bcrypt.js')
-const controllerProfissional = require('../profissional/controller_profissional.js')
-const controllerPaciente = require('../paciente/controller_paciente.js')
-const controllerAdministrador = require('../administrador/controller_administrador.js')
 
 // autenticar usuário
 const autenticarUsuario = async (usuario, contentType) => {
 
     let message = JSON.parse(JSON.stringify(config_message))
-    const administrador = 0
-    const profissional = 1
-    const paciente = 2
 
     try {
 
@@ -27,15 +21,8 @@ const autenticarUsuario = async (usuario, contentType) => {
         const validarUsuario = await validarDados(usuario, contentType)
         if (validarUsuario) return validarUsuario
 
-        // define qual função no DAO será chamada de acordo com o tipo de usuário
-        let dadosUsuario =
-            usuario.nivel == administrador ?
-                await authDAO.selectAuthAministrador(usuario) :
-            usuario.nivel == profissional ?
-                await authDAO.selectAuthProfissional(usuario) :
-            usuario.nivel == paciente ?
-                await authDAO.selectAuthPaciente(usuario) :
-            null
+        // procura o usuário no banco de dados
+        let dadosUsuario = await authDAO.selectAuthUsuario(usuario)
 
         // verifica se o usuário foi encontrado
         if (!dadosUsuario || dadosUsuario.length < 1)
@@ -99,12 +86,6 @@ const validarDados = async (usuario, contentType) => {
     // Valida a senha de acesso
     if(typeof(usuario.senha) != 'string' || usuario.senha.trim() == '' || usuario.senha.length > 30){
         message.ERROR_BAD_REQUEST.field = '[SENHA] INVÁLIDO'
-        return message.ERROR_BAD_REQUEST // 400
-    }
-
-    // Valida o tipo de usuário
-    if(typeof(usuario.nivel) != 'number' || String(usuario.nivel).length > 1){
-        message.ERROR_BAD_REQUEST.field = '[NIVEL] INVÁLIDO'
         return message.ERROR_BAD_REQUEST // 400
     }
 

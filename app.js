@@ -77,6 +77,7 @@ const tarefaDestinatarioRouter = require('./routes/tarefa_destinatario.routes.js
 const tratamentoRouter = require('./routes/tratamento.routes.js')
 const vinculoRouter = require('./routes/vinculo.routes.js')
 const authRouter = require('./routes/auth.routes.js')
+const usuarioRouter = require('./routes/usuario.routes.js')
 
 // Rotas da API
 app.use('/v1/dialoga/aprovacoes-profissionais', cors(), verifyJWT, administradorProfissionalRouter)
@@ -104,6 +105,7 @@ app.use('/v1/dialoga/tarefas-destinatario', cors(), verifyJWT, tarefaDestinatari
 app.use('/v1/dialoga/tratamentos', cors(), verifyJWT, tratamentoRouter)
 app.use('/v1/dialoga/vinculos', cors(), verifyJWT, vinculoRouter)
 app.use('/v1/dialoga/auth', cors(), authRouter)
+app.use('/v1/dialoga/usuarios', cors(), verifyJWT, usuarioRouter)
 
 // inicializar a API para receber requisições
 app.listen(port, () => {

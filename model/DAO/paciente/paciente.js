@@ -12,16 +12,15 @@ const knexConex = knex(knexConfig.development)
 
 // insert de paciente
 const insertPaciente = async (paciente) => {
-    let sql = `INSERT INTO tbl_paciente (nome_completo, celular, email, senha_hash, foto_avatar, primeiro_acesso_concluido, status_atividade, criado_em)
-               VALUES (?, ?, ?, ?, ?, false, 1, date_format(now(), '%Y-%m-%d %H:%i:%s'))`
+    let sql = `INSERT INTO tbl_paciente (nome_completo, celular,foto_avatar, primeiro_acesso_concluido, status_atividade, id_usuario)
+               VALUES (?, ?, ?, 0, 1, ?)`
 
     try {
         let response = await knexConex.raw(sql, [
             paciente.nome_completo,
             paciente.celular || null,
-            paciente.email,
-            paciente.senha_hash,
-            paciente.foto_avatar || null
+            paciente.foto_avatar || null,
+            paciente.id_usuario
         ])
 
         if(response) return response[0].insertId 
@@ -38,8 +37,6 @@ const updatePaciente = async (paciente) => {
                    apelido = ?,
                    data_nascimento = ?,
                    celular = ?,
-                   email = ?,
-                   senha_hash = ?,
                    foto_avatar = ?,
                    deseja_iniciar_registros = ?,
                    primeiro_acesso_concluido = 1
@@ -50,8 +47,6 @@ const updatePaciente = async (paciente) => {
             paciente.apelido || null,
             paciente.data_nascimento || null,
             paciente.celular || null,
-            paciente.email,
-            paciente.senha_hash,
             paciente.foto_avatar || null,
             paciente.deseja_iniciar_registros,
             paciente.id
@@ -72,13 +67,11 @@ const selectAllPaciente = async () => {
                    apelido,
                    data_nascimento,
                    celular,
-                   email,
-                   senha_hash,
                    foto_avatar,
                    deseja_iniciar_registros,
                    primeiro_acesso_concluido,
                    status_atividade,
-                   criado_em
+                   id_usuario
                FROM tbl_paciente
                ORDER BY id DESC`
     try {
@@ -100,13 +93,11 @@ const selectByIdPaciente = async (id) => {
                    apelido,
                    data_nascimento,
                    celular,
-                   email,
-                   senha_hash,
                    foto_avatar,
                    deseja_iniciar_registros,
                    primeiro_acesso_concluido,
                    status_atividade,
-                   criado_em
+                   id_usuario
                FROM tbl_paciente
                WHERE id = ?`
     try {

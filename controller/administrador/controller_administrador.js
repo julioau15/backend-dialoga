@@ -7,6 +7,7 @@
 
 const config_message = require('../module/configMessages.js')
 const administradorDAO = require('../../model/DAO/administrador/administrador.js')
+const usuarioController = require('../usuario/controller_usuario.js')
 const bcrypt = require('../../services/bcrypt.js')
 const { decodeJWT } = require('../../middleware/middlewareJWT.js')
 
@@ -17,7 +18,13 @@ const inserirNovaAdministrador = async (administrador,foto_avatar, contentType) 
         let validar = await validarDados(administrador, contentType)
         if(validar) return validar // 400 ou 415
 
-        administrador.senha_hash = await bcrypt.criarHash(administrador.senha_provisoria)
+        administrador.senha_hash = await bcrypt.criarHash(administrador.senha)
+        administrador.nivel = 0 // define o nivel do usuario como administrador
+
+        let resultUsuario = await usuarioController.inserirNovaUsuario(administrador, contentType)
+        if(!resultUsuario.status) return resultUsuario // 400, 404, 415 ou 500
+
+        administrador.id_usuario = resultUsuario.response.usuario.id
 
         let result = await administradorDAO.insertAdministrador(administrador)
 
@@ -41,7 +48,7 @@ const atualizarAdministrador = async (administrador, id, foto_avatar, contentTyp
         let resultBuscarId = await buscarAdministrador(id)
         if(!resultBuscarId.status) return resultBuscarId // 400 e 404
 
-        administrador.senha_hash = await bcrypt.criarHash(administrador?.senha_provisoria)
+        administrador.senha_hash = await bcrypt.criarHash(administrador?.senha)
 
         administrador.id = Number(id)
         let result = await administradorDAO.updateAdministrador(administrador)
@@ -138,6 +145,8 @@ const editarAdministradorByToken = async (dados, token, foto_avatar, contentType
     let message = JSON.parse(JSON.stringify(config_message))
 
     try {
+        // valida se o usuario deseja editar a senha 
+        let resultEditarSenha = false
 
         let decodedToken = await decodeJWT(token)
         if(!decodedToken.status) return message.ERROR_INVALID_TOKEN
@@ -147,12 +156,26 @@ const editarAdministradorByToken = async (dados, token, foto_avatar, contentType
         let resultBuscarId = await buscarAdministrador(idAdministrador)
         if(!resultBuscarId.status) return resultBuscarId // 400 e 404
 
+        // caso a senha for valida, cria o hash e atualiza a senha do usuario
         if(dados?.nova_senha != undefined && dados?.nova_senha != null){
             dados.senha_hash = await bcrypt.criarHash(dados.nova_senha)
+
+            resultEditarSenha = await usuarioController.atualizarUsuario(dados, resultBuscarId.response.administrador[0].id_usuario, contentType)
+            if(!resultEditarSenha.status) return resultEditarSenha // 400, 404, 415 ou 500
         }
 
         let resultEditar = await atualizarAdministrador(dados, idAdministrador, foto_avatar, contentType)
         if(!resultEditar.status) return resultEditar // 400, 404, 415 ou 500
+
+        // caso a senha não for editada, retorna apenas o administrador editado
+        if(resultEditarSenha.status && resultEditar.status) 
+            return await montarMensagem(
+                message, 
+                message.SUCESS_UPDATE_ITEM,
+                {
+                    administrador: resultEditar.response.administrador[0], 
+                    usuario: resultEditarSenha.response.usuario[0]
+                })
 
         return resultEditar
 
@@ -180,7 +203,7 @@ const validarDados = async (administrador, contentType) => {
     }
 
     // Valida e-mail obrigatório
-    if(typeof administrador.email != 'string' || administrador.email.trim() == '' || administrador.email.length > 150){
+    if(administrador.email.trim() == '' || administrador.email.length > 150){
         message.ERROR_BAD_REQUEST.field = '[EMAIL] INVÁLIDO'
         return message.ERROR_BAD_REQUEST
     }
@@ -206,10 +229,10 @@ const validarDados = async (administrador, contentType) => {
         return message.ERROR_BAD_REQUEST
     }
 
-    // Valida flag de senha provisória
-    if(administrador.senha_provisoria != undefined && administrador.senha_provisoria != null &&
-       ![0, 1, true, false].includes(administrador.senha_provisoria)){
-        message.ERROR_BAD_REQUEST.field = '[SENHA_PROVISORIA] INVÁLIDO'
+    // Valida nova senha
+    if(administrador?.senha != undefined && administrador?.senha != null &&
+       (typeof administrador?.senha != 'string' || administrador?.senha.length > 30)){
+        message.ERROR_BAD_REQUEST.field = '[senha] INVÁLIDA'
         return message.ERROR_BAD_REQUEST
     }
 

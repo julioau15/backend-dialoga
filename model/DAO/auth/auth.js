@@ -9,62 +9,16 @@ const knex = require('knex')
 const knexConfig = require('../../database_config_knex/knexFile.js')
 const knexConex = knex(knexConfig.development)
 
-// valida o usuario adm
-const selectAuthAdministrador = async (usuario) => {
+// valida o usuario
+const selectAuthUsuario = async (usuario) => {
 
     let sql = `SELECT
                    id,
-                   nome_completo,
                    email,
                    senha_hash,
-                   senha_provisoria,
-                   celular,
-                   foto_avatar,
-                   papel,
-                   data_criacao
-               FROM tbl_administrador
-               WHERE email = ?`
-
-    let response = await knexConex.raw(sql, [usuario.email])
-
-    if(response)
-        return response[0]
-
-    return false
-}
-
-// valida o usuario profissional
-const selectAuthProfissional = async (usuario) => {
-
-    let sql = `SELECT
-                   id,
-                   nome_completo,
-                   email,
-                   cpf,
-                   crp,
-                   senha_hash,
-                   celular,
-                   instituicao_clinica,
-                   foto_avatar,
-                   papel
-               FROM tbl_profissional
-               WHERE email = ?`
-
-    let response = await knexConex.raw(sql, [usuario.email])
-
-    if(response)
-        return response[0]
-
-    return false
-}
-
-// valida o usuario paciente
-const selectAuthPaciente = async (usuario) => {
-    console.log('usuario', usuario)
-
-    let sql = `SELECT
-                   *
-               FROM tbl_paciente
+                   data_criacao,
+                   nivel
+               FROM tbl_usuario
                WHERE email = ?`
 
     let response = await knexConex.raw(sql, [usuario.email])
@@ -76,7 +30,5 @@ const selectAuthPaciente = async (usuario) => {
 }
 
 module.exports = {
-    selectAuthAdministrador,
-    selectAuthProfissional,
-    selectAuthPaciente
+    selectAuthUsuario
 }

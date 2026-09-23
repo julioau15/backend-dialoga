@@ -7,6 +7,7 @@
 
 const config_message = require('../module/configMessages.js')
 const pacienteDAO = require('../../model/DAO/paciente/paciente.js')
+const usuarioController = require('../usuario/controller_usuario.js')
 const bycrypt = require('../../services/bcrypt.js')
 const { decodeJWT } = require('../../middleware/middlewareJWT.js')
 
@@ -18,6 +19,12 @@ const inserirNovaPaciente = async (paciente,foto_avatar, contentType) => {
         if(validar) return validar // 400 ou 415
 
         paciente.senha_hash = await bycrypt.criarHash(paciente.senha)
+        paciente.nivel = 2 // define o nivel do usuario como paciente
+
+        let resultUsuario = await usuarioController.inserirNovaUsuario(paciente, contentType)
+        if(!resultUsuario.status) return resultUsuario
+
+        paciente.id_usuario = resultUsuario.response.usuario.id
 
         let result = await pacienteDAO.insertPaciente(paciente)
 
@@ -180,14 +187,14 @@ const validarDados = async (paciente, contentType) => {
     }
 
     // Valida o e-mail
-    if(paciente.email != undefined || paciente.email != null ||
-       (typeof paciente.email != 'string' || paciente.email.length > 150)){
+    if(paciente.email == undefined || paciente.email == null ||
+       paciente.email.length > 150){
         message.ERROR_BAD_REQUEST.field = '[EMAIL] INVÁLIDO'
         return message.ERROR_BAD_REQUEST // 400
     }
 
     // Valida a senha 
-    if(paciente.senha != undefined || paciente.senha != null ||
+    if(paciente.senha == undefined || paciente.senha == null ||
        (typeof paciente.senha != 'string' || paciente.senha.length > 30)){
         message.ERROR_BAD_REQUEST.field = '[SENHA] INVÁLIDO'
         return message.ERROR_BAD_REQUEST // 400

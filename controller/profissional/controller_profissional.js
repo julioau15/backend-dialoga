@@ -7,6 +7,7 @@
 
 const config_message = require('../module/configMessages.js')
 const profissionalDAO = require('../../model/DAO/profissional/profissional.js')
+const usuarioController = require('../usuario/controller_usuario.js')
 const bcrypt = require('../../services/bcrypt.js')
 const { decodeJWT } = require('../../middleware/middlewareJWT.js')
 
@@ -18,6 +19,12 @@ const inserirNovaProfissional = async (profissional, foto_avatar, contentType) =
         if(validar) return validar // 400 ou 415
 
         profissional.senha_hash = await bcrypt.criarHash(profissional.senha)
+        profissional.nivel = 1 // define o nivel do usuario como profissional
+
+        let resultUsuario = await usuarioController.inserirNovaUsuario(profissional, contentType)
+        if(!resultUsuario.status) return resultUsuario
+
+        profissional.id_usuario = resultUsuario.response.usuario.id
 
         let result = await profissionalDAO.insertProfissional(profissional)
 
@@ -172,12 +179,6 @@ const validarDados = async (profissional, contentType) => {
     // Valida o nome completo
     if(typeof profissional.nome_completo != 'string' || profissional.nome_completo.trim() == '' || profissional.nome_completo.length > 150){
         message.ERROR_BAD_REQUEST.field = '[NOME_COMPLETO] INVÁLIDO'
-        return message.ERROR_BAD_REQUEST // 400
-    }
-
-    // Valida o e-mail
-    if(typeof profissional.email != 'string' || profissional.email.trim() == '' || profissional.email.length > 150){
-        message.ERROR_BAD_REQUEST.field = '[EMAIL] INVÁLIDO'
         return message.ERROR_BAD_REQUEST // 400
     }
 
