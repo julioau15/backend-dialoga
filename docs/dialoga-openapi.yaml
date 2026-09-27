@@ -148,44 +148,6 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
       security: []
-  /auth/logout:
-    post:
-      summary: Encerrar sessão
-      description: 'Requisitos relacionados: RF20, RF64, RF152, RF213'
-      tags:
-      - Autenticação
-      responses:
-        '200':
-          description: Sessão encerrada
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  status:
-                    type: boolean
-                    example: true
-                  status_code:
-                    type: integer
-                    example: 200
-                  message:
-                    type: string
-                    example: Sessão encerrada
-                  response:
-                    type: object
-                    nullable: true
-                    example: {}
-                required:
-                - status
-                - status_code
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
   /auth/recuperar-senha/solicitar:
     post:
       summary: Solicitar código de recuperação de senha
@@ -4162,10 +4124,6 @@ components:
         foto_avatar:
           type: string
           nullable: true
-        papel:
-          type: string
-          maxLength: 20
-          example: Admin
         data_criacao:
           type: string
           format: date-time
@@ -4178,6 +4136,7 @@ components:
         email:
           type: string
           format: email
+          maxLength: 150
         celular:
           type: string
           maxLength: 20
@@ -4187,13 +4146,18 @@ components:
           format: binary
           nullable: true
           description: Arquivo de imagem do avatar (multipart/form-data).
-        senha_provisoria:
+        senha:
           type: string
-          description: Enviada por e-mail junto às instruções de acesso (RF07).
+          format: password
+          minLength: 6
+          maxLength: 255
+          description: Senha provisória gerada e enviada por e-mail junto às instruções de acesso (RF07).
+            É salva como hash em tbl_usuario; tbl_administrador.senha_provisoria é apenas o flag que marca
+            que essa senha ainda precisa ser trocada.
       required:
       - nome_completo
       - email
-      - senha_provisoria
+      - senha
     AdministradorAtualizarRequest:
       type: object
       properties:
@@ -4266,8 +4230,6 @@ components:
         foto_avatar:
           type: string
           nullable: true
-        deseja_iniciar_registros:
-          type: boolean
         primeiro_acesso_concluido:
           type: boolean
         status_atividade:
@@ -4297,7 +4259,7 @@ components:
         nome_completo:
           type: string
           minLength: 3
-          maxLength: 255
+          maxLength: 150
         celular:
           type: string
           pattern: ^[0-9]{11}$
@@ -4305,7 +4267,7 @@ components:
           type: string
           format: email
           minLength: 10
-          maxLength: 255
+          maxLength: 150
         senha:
           type: string
           format: password
@@ -4334,13 +4296,6 @@ components:
           type: string
           format: date
           nullable: true
-        deseja_iniciar_registros:
-          type: boolean
-        possui_profissional_vinculado:
-          type: boolean
-      required:
-      - deseja_iniciar_registros
-      - possui_profissional_vinculado
     PacienteAtualizarRequest:
       type: object
       properties:
@@ -4416,13 +4371,14 @@ components:
         nome_completo:
           type: string
           minLength: 3
-          maxLength: 255
+          maxLength: 150
         celular:
           type: string
           pattern: ^[0-9]{11}$
         email:
           type: string
           format: email
+          maxLength: 150
         senha:
           type: string
           format: password
@@ -4434,7 +4390,7 @@ components:
         crp:
           type: string
           minLength: 6
-          maxLength: 12
+          maxLength: 20
         instituicao_clinica:
           type: string
           nullable: true
@@ -4791,6 +4747,7 @@ components:
       properties:
         categoria:
           type: string
+          maxLength: 30
           enum:
           - Sentimento
           - Energia
