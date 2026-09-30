@@ -26,11 +26,21 @@ const inserirNovaAdministrador = async (administrador,foto_avatar, contentType) 
 
         administrador.id_usuario = resultUsuario.response.usuario.id
 
+        delete administrador.senha 
+        delete administrador.senha_hash 
         let result = await administradorDAO.insertAdministrador(administrador)
 
         if(!result) return message.ERROR_INTERNAL_SERVER_MODEL
 
+        let resultbuscarUsuario = await usuarioController.buscarUsuario(administrador.id_usuario)
+
+        delete resultbuscarUsuario.response.usuario[0].senha
+        delete resultbuscarUsuario.response.usuario[0].senha_hash
+        delete administrador.id_usuario
+
         administrador.id = result
+        administrador.usuario = resultbuscarUsuario.response.usuario
+
         return await montarMensagem(message, message.SUCESS_CREATED_ITEM, administrador)
 
     } catch (error) {console.log(error)}
@@ -55,7 +65,8 @@ const atualizarAdministrador = async (administrador, id, foto_avatar, contentTyp
 
         if(!result) return message.ERROR_INTERNAL_SERVER_MODEL // 500
 
-        return await montarMensagem(message, message.SUCESS_UPDATE_ITEM, administrador)
+        resultBuscarId = await buscarAdministrador(id)
+        return resultBuscarId // 200 ou 400 ou 404
 
     } catch (error) {console.log(error)}
     return message.ERROR_INTERNAL_SERVER_CONTROLLER // 500
@@ -72,6 +83,17 @@ const listarAdministrador = async () => {
 
         // verfica se o array é vazio
         if(result.length <= 0) return message.ERROR_NOT_FOUND // status_code 404
+
+        for (let administrador of result) {
+            let usuario = await usuarioController.buscarUsuario(administrador.id_usuario)
+
+            delete usuario.response.usuario[0].senha
+            delete usuario.response.usuario[0].senha_hash
+
+            if(usuario.status) {
+                administrador.usuario = usuario.response.usuario[0]
+            } 
+        }
 
         let listarAdministradorMessage = await montarMensagem(message, message.SUCESS_RESPONSE, result)
         message.DEFAULT_MESSAGE.response.count = result.length
@@ -96,6 +118,17 @@ const buscarAdministrador = async (id) => {
         if(!result) return message.ERROR_INTERNAL_SERVER_MODEL // 500
 
         if(result.length < 1) return config_message.ERROR_NOT_FOUND
+
+        for (let administrador of result) {
+            let usuario = await usuarioController.buscarUsuario(administrador.id_usuario)
+
+            delete usuario.response.usuario[0].senha
+            delete usuario.response.usuario[0].senha_hash
+
+            if(usuario.status) {
+                administrador.usuario = usuario.response.usuario[0]
+            } 
+        }
 
         return await montarMensagem(message, message.SUCESS_RESPONSE, result)
 
@@ -141,7 +174,7 @@ const buscarAdministradorByToken = async (token) => {
     return message.ERROR_INTERNAL_SERVER_CONTROLLER // 500
 }
 
-const editarAdministradorByToken = async (dados, token, foto_avatar, contentType) => {
+const editarAdministradorByToken = async (administrador, token, foto_avatar, contentType) => {
     let message = JSON.parse(JSON.stringify(config_message))
 
     try {
@@ -152,32 +185,39 @@ const editarAdministradorByToken = async (dados, token, foto_avatar, contentType
         if(!decodedToken.status) return message.ERROR_INVALID_TOKEN
 
         let idAdministrador = decodedToken.decode.id
+        administrador.email = decodedToken.decode.email
+
+        // caso a senha for valida, cria o hash e atualiza a senha do usuario
+        if(administrador?.senha != undefined && administrador?.senha != null){
+            administrador.senha_hash = await bcrypt.criarHash(administrador.senha)
+
+            resultEditarSenha = await usuarioController.atualizarUsuario(administrador, idAdministrador, contentType)
+            if(!resultEditarSenha.status) return resultEditarSenha // 400, 404, 415 ou 500
+        }
+
+        administrador.id = Number(idAdministrador)
+        let result = await administradorDAO.updateAdministrador(administrador)
+
+        if(!result) return message.ERROR_INTERNAL_SERVER_MODEL // 500
 
         let resultBuscarId = await buscarAdministrador(idAdministrador)
         if(!resultBuscarId.status) return resultBuscarId // 400 e 404
 
-        // caso a senha for valida, cria o hash e atualiza a senha do usuario
-        if(dados?.nova_senha != undefined && dados?.nova_senha != null){
-            dados.senha_hash = await bcrypt.criarHash(dados.nova_senha)
-
-            resultEditarSenha = await usuarioController.atualizarUsuario(dados, resultBuscarId.response.administrador[0].id_usuario, contentType)
-            if(!resultEditarSenha.status) return resultEditarSenha // 400, 404, 415 ou 500
-        }
-
-        let resultEditar = await atualizarAdministrador(dados, idAdministrador, foto_avatar, contentType)
-        if(!resultEditar.status) return resultEditar // 400, 404, 415 ou 500
+        delete resultEditarSenha.response.usuario.senha
+        delete resultEditarSenha.response.usuario.senha_hash
 
         // caso a senha não for editada, retorna apenas o administrador editado
-        if(resultEditarSenha.status && resultEditar.status) 
+        if(resultEditarSenha){
             return await montarMensagem(
                 message, 
                 message.SUCESS_UPDATE_ITEM,
                 {
-                    administrador: resultEditar.response.administrador[0], 
-                    usuario: resultEditarSenha.response.usuario[0]
+                    administrador: resultBuscarId.response.administrador[0], 
+                    usuario: resultEditarSenha.response.usuario
                 })
+        }
 
-        return resultEditar
+        return resultBuscarId
 
     } catch (error) {console.log(error)}
     return message.ERROR_INTERNAL_SERVER_CONTROLLER // 500
@@ -203,15 +243,8 @@ const validarDados = async (administrador, contentType) => {
     }
 
     // Valida e-mail obrigatório
-    if(administrador.email.trim() == '' || administrador.email.length > 150){
+    if(administrador.email == undefined || administrador.email == null || String(administrador.email).trim() == '' || String(administrador.email).length > 150){
         message.ERROR_BAD_REQUEST.field = '[EMAIL] INVÁLIDO'
-        return message.ERROR_BAD_REQUEST
-    }
-
-     // Valida nova senha
-    if(administrador?.nova_senha != undefined && administrador?.nova_senha != null &&
-       (typeof administrador?.nova_senha != 'string' || administrador?.nova_senha.length > 30)){
-        message.ERROR_BAD_REQUEST.field = '[NOVA_SENHA] INVÁLIDA'
         return message.ERROR_BAD_REQUEST
     }
 

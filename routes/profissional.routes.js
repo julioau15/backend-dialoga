@@ -25,8 +25,8 @@ const {
     editarProfissionalByToken
 } = require('../controller/profissional/controller_profissional.js')
 
-const formatarJson = async (dados) => {
-    const profissional = {
+const formatarJson = async (dados, acao) => {
+    const profissionalInserir = {
         nome_completo       : String(dados.nome_completo),
         celular             : String(dados.celular),
         email               : String(dados.email),
@@ -34,10 +34,18 @@ const formatarJson = async (dados) => {
         cpf                 : String(dados.cpf),
         crp                 : String(dados.crp),
         instituicao_clinica : String(dados.instituicao_clinica),
-        especialidade_ids   : dados.especialidade_ids
+        id_especialidade    : JSON.parse(dados.id_especialidade)
     }
 
-    return profissional
+     const profissionalEditar = {
+        nome_completo       : String(dados.nome_completo),
+        celular             : String(dados.celular),
+        id_especialidade    : JSON.parse(dados.id_especialidade)
+    }
+
+    if(acao == 'inserir') return profissionalInserir
+
+    return profissionalEditar
 }
 
 // ---------------- profissional -----------------
@@ -49,7 +57,7 @@ router.post('/',upload.single('foto_avatar'), async (req,res) => {
     let foto_avatar = req.file
     let contentType = req.headers['content-type']
 
-    const profissional = await formatarJson(dados)
+    const profissional = await formatarJson(dados, 'inserir')
 
     let result = await inserirNovaProfissional(profissional,foto_avatar,contentType)
     res.status(result.status_code).json(result)
@@ -75,19 +83,6 @@ router.get('/:id', async (req,res) => {
     res.status(result.status_code).json(result)
 })
 
-// endpoint para atualizar um profissional pelo id
-router.put('/:id', upload.single('foto_avatar'), async (req,res) => {
-    let id          = req.params.id                 // Recebe o id por parametro
-    let dados       = req.body                      // Recebe os dados do body da requisição
-    let contentType = req.headers['content-type']   // Recebe o ContentType do header da requisição
-    let foto_avatar = req.file
-
-    const profissional = await formatarJson(dados)
-
-    let result      = await atualizarProfissional(profissional, id, foto_avatar, contentType)
-    res.status(result.status_code).json(result)
-})
-
 // endpoint para atualizar um profissional pelo token
 router.put('/me', upload.single('foto_avatar'), async (req,res) => {
     let token = req.headers['x-access-token']
@@ -95,9 +90,22 @@ router.put('/me', upload.single('foto_avatar'), async (req,res) => {
     let contentType = req.headers['content-type']
     let foto_avatar = req.file
 
-    const profissional = await formatarJson(dados)
+    const profissional = await formatarJson(dados, 'editar')
 
     let result = await editarProfissionalByToken(profissional, token, foto_avatar, contentType)
+    res.status(result.status_code).json(result)
+})
+
+// endpoint para atualizar um profissional pelo id
+router.put('/:id', upload.single('foto_avatar'), async (req,res) => {
+    let id          = req.params.id                 // Recebe o id por parametro
+    let dados       = req.body                      // Recebe os dados do body da requisição
+    let contentType = req.headers['content-type']   // Recebe o ContentType do header da requisição
+    let foto_avatar = req.file
+
+    const profissional = await formatarJson(dados, 'editar')
+
+    let result      = await atualizarProfissional(profissional, id, foto_avatar, contentType)
     res.status(result.status_code).json(result)
 })
 

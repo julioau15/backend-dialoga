@@ -30,7 +30,17 @@ const inserirNovaPaciente = async (paciente,foto_avatar, contentType) => {
 
         if(!result) return message.ERROR_INTERNAL_SERVER_MODEL
 
+        let resultbuscarUsuario = await usuarioController.buscarUsuario(paciente.id_usuario)
+
+        delete resultbuscarUsuario.response.usuario[0].senha
+        delete resultbuscarUsuario.response.usuario[0].senha_hash
+        delete paciente.senha
+        delete paciente.senha_hash
+        delete paciente.id_usuario
+
         paciente.id = result
+        paciente.usuario = resultbuscarUsuario.response.usuario
+
         return await montarMensagem(message, message.SUCESS_CREATED_ITEM, paciente)
 
     } catch (error) {console.log(error)}
@@ -71,6 +81,17 @@ const listarPaciente = async () => {
         // verfica se o array é vazio
         if(result.length <= 0) return message.ERROR_NOT_FOUND // status_code 404
 
+        for (let paciente of result) {
+            let usuario = await usuarioController.buscarUsuario(paciente.id_usuario)
+
+            delete usuario.response.usuario[0].senha
+            delete usuario.response.usuario[0].senha_hash
+
+            if(usuario.status) {
+                paciente.usuario = usuario.response.usuario[0]
+            } 
+        }
+
         let listarPacienteMessage = await montarMensagem(message, message.SUCESS_RESPONSE, result)
         message.DEFAULT_MESSAGE.response.count = result.length
 
@@ -94,6 +115,17 @@ const buscarPaciente = async (id) => {
         if(!result) return message.ERROR_INTERNAL_SERVER_MODEL // 500
 
         if(result.length < 1) return config_message.ERROR_NOT_FOUND
+
+        for (let paciente of result) {
+            let usuario = await usuarioController.buscarUsuario(paciente.id_usuario)
+
+            delete usuario.response.usuario[0].senha
+            delete usuario.response.usuario[0].senha_hash
+
+            if(usuario.status) {
+                paciente.usuario = usuario.response.usuario[0]
+            } 
+        }
 
         return await montarMensagem(message, message.SUCESS_RESPONSE, result)
 
@@ -145,9 +177,15 @@ const editarPacienteByToken = async (paciente, token, foto_avatar, contentType) 
         if(!decodedToken.status) return message.ERROR_INVALID_TOKEN // 401
 
         let idPaciente = decodedToken.decode.id
-        let resultEditar = await atualizarPaciente(paciente, idPaciente, foto_avatar, contentType)
+        paciente.id = Number(idPaciente)
 
-        return resultEditar // 200 ou 400 ou 404
+        let result = await pacienteDAO.updatePaciente(paciente)
+
+        if(!result) return message.ERROR_INTERNAL_SERVER_MODEL // 500
+
+        let resultBuscarId = await buscarPaciente(idPaciente)
+        
+        return resultBuscarId // 200 ou 400 ou 404
 
     } catch (error) {console.log(error)}
     return message.ERROR_INTERNAL_SERVER_CONTROLLER // 500

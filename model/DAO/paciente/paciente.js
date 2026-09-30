@@ -38,7 +38,6 @@ const updatePaciente = async (paciente) => {
                    data_nascimento = ?,
                    celular = ?,
                    foto_avatar = ?,
-                   deseja_iniciar_registros = ?,
                    primeiro_acesso_concluido = 1
                WHERE id = ?`
     try {
@@ -48,7 +47,6 @@ const updatePaciente = async (paciente) => {
             paciente.data_nascimento || null,
             paciente.celular || null,
             paciente.foto_avatar || null,
-            paciente.deseja_iniciar_registros,
             paciente.id
         ])
 
@@ -68,7 +66,6 @@ const selectAllPaciente = async () => {
                    data_nascimento,
                    celular,
                    foto_avatar,
-                   deseja_iniciar_registros,
                    primeiro_acesso_concluido,
                    status_atividade,
                    id_usuario
@@ -94,7 +91,6 @@ const selectByIdPaciente = async (id) => {
                    data_nascimento,
                    celular,
                    foto_avatar,
-                   deseja_iniciar_registros,
                    primeiro_acesso_concluido,
                    status_atividade,
                    id_usuario

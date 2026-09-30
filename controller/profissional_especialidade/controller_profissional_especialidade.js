@@ -109,6 +109,26 @@ const excluirProfissionalEspecialidade = async (id) => {
     return message.ERROR_INTERNAL_SERVER_CONTROLLER // 500
 }
 
+const buscarEspecialidadesIdProfissional = async (idProfissional) => {
+    let message = JSON.parse(JSON.stringify(config_message))
+
+    try {
+
+       const validarID = await validarId(idProfissional)
+       if(validarID) return validarID
+
+        let result = await profissionalEspecialidadeDAO.selectEspecialidadesByIdProfissional(idProfissional)
+
+        if(!result) return message.ERROR_INTERNAL_SERVER_MODEL // 500
+
+        if(result.length < 1) return config_message.ERROR_NOT_FOUND
+
+        return await montarMensagem(message, message.SUCESS_RESPONSE, result)
+
+    } catch (error) {console.log(error)}
+    return message.ERROR_INTERNAL_SERVER_CONTROLLER // 500
+}
+
 const validarDados = async (profissionalEspecialidade, contentType) => {
     let message = JSON.parse(JSON.stringify(config_message))
 
@@ -164,5 +184,6 @@ module.exports = {
     atualizarProfissionalEspecialidade,
     listarProfissionalEspecialidade,
     buscarProfissionalEspecialidade,
-    excluirProfissionalEspecialidade
+    excluirProfissionalEspecialidade,
+    buscarEspecialidadesIdProfissional
 }

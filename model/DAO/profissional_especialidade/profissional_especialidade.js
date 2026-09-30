@@ -94,10 +94,30 @@ const deleteProfissionalEspecialidade = async (id) => {
     return false
 }
 
+// select de todos Profissionais buscando pelo id de Especialidade
+const selectEspecialidadesByIdProfissional = async (idProfissional) => {
+    let sql = `SELECT tbl_especialidade.*
+               FROM tbl_especialidade
+                    INNER JOIN tbl_profissional_especialidade
+                        ON tbl_especialidade.id = tbl_profissional_especialidade.id_especialidade
+                    INNER JOIN tbl_profissional
+                        ON tbl_profissional.id = tbl_profissional_especialidade.id_profissional
+               WHERE tbl_profissional.id = ${idProfissional}`
+    try {
+        let response = await knexConex.raw(sql)
+
+        if(response) return response[0]
+        
+    } catch (error) {console.log(error)}
+
+    return false
+}
+
 module.exports = {
     insertProfissionalEspecialidade,
     updateProfissionalEspecialidade,
     selectAllProfissionalEspecialidade,
     selectByIdProfissionalEspecialidade,
-    deleteProfissionalEspecialidade
+    deleteProfissionalEspecialidade,
+    selectEspecialidadesByIdProfissional
 }

@@ -27,13 +27,10 @@ const inserirNovaUsuario = async (usuario, contentType) => {
 }
 
 // atualizar usuario
-const atualizarUsuario = async (usuario, id, contentType) => {
+const atualizarUsuario = async (usuario, id) => {
     let message = JSON.parse(JSON.stringify(config_message))
 
     try {
-        let validar = await validarDados(usuario, contentType)
-        if(validar) return validar // 400 ou 415
-
         let resultBuscarId = await buscarUsuario(id)
         if(!resultBuscarId.status) return resultBuscarId // 400 e 404
 

@@ -8,6 +8,7 @@
 const config_message = require('../module/configMessages.js')
 const profissionalDAO = require('../../model/DAO/profissional/profissional.js')
 const usuarioController = require('../usuario/controller_usuario.js')
+const profissionalEspecialidadeController = require('../profissional_especialidade/controller_profissional_especialidade.js')
 const bcrypt = require('../../services/bcrypt.js')
 const { decodeJWT } = require('../../middleware/middlewareJWT.js')
 
@@ -30,7 +31,24 @@ const inserirNovaProfissional = async (profissional, foto_avatar, contentType) =
 
         if(!result) return message.ERROR_INTERNAL_SERVER_MODEL
 
+        let resultBuscarUsuario = await usuarioController.buscarUsuario(profissional.id_usuario)
+
+        delete resultBuscarUsuario.response.usuario[0].senha
+        delete resultBuscarUsuario.response.usuario[0].senha_hash
+
+        delete profissional.senha
+        delete profissional.senha_hash
+        delete profissional.id_usuario
+
         profissional.id = result
+        profissional.usuario = resultBuscarUsuario.response.usuario
+
+        for (const especialidade of profissional.id_especialidade || []) {
+            let profissionalEspecialidade = { id_especialidade: especialidade, id_profissional: profissional.id }
+            let resultInsertEspecialidade = await profissionalEspecialidadeController.inserirNovaProfissionalEspecialidade(profissionalEspecialidade, 'application/json')
+            if(!resultInsertEspecialidade.status) return message.SUCESS_CREATED_ITEM_WARNING
+        }
+
         return await montarMensagem(message, message.SUCESS_CREATED_ITEM, profissional)
 
     } catch (error) {console.log(error)}
@@ -53,6 +71,9 @@ const atualizarProfissional = async (profissional, id, foto_avatar, contentType)
 
         if(!result) return message.ERROR_INTERNAL_SERVER_MODEL // 500
 
+        delete profissional.senha
+        delete profissional.senha_hash
+
         return await montarMensagem(message, message.SUCESS_UPDATE_ITEM, profissional)
 
     } catch (error) {console.log(error)}
@@ -70,6 +91,22 @@ const listarProfissional = async () => {
 
         // verfica se o array é vazio
         if(result.length <= 0) return message.ERROR_NOT_FOUND // status_code 404
+
+        for (let profissional of result) {
+            let usuario = await usuarioController.buscarUsuario(profissional.id_usuario)
+
+            delete usuario.response.usuario[0].senha
+            delete usuario.response.usuario[0].senha_hash
+
+            if(usuario.status) {
+                profissional.usuario = usuario.response.usuario[0]
+            }
+
+            let especialidades = profissionalEspecialidadeController.buscarEspecialidadesIdProfissional(profissional.id)
+            if(especialidades.status) {
+                profissional.especialidade = especialidades.response.profissionalEspecialidade
+            }
+        }
 
         let listarProfissionalMessage = await montarMensagem(message, message.SUCESS_RESPONSE, result)
         message.DEFAULT_MESSAGE.response.count = result.length
@@ -94,6 +131,22 @@ const buscarProfissional = async (id) => {
         if(!result) return message.ERROR_INTERNAL_SERVER_MODEL // 500
 
         if(result.length < 1) return config_message.ERROR_NOT_FOUND
+
+        for (let profissional of result) {
+            let usuario = await usuarioController.buscarUsuario(profissional.id_usuario)
+
+            delete usuario.response.usuario[0].senha
+            delete usuario.response.usuario[0].senha_hash
+
+            if(usuario.status) {
+                profissional.usuario = usuario.response.usuario[0]
+            } 
+
+            let especialidades = await profissionalEspecialidadeController.buscarEspecialidadesIdProfissional(profissional.id)
+            if(especialidades.status) {
+                profissional.especialidade = especialidades.response.profissionalEspecialidade
+            }
+        }
 
         return await montarMensagem(message, message.SUCESS_RESPONSE, result)
 
@@ -146,10 +199,8 @@ const editarProfissionalByToken = async (profissional, token, foto_avatar, conte
         if(!decodedToken.status) return message.ERROR_INVALID_TOKEN // 401
 
         let idProfissional = decodedToken.decode.id
-        let resultBuscarId = await buscarProfissional(idProfissional)
-        if(!resultBuscarId.status) return resultBuscarId // 400 e 404
 
-        let validar = await validarDados(profissional, contentType)
+        let validar = await validarDadosAtualizacao(profissional, contentType)
         if(validar) return validar // 400 ou 415
 
         profissional.id = Number(idProfissional)
@@ -157,7 +208,10 @@ const editarProfissionalByToken = async (profissional, token, foto_avatar, conte
 
         if(!result) return message.ERROR_INTERNAL_SERVER_MODEL // 500
 
-        return await montarMensagem(message, message.SUCESS_UPDATE_ITEM, profissional)
+        let resultBuscarId = await buscarProfissional(idProfissional)
+        if(!resultBuscarId.status) return resultBuscarId // 400 e 404
+
+        return resultBuscarId // 200 ou 400 ou 404
 
     } catch (error) {console.log(error)}
     return message.ERROR_INTERNAL_SERVER_CONTROLLER // 500
@@ -183,13 +237,13 @@ const validarDados = async (profissional, contentType) => {
     }
 
     // Valida o CPF
-    if(typeof profissional.cpf != 'string' || profissional.cpf.trim() == '' || profissional.cpf.length > 11){
+    if(profissional?.cpf == null || profissional?.cpf == undefined || typeof profissional?.cpf != 'string' || profissional?.cpf.trim() == '' || profissional?.cpf.length > 11){
         message.ERROR_BAD_REQUEST.field = '[CPF] INVÁLIDO'
         return message.ERROR_BAD_REQUEST // 400
     }
 
     // Valida o CRP
-    if(typeof profissional.crp != 'string' || profissional.crp.trim() == '' || profissional.crp.length > 20){
+    if(profissional?.crp == undefined || typeof profissional?.crp != 'string' || profissional?.crp.trim() == '' || profissional?.crp.length > 20){
         message.ERROR_BAD_REQUEST.field = '[CRP] INVÁLIDO'
         return message.ERROR_BAD_REQUEST // 400
     }
@@ -219,6 +273,46 @@ const validarDados = async (profissional, contentType) => {
     if(profissional.foto_avatar != undefined && profissional.foto_avatar != null && typeof profissional.foto_avatar != 'string'){
         message.ERROR_BAD_REQUEST.field = '[FOTO_AVATAR] INVÁLIDO'
         return message.ERROR_BAD_REQUEST // 400
+    }
+
+    return false
+}
+
+const validarDadosAtualizacao = async (profissional, contentType) => {
+    let message = JSON.parse(JSON.stringify(config_message))
+
+    // Valida o formato da requisição
+    if(
+        String(contentType).toLowerCase() != 'application/json' &&
+        !String(contentType).toLowerCase().includes('multipart/form-data')
+    ){
+        return message.ERROR_CONTENT_TYPE
+    }
+
+    // Nome, se enviado
+    if(
+        profissional.nome_completo != undefined &&
+        (
+            typeof profissional.nome_completo != 'string' ||
+            profissional.nome_completo.trim() == '' ||
+            profissional.nome_completo.length > 150
+        )
+    ){
+        message.ERROR_BAD_REQUEST.field = '[NOME_COMPLETO] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST
+    }
+
+    // Celular, se enviado
+    if(
+        profissional.celular != undefined &&
+        profissional.celular != null &&
+        (
+            typeof profissional.celular != 'string' ||
+            profissional.celular.length > 20
+        )
+    ){
+        message.ERROR_BAD_REQUEST.field = '[CELULAR] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST
     }
 
     return false
