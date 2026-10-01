@@ -191,6 +191,28 @@ const editarPacienteByToken = async (paciente, token, foto_avatar, contentType) 
     return message.ERROR_INTERNAL_SERVER_CONTROLLER // 500
 }
 
+const primeiroAcessoPaciente = async (paciente, contentType) => {
+    let message = JSON.parse(JSON.stringify(config_message))
+
+    try {
+        let validar = await validarDados(paciente, contentType)
+        if(validar) return validar // 400 ou 415
+
+        let resultBuscarId = await buscarPaciente(paciente.id)
+        if(!resultBuscarId.status) return resultBuscarId // 400 e 404
+
+        let result = await pacienteDAO.updatePrimeiroAcessoPaciente(paciente)
+
+        if(!result) return message.ERROR_INTERNAL_SERVER_MODEL // 500
+
+        let resultBuscarId = await buscarPaciente(paciente.id)
+        
+        return resultBuscarId // 200 ou 400 ou 404
+
+    } catch (error) {console.log(error)}
+    return message.ERROR_INTERNAL_SERVER_CONTROLLER // 500
+}
+
 const validarDados = async (paciente, contentType) => {
     let message = JSON.parse(JSON.stringify(config_message))
 

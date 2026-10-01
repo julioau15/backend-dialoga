@@ -22,7 +22,8 @@ const {
     buscarPaciente,
     excluirPaciente,
     buscarPacienteByToken,
-    editarPacienteByToken
+    editarPacienteByToken,
+    primeiroAcessoPaciente
 } = require('../controller/paciente/controller_paciente.js')
 
 const formatarJson = async (dados, acao) => {
@@ -41,12 +42,22 @@ const formatarJson = async (dados, acao) => {
 
     if(acao == 'inserir') {
         return pacienteInserir
-    } 
+    }
 
     return pacienteEditar
 }
 
 // ---------------- paciente -----------------
+
+// endpoint para realizar o form de primeiro acesso do paciente
+router.post('/primeiro-acesso', async (req,res) => {
+    // recebe o conteudo dentro do body da requisição
+    let dados = req.body
+    let contentType = req.headers['content-type']
+
+    let result = await primeiroAcessoPaciente(dados,contentType)
+    res.status(result.status_code).json(result)
+})
 
 // endpoint para inserir paciente
 router.post('/',upload.single('foto_avatar'), async (req,res) => {

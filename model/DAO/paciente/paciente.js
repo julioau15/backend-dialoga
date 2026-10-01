@@ -122,6 +122,28 @@ const deletePaciente = async (id) => {
     return false
 }
 
+// update de paciente
+const updatePrimeiroAcessoPaciente = async (paciente) => {
+    let sql = `UPDATE tbl_paciente
+               SET 
+                   apelido = ?,
+                   data_nascimento = ?,
+                   primeiro_acesso_concluido = 1
+               WHERE id = ?`
+    try {
+        let response = await knexConex.raw(sql, [
+            paciente.apelido || null,
+            paciente.data_nascimento || null,
+            paciente.id
+        ])
+
+        if(response) return response
+
+    } catch (error) { console.log(error) }
+
+    return false
+}
+
 module.exports = {
     insertPaciente,
     updatePaciente,
