@@ -17,7 +17,8 @@ const selectAuthUsuario = async (usuario) => {
                    email,
                    senha_hash,
                    data_criacao,
-                   nivel
+                   nivel,
+                   id_google
                FROM tbl_usuario
                WHERE email = ?`
 
@@ -29,6 +30,28 @@ const selectAuthUsuario = async (usuario) => {
     return false
 }
 
+// valida o usuario pelo id_google
+const selectAuthUsuarioGoogle = async (id_google) => {
+
+    let sql = `SELECT
+                   id,
+                   email,
+                   senha_hash,
+                   data_criacao,
+                   nivel,
+                   id_google
+               FROM tbl_usuario
+               WHERE id_google = ?`
+
+    let response = await knexConex.raw(sql, [id_google])
+
+    if(response)
+        return response[0]
+
+    return false
+}
+
 module.exports = {
-    selectAuthUsuario
+    selectAuthUsuario,
+    selectAuthUsuarioGoogle
 }
