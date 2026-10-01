@@ -7,6 +7,7 @@
 
 const config_message = require('../module/configMessages.js')
 const administradorProfissionalDAO = require('../../model/DAO/administrador_profissional/administrador_profissional.js')
+const JWT = require('../../middleware/middlewareJWT.js')
 
 // inserir nova administradorProfissional
 const inserirNovaAdministradorProfissional = async (administradorProfissional, contentType) => {
@@ -109,6 +110,56 @@ const excluirAdministradorProfissional = async (id) => {
     return message.ERROR_INTERNAL_SERVER_CONTROLLER // 500
 }
 
+// aprova um profissional pelo id
+const aprovarAdministradorProfissional = async (id, token, contentType) => {
+    let message = JSON.parse(JSON.stringify(config_message))
+
+    try {
+
+        let idAdministrador = JWT.decodeJWT(token)
+        if(!idAdministrador) return message.ERROR_UNAUTHORIZED
+
+        let administradorProfissional = {
+            status_aprovacao: 1,
+            id_profissional: Number(id),
+            id_administrador: Number(idAdministrador)
+        }
+
+        let result = await administradorProfissionalDAO.updateAdministradorProfissional(administradorProfissional)
+
+        if(!result) return message.ERROR_INTERNAL_SERVER_MODEL // 500
+
+        return await montarMensagem(message, message.SUCESS_UPDATE_ITEM, administradorProfissional)
+
+    }catch (error) {console.log(error)}
+    return message.ERROR_INTERNAL_SERVER_CONTROLLER // 500
+}
+
+// reprova um profissional pelo id
+const reprovarAdministradorProfissional = async (id, token, contentType) => {
+    let message = JSON.parse(JSON.stringify(config_message))
+
+    try {
+
+        let idAdministrador = JWT.decodeJWT(token)
+        if(!idAdministrador) return message.ERROR_UNAUTHORIZED
+
+        let administradorProfissional = {
+            status_aprovacao: 0,
+            id_profissional: Number(id),
+            id_administrador: Number(idAdministrador)
+        }
+
+        let result = await administradorProfissionalDAO.updateAdministradorProfissional(administradorProfissional)
+
+        if(!result) return message.ERROR_INTERNAL_SERVER_MODEL // 500
+
+        return await montarMensagem(message, message.SUCESS_UPDATE_ITEM, administradorProfissional)
+
+    }catch (error) {console.log(error)}
+    return message.ERROR_INTERNAL_SERVER_CONTROLLER // 500
+}
+
 const validarDados = async (administradorProfissional, contentType) => {
     let message = JSON.parse(JSON.stringify(config_message))
 
@@ -171,11 +222,12 @@ const montarMensagem = async (base,status,response = null) => {
     return base.DEFAULT_MESSAGE // 200 ou 201
 }
 
-
 module.exports = {
     inserirNovaAdministradorProfissional,
     atualizarAdministradorProfissional,
     listarAdministradorProfissional,
     buscarAdministradorProfissional,
-    excluirAdministradorProfissional
+    excluirAdministradorProfissional,
+    aprovarAdministradorProfissional,
+    reprovarAdministradorProfissional
 }

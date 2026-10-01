@@ -13,13 +13,11 @@ const knexConex = knex(knexConfig.development)
 // insert de administradorProfissional
 const insertAdministradorProfissional = async (administradorProfissional) => {
     let sql = `INSERT INTO tbl_administrador_profissional (status_aprovacao, data_decisao, criado_em, id_profissional, id_administrador)
-               VALUES (?, ?, ?, ?, ?)`
+               VALUES (?, now(), now() , ?, ?)`
 
     try {
         let response = await knexConex.raw(sql, [
             administradorProfissional.status_aprovacao,
-            administradorProfissional.data_decisao,
-            administradorProfissional.criado_em,
             administradorProfissional.id_profissional,
             administradorProfissional.id_administrador
         ])
@@ -35,18 +33,11 @@ const insertAdministradorProfissional = async (administradorProfissional) => {
 const updateAdministradorProfissional = async (administradorProfissional) => {
     let sql = `UPDATE tbl_administrador_profissional
                SET status_aprovacao = ?,
-                   data_decisao = ?,
-                   criado_em = ?,
-                   id_profissional = ?,
-                   id_administrador = ?
+                   data_decisao = now(),
                WHERE id = ?`
     try {
         let response = await knexConex.raw(sql, [
             administradorProfissional.status_aprovacao,
-            administradorProfissional.data_decisao,
-            administradorProfissional.criado_em,
-            administradorProfissional.id_profissional,
-            administradorProfissional.id_administrador,
             administradorProfissional.id
         ])
 

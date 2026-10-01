@@ -13,7 +13,8 @@ const bodyParserJSON = bodyParser.json()
 
 const {
     inserirNovaAdministradorProfissional,
-    atualizarAdministradorProfissional,
+    aprovarAdministradorProfissional,
+    reprovarAdministradorProfissional,
     listarAdministradorProfissional,
     buscarAdministradorProfissional,
     excluirAdministradorProfissional
@@ -44,13 +45,23 @@ router.get('/:id', async (req,res) => {
     res.status(result.status_code).json(result)
 })
 
-// endpoint para atualizar um administradorProfissional pelo id
-router.put('/:id', bodyParserJSON, async (req,res) => {
+// endpoint para aprovar um Profissional pelo id
+router.put('/:id/aprovar', bodyParserJSON, async (req,res) => {
+    let token = req.headers['x-access-token']
     let id          = req.params.id                 // Recebe o id por parametro
-    let dados       = req.body                      // Recebe os dados do body da requisição
     let contentType = req.headers['content-type']   // Recebe o ContentType do header da requisição
     
-    let result      = await atualizarAdministradorProfissional(dados, id, contentType)
+    let result      = await aprovarAdministradorProfissional(id, token, contentType)
+    res.status(result.status_code).json(result)
+})
+
+// endpoint para reprovar um Profissional pelo id
+router.put('/:id/reprovar', bodyParserJSON, async (req,res) => {
+    let token = req.headers['x-access-token']
+    let id          = req.params.id                 // Recebe o id por parametro
+    let contentType = req.headers['content-type']   // Recebe o ContentType do header da requisição
+    
+    let result      = await reprovarAdministradorProfissional(id, token, contentType)
     res.status(result.status_code).json(result)
 })
 
