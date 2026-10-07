@@ -109,6 +109,97 @@ const excluirVinculo = async (id) => {
     return message.ERROR_INTERNAL_SERVER_CONTROLLER // 500
 }
 
+// listar pacientes pelo id do profissional
+const listarPacientesByIdProfissional = async (id_profissional) => {
+    let message = JSON.parse(JSON.stringify(config_message))
+
+    try {
+        let result = await vinculoDAO.selectByIdProfissional(id_profissional)
+
+        if(!result) return message.ERROR_INTERNAL_SERVER_MODEL // 500
+
+        // verfica se o array é vazio
+        if(result.length <= 0) return message.ERROR_NOT_FOUND // status_code 404
+
+        let listarVinculoMessage = await montarMensagem(message, message.SUCESS_RESPONSE, result)
+        message.DEFAULT_MESSAGE.response.count = result.length
+
+        return listarVinculoMessage // status_code 200
+
+    } catch (error) {console.log(error)}
+    return message.ERROR_INTERNAL_SERVER_CONTROLLER // 500
+}
+
+// listar profissionais pelo id do paciente
+const listarProfissionaisByIdPaciente = async (idPaciente) => {
+    let message = JSON.parse(JSON.stringify(config_message))
+
+    try {
+        let result = await vinculoDAO.selectByIdPaciente(idPaciente)
+
+        if(!result) return message.ERROR_INTERNAL_SERVER_MODEL // 500
+
+        // verfica se o array é vazio
+        if(result.length <= 0) return message.ERROR_NOT_FOUND // status_code 404
+
+        let listarVinculoMessage = await montarMensagem(message, message.SUCESS_RESPONSE, result)
+        message.DEFAULT_MESSAGE.response.count = result.length
+
+        return listarVinculoMessage // status_code 200
+
+    } catch (error) {console.log(error)}
+    return message.ERROR_INTERNAL_SERVER_CONTROLLER // 500
+}
+
+// cria um vinculo pacinte-profissional pelo profissional
+const inserirNovoVinculoByProfissional = async (vinculo) => {
+    let message = JSON.parse(JSON.stringify(config_message))
+    try {
+        let result = await vinculoDAO.insertVinculoProfissional(vinculo)
+
+        if(!result) return message.ERROR_INTERNAL_SERVER_MODEL
+
+        vinculo.id = result
+        return await montarMensagem(message, message.SUCESS_CREATED_ITEM, vinculo)
+
+    } catch (error) {console.log(error)}
+    return message.ERROR_INTERNAL_SERVER_CONTROLLER
+}
+
+// cria um vinculo pacinte-profissional pelo paciente
+const inserirNovoVinculoByPaciente = async (vinculo) => {
+    let message = JSON.parse(JSON.stringify(config_message))
+    try {
+        let result = await vinculoDAO.insertVinculoPaciente(vinculo)
+
+        if(!result) return message.ERROR_INTERNAL_SERVER_MODEL
+
+        vinculo.id = result
+        return await montarMensagem(message, message.SUCESS_CREATED_ITEM, vinculo)
+
+    } catch (error) {console.log(error)}
+    return message.ERROR_INTERNAL_SERVER_CONTROLLER
+}
+
+// remover paciente/ profissional da lista de acompanhamento
+const excluirVinculoPacienteProfissional = async (idPaciente, idProfissonal) => {
+    let message = JSON.parse(JSON.stringify(config_message))
+
+    try {
+
+        let resultBuscarId = await vinculoDAO.selectByIdPacienteProfissional(idPaciente, idProfissonal)
+        if(!resultBuscarId) return message.ERROR_NOT_FOUND // 404
+
+        let result = await vinculoDAO.deleteVinculoPacienteProfissional(idPaciente, idProfissonal)
+
+        if(!result) return message.ERROR_INTERNAL_SERVER_MODEL // 500
+
+        return await montarMensagem(message, message.SUCESS_DELETE_ITEM)
+
+    } catch (error) {console.log(error)}
+    return message.ERROR_INTERNAL_SERVER_CONTROLLER // 500
+}
+
 const validarDados = async (vinculo, contentType) => {
     let message = JSON.parse(JSON.stringify(config_message))
 
@@ -200,5 +291,10 @@ module.exports = {
     atualizarVinculo,
     listarVinculo,
     buscarVinculo,
-    excluirVinculo
+    excluirVinculo,
+    listarPacientesByIdProfissional,
+    listarProfissionaisByIdPaciente,
+    inserirNovoVinculoByProfissional,
+    inserirNovoVinculoByPaciente,
+    excluirVinculoPacienteProfissional
 }

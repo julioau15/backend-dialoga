@@ -7,6 +7,7 @@
 
 const config_message = require('../module/configMessages.js')
 const profissionalDAO = require('../../model/DAO/profissional/profissional.js')
+const vinculoDAO = require('../../model/DAO/vinculo/vinculo.js')
 const usuarioController = require('../usuario/controller_usuario.js')
 const profissionalEspecialidadeController = require('../profissional_especialidade/controller_profissional_especialidade.js')
 const bcrypt = require('../../services/bcrypt.js')
@@ -217,6 +218,110 @@ const editarProfissionalByToken = async (profissional, token, foto_avatar, conte
     return message.ERROR_INTERNAL_SERVER_CONTROLLER // 500
 }
 
+// listar pacientes vinculados ao profissional
+const listarPacientesVinculados = async (token) => {
+    let message = JSON.parse(JSON.stringify(config_message))
+
+    try {
+
+        let decodedToken = await decodeJWT(token)
+        if(!decodedToken.status) return message.ERROR_INVALID_TOKEN // 401
+
+        let idProfissional = decodedToken.decode.id
+        let resultBuscarId = await buscarProfissional(idProfissional)
+        if(!resultBuscarId.status) return resultBuscarId // 400 e 404
+
+        let result = await vinculoDAO.selectByIdProfissional(idProfissional)
+
+        if(!result) return message.ERROR_INTERNAL_SERVER_MODEL // 500
+
+        // verfica se o array é vazio
+        if(result.length <= 0) return message.ERROR_NOT_FOUND // status_code 404
+
+        for (let paciente of result) {
+            let usuario = await usuarioController.buscarUsuario(paciente.id_usuario)
+
+            delete usuario.response.usuario[0].senha
+            delete usuario.response.usuario[0].senha_hash
+
+            if(usuario.status) {
+                paciente.usuario = usuario.response.usuario[0]
+            }
+        }
+
+        let listarPacientesMessage = await montarMensagem(message, message.SUCESS_RESPONSE, result)
+        message.DEFAULT_MESSAGE.response.count = result.length
+
+        return listarPacientesMessage // status_code 200
+
+    } catch (error) {console.log(error)}
+    return message.ERROR_INTERNAL_SERVER_CONTROLLER // 500
+}
+
+// insere um novo vinculo entre profissional e paciente
+const inserirNovoVinculo = async (token, idPaciente) => {
+    let message = JSON.parse(JSON.stringify(config_message))
+
+    try {
+
+        let decodedToken = await decodeJWT(token)
+        if(!decodedToken.status) return message.ERROR_INVALID_TOKEN // 401
+        let idProfissional = decodedToken.decode.id
+
+        let resultBuscarIdProfissional = await buscarProfissional(idProfissional)
+        if(!resultBuscarIdProfissional.status) return resultBuscarIdProfissional // 400 e 404
+
+        let resultBuscarIdPaciente = await usuarioController.buscarUsuario(idPaciente)
+        if(!resultBuscarIdPaciente.status) return resultBuscarIdPaciente // 400 e 404
+
+        let vinculo = {
+            id_profissional: idProfissional,
+            id_paciente: idPaciente
+        }
+
+        let resultInsertVinculo = await vinculoDAO.insertVinculo(vinculo)
+
+        if(!resultInsertVinculo) return message.ERROR_INTERNAL_SERVER_MODEL // 500
+
+        vinculo.id = resultInsertVinculo
+
+        return await montarMensagem(message, message.SUCESS_CREATED_ITEM, vinculo)
+
+    } catch (error) {console.log(error)}
+    return message.ERROR_INTERNAL_SERVER_CONTROLLER // 500
+}
+
+// exclui um vinculo entre profissional e paciente
+const excluirVinculo = async (token, idPaciente) => {
+    let message = JSON.parse(JSON.stringify(config_message))
+
+    try {
+
+        let decodedToken = await decodeJWT(token)
+        if(!decodedToken.status) return message.ERROR_INVALID_TOKEN // 401
+        let idProfissional = decodedToken.decode.id
+
+        let resultBuscarIdProfissional = await buscarProfissional(idProfissional)
+        if(!resultBuscarIdProfissional.status) return resultBuscarIdProfissional // 400 e 404
+
+        let resultBuscarIdPaciente = await usuarioController.buscarUsuario(idPaciente)
+        if(!resultBuscarIdPaciente.status) return resultBuscarIdPaciente // 400 e 404
+
+        let resultBuscarVinculo = await vinculoDAO.selectByIdPacienteProfissional(idPaciente, idProfissional)
+        if(!resultBuscarVinculo) return message.ERROR_INTERNAL_SERVER_MODEL // 500
+
+        if(resultBuscarVinculo.length < 1) return message.ERROR_NOT_FOUND // status_code 404
+
+        let resultDeleteVinculo = await vinculoDAO.deleteVinculo(resultBuscarVinculo[0].id)
+
+        if(!resultDeleteVinculo) return message.ERROR_INTERNAL_SERVER_MODEL // 500
+
+        return await montarMensagem(message, message.SUCESS_DELETE_ITEM)
+
+    } catch (error) {console.log(error)}
+    return message.ERROR_INTERNAL_SERVER_CONTROLLER // 500
+}
+
 const validarDados = async (profissional, contentType) => {
     let message = JSON.parse(JSON.stringify(config_message))
 
@@ -346,5 +451,8 @@ module.exports = {
     buscarProfissional,
     excluirProfissional,
     buscarProfissionalByToken,
-    editarProfissionalByToken
+    editarProfissionalByToken,
+    listarPacientesVinculados,
+    inserirNovoVinculo,
+    excluirVinculo
 }
