@@ -22,7 +22,10 @@ const {
     buscarProfissional,
     excluirProfissional,
     buscarProfissionalByToken,
-    editarProfissionalByToken
+    editarProfissionalByToken,
+    listarPacientesVinculados,
+    inserirNovoVinculo,
+    excluirVinculo
 } = require('../controller/profissional/controller_profissional.js')
 
 const formatarJson = async (dados, acao) => {
@@ -49,6 +52,32 @@ const formatarJson = async (dados, acao) => {
 }
 
 // ---------------- profissional -----------------
+
+// endpoint para retornar paciente vinculados a um paciente
+router.get('/me/pacientes', async (req,res) => {
+    let token = req.headers['x-access-token']
+    let result = await listarPacientesVinculados(token)
+    res.status(result.status_code).json(result)
+})
+
+// endpoint para inserir um vinculo entre paciente e profissional
+router.post('/me/pacientes/:id', async (req,res) => {
+    let token = req.headers['x-access-token']
+    let idPaciente = req.params.id
+    let contentType = req.headers['content-type']
+
+    let result = await inserirNovoVinculo(token, idPaciente)
+    res.status(result.status_code).json(result)
+})
+
+// endpoint para deletar um vinculo de  paciente pelo id
+router.delete('/me/pacientes/:id', async (req,res) => {
+    let id = req.params.id
+    let token = req.headers['x-access-token']
+    let result = await excluirVinculo(token, id)
+    res.status(result.status_code).json(result)
+})
+
 
 // endpoint para inserir profissional
 router.post('/',upload.single('foto_avatar'), async (req,res) => {

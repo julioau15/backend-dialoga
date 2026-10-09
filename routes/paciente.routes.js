@@ -23,7 +23,10 @@ const {
     excluirPaciente,
     buscarPacienteByToken,
     editarPacienteByToken,
-    primeiroAcessoPaciente
+    primeiroAcessoPaciente,
+    listarProfissionaisVinculados,
+    inserirNovoVinculo,
+    excluirVinculo
 } = require('../controller/paciente/controller_paciente.js')
 
 const formatarJson = async (dados, acao) => {
@@ -48,6 +51,31 @@ const formatarJson = async (dados, acao) => {
 }
 
 // ---------------- paciente -----------------
+
+// endpoint para retornar profissionais vinculados a um paciente
+router.get('/me/profissionais', async (req,res) => {
+    let token = req.headers['x-access-token']
+    let result = await listarProfissionaisVinculados(token)
+    res.status(result.status_code).json(result)
+})
+
+// endpoint para inserir um vinculo entre paciente e profissional
+router.post('/me/profissionais/:id', async (req,res) => {
+    let token = req.headers['x-access-token']
+    let idProfissional = req.params.id
+    let contentType = req.headers['content-type']
+
+    let result = await inserirNovoVinculo(token, idProfissional)
+    res.status(result.status_code).json(result)
+})
+
+// endpoint para deletar um paciente pelo id
+router.delete('/me/profissionais/:id', async (req,res) => {
+    let id = req.params.id
+    let token = req.headers['x-access-token']
+    let result = await excluirVinculo(token, id)
+    res.status(result.status_code).json(result)
+})
 
 // endpoint para realizar o form de primeiro acesso do paciente
 router.post('/primeiro-acesso', async (req,res) => {
@@ -124,5 +152,6 @@ router.delete('/:id', async (req,res) => {
     let result = await excluirPaciente(id)
     res.status(result.status_code).json(result)
 })
+
 
 module.exports = router

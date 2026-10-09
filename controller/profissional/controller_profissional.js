@@ -9,6 +9,7 @@ const config_message = require('../module/configMessages.js')
 const profissionalDAO = require('../../model/DAO/profissional/profissional.js')
 const vinculoDAO = require('../../model/DAO/vinculo/vinculo.js')
 const usuarioController = require('../usuario/controller_usuario.js')
+const vinculoController = require('../vinculo/controller_vinculo.js')
 const profissionalEspecialidadeController = require('../profissional_especialidade/controller_profissional_especialidade.js')
 const bcrypt = require('../../services/bcrypt.js')
 const { decodeJWT } = require('../../middleware/middlewareJWT.js')
@@ -231,7 +232,7 @@ const listarPacientesVinculados = async (token) => {
         let resultBuscarId = await buscarProfissional(idProfissional)
         if(!resultBuscarId.status) return resultBuscarId // 400 e 404
 
-        let result = await vinculoDAO.selectByIdProfissional(idProfissional)
+        let result = await vinculoController.listarPacientesByIdProfissional(idProfissional)
 
         if(!result) return message.ERROR_INTERNAL_SERVER_MODEL // 500
 
@@ -279,11 +280,9 @@ const inserirNovoVinculo = async (token, idPaciente) => {
             id_paciente: idPaciente
         }
 
-        let resultInsertVinculo = await vinculoDAO.insertVinculo(vinculo)
+        let resultInsertVinculo = await vinculoController.inserirNovoVinculoByProfissional(vinculo)
 
         if(!resultInsertVinculo) return message.ERROR_INTERNAL_SERVER_MODEL // 500
-
-        vinculo.id = resultInsertVinculo
 
         return await montarMensagem(message, message.SUCESS_CREATED_ITEM, vinculo)
 
@@ -307,15 +306,10 @@ const excluirVinculo = async (token, idPaciente) => {
         let resultBuscarIdPaciente = await usuarioController.buscarUsuario(idPaciente)
         if(!resultBuscarIdPaciente.status) return resultBuscarIdPaciente // 400 e 404
 
-        let resultBuscarVinculo = await vinculoDAO.selectByIdPacienteProfissional(idPaciente, idProfissional)
-        if(!resultBuscarVinculo) return message.ERROR_INTERNAL_SERVER_MODEL // 500
+        let result = await vinculoController.excluirVinculoPacienteProfissional(idProfissional, idPaciente)
 
-        if(resultBuscarVinculo.length < 1) return message.ERROR_NOT_FOUND // status_code 404
-
-        let resultDeleteVinculo = await vinculoDAO.deleteVinculo(resultBuscarVinculo[0].id)
-
-        if(!resultDeleteVinculo) return message.ERROR_INTERNAL_SERVER_MODEL // 500
-
+        if(!result) return message.ERROR_INTERNAL_SERVER_MODEL // 500
+        
         return await montarMensagem(message, message.SUCESS_DELETE_ITEM)
 
     } catch (error) {console.log(error)}
