@@ -241,6 +241,42 @@ const deleteVinculoPacienteProfissional = async (idPaciente, idProfissonal) => {
     return false
 }
 
+// aceitar um vinculo
+const aceitarVinculo = async (id) => {
+    let sql = `UPDATE tbl_vinculo
+               SET status = 1,
+                   data_aceite = now(),
+                   data_inicio_acompanhamento = now()
+               WHERE id = ?`
+    try {
+        let response = await knexConex.raw(sql, [
+            id
+        ])
+
+        if(response) return response
+
+    } catch (error) { console.log(error) }
+
+    return false
+}
+
+// recusar um vinculo
+const recusarVinculo = async (id) => {
+    let sql = `UPDATE tbl_vinculo
+               SET status = 2
+               WHERE id = ?`
+    try {
+        let response = await knexConex.raw(sql, [
+            id
+        ])
+
+        if(response) return response
+
+    } catch (error) { console.log(error) }
+
+    return false
+}
+
 module.exports = {
     insertVinculo,
     updateVinculo,
@@ -252,5 +288,7 @@ module.exports = {
     deleteVinculoPacienteProfissional,
     selectByIdPacienteProfissional,
     selectByIdPaciente,
-    insertVinculoPaciente
+    insertVinculoPaciente,
+    aceitarVinculo,
+    recusarVinculo
 }

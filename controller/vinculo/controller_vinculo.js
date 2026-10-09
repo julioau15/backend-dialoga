@@ -200,6 +200,44 @@ const excluirVinculoPacienteProfissional = async (idPaciente, idProfissonal) => 
     return message.ERROR_INTERNAL_SERVER_CONTROLLER // 500
 }
 
+// aceita um vinculo pelo id
+const aceitarVinculo = async (id) => {
+    let message = JSON.parse(JSON.stringify(config_message))
+
+    try {
+
+        let resultBuscarId = await buscarVinculo(id)
+        if(!resultBuscarId.status) return resultBuscarId // 400 e 404
+
+        let result = await vinculoDAO.aceitarVinculo(id)
+
+        if(!result) return message.ERROR_INTERNAL_SERVER_MODEL // 500
+
+        return await montarMensagem(message, message.SUCESS_UPDATE_ITEM)
+
+    } catch (error) {console.log(error)}
+    return message.ERROR_INTERNAL_SERVER_CONTROLLER // 500
+}
+
+// recusa um vinculo pelo id
+const recusarVinculo = async (id) => {
+    let message = JSON.parse(JSON.stringify(config_message))
+
+    try {
+
+        let resultBuscarId = await buscarVinculo(id)
+        if(!resultBuscarId.status) return resultBuscarId // 400 e 404
+
+        let result = await vinculoDAO.recusarVinculo(id)
+
+        if(!result) return message.ERROR_INTERNAL_SERVER_MODEL // 500
+
+        return await montarMensagem(message, message.SUCESS_UPDATE_ITEM)
+
+    } catch (error) {console.log(error)}
+    return message.ERROR_INTERNAL_SERVER_CONTROLLER // 500
+}
+
 const validarDados = async (vinculo, contentType) => {
     let message = JSON.parse(JSON.stringify(config_message))
 
@@ -296,5 +334,7 @@ module.exports = {
     listarProfissionaisByIdPaciente,
     inserirNovoVinculoByProfissional,
     inserirNovoVinculoByPaciente,
-    excluirVinculoPacienteProfissional
+    excluirVinculoPacienteProfissional,
+    aceitarVinculo,
+    recusarVinculo
 }

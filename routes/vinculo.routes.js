@@ -16,7 +16,9 @@ const {
     atualizarVinculo,
     listarVinculo,
     buscarVinculo,
-    excluirVinculo
+    excluirVinculo,
+    aceitarVinculo,
+    recusarVinculo
 } = require('../controller/vinculo/controller_vinculo.js')
 
 // ---------------- vinculo -----------------
@@ -41,6 +43,22 @@ router.get('/', async (req,res) => {
 router.get('/:id', async (req,res) => {
     let id = req.params.id
     let result = await buscarVinculo(id)
+    res.status(result.status_code).json(result)
+})
+
+// endpoint para aceitar um vinculo
+router.put('/:id/aceitar', async (req,res) => {
+    let id          = req.params.id                 // Recebe o id por parametro
+    
+    let result      = await aceitarVinculo(id)
+    res.status(result.status_code).json(result)
+})
+
+// endpoint para recusar um vinculo
+router.put('/:id/recusar', async (req,res) => {
+    let id          = req.params.id                 // Recebe o id por parametro
+    
+    let result      = await recusarVinculo(id)
     res.status(result.status_code).json(result)
 })
 
