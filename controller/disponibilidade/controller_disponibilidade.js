@@ -109,6 +109,51 @@ const excluirDisponibilidade = async (id) => {
     return message.ERROR_INTERNAL_SERVER_CONTROLLER // 500
 }
 
+// listar disponibilidades de um profissional pelo token
+const listarDisponibilidadeByToken = async (token) => {
+    let message = JSON.parse(JSON.stringify(config_message))
+
+    try {
+        let decodificarToken = await disponibilidadeDAO.decodeToken(token)
+        let idProfissional = decodificarToken.id_profissional
+
+        let result = await disponibilidadeDAO.selectAllDisponibilidadeByIdProfissional(idProfissional)
+
+        if(!result) return message.ERROR_INTERNAL_SERVER_MODEL // 500
+
+        // verfica se o array é vazio
+        if(result.length <= 0) return message.ERROR_NOT_FOUND // status_code 404
+
+        let listarDisponibilidadeMessage = await montarMensagem(message, message.SUCESS_RESPONSE, result)
+        message.DEFAULT_MESSAGE.response.count = result.length
+
+        return listarDisponibilidadeMessage // status_code 200
+
+    } catch (error) {console.log(error)}
+    return message.ERROR_INTERNAL_SERVER_CONTROLLER // 500
+}
+
+// inserir nova disponibilidade de um profissional pelo token
+const inserirNovaDisponibilidadeByToken = async (disponibilidade, token, contentType) => {
+    let message = JSON.parse(JSON.stringify(config_message))
+    try {
+        let validar = await validarDados(disponibilidade, contentType)
+        if(validar) return validar // 400 ou 415
+
+        let decodificarToken = await disponibilidadeDAO.decodeToken(token)
+        let idProfissional = decodificarToken.id_profissional
+
+        let result = await disponibilidadeDAO.insertDisponibilidadeByIdProfissional(disponibilidade, idProfissional)
+
+        if(!result) return message.ERROR_INTERNAL_SERVER_MODEL
+
+        disponibilidade.id = result
+        return await montarMensagem(message, message.SUCESS_CREATED_ITEM, disponibilidade)
+
+    } catch (error) {console.log(error)}
+    return message.ERROR_INTERNAL_SERVER_CONTROLLER
+}
+
 const validarDados = async (disponibilidade, contentType) => {
     let message = JSON.parse(JSON.stringify(config_message))
 
@@ -119,12 +164,6 @@ const validarDados = async (disponibilidade, contentType) => {
     // Garante que o objeto foi informado
     if(disponibilidade == undefined || disponibilidade == null || typeof disponibilidade != 'object'){
         message.ERROR_BAD_REQUEST.field = '[DISPONIBILIDADE] INVÁLIDO'
-        return message.ERROR_BAD_REQUEST // 400
-    }
-
-    // Valida os dias da semana
-    if(typeof disponibilidade.dias_da_semana != 'string' || disponibilidade.dias_da_semana.trim() == '' || disponibilidade.dias_da_semana.length > 50){
-        message.ERROR_BAD_REQUEST.field = '[DIAS_DA_SEMANA] INVÁLIDO'
         return message.ERROR_BAD_REQUEST // 400
     }
 
@@ -194,5 +233,7 @@ module.exports = {
     atualizarDisponibilidade,
     listarDisponibilidade,
     buscarDisponibilidade,
-    excluirDisponibilidade
+    excluirDisponibilidade,
+    listarDisponibilidadeByToken,
+    inserirNovaDisponibilidadeByToken
 }

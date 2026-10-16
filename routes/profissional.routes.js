@@ -28,6 +28,11 @@ const {
     excluirVinculo
 } = require('../controller/profissional/controller_profissional.js')
 
+const {
+    listarDisponibilidadeByToken,
+    inserirNovaDisponibilidadeByToken
+} = require ('../controller/disponibilidade/controller_disponibilidade.js')
+
 const formatarJson = async (dados, acao) => {
     const profissionalInserir = {
         nome_completo       : String(dados.nome_completo),
@@ -60,35 +65,10 @@ router.get('/me/pacientes', async (req,res) => {
     res.status(result.status_code).json(result)
 })
 
-// endpoint para inserir um vinculo entre paciente e profissional
-router.post('/me/pacientes/:id', async (req,res) => {
+// endpoint para retornar as disponibilidades de um profissional
+router.get('/me/disponibilidades', async (req,res) => {
     let token = req.headers['x-access-token']
-    let idPaciente = req.params.id
-    let contentType = req.headers['content-type']
-
-    let result = await inserirNovoVinculo(token, idPaciente)
-    res.status(result.status_code).json(result)
-})
-
-// endpoint para deletar um vinculo de  paciente pelo id
-router.delete('/me/pacientes/:id', async (req,res) => {
-    let id = req.params.id
-    let token = req.headers['x-access-token']
-    let result = await excluirVinculo(token, id)
-    res.status(result.status_code).json(result)
-})
-
-
-// endpoint para inserir profissional
-router.post('/',upload.single('foto_avatar'), async (req,res) => {
-    // recebe o conteudo dentro do body da requisição
-    let dados = req.body
-    let foto_avatar = req.file
-    let contentType = req.headers['content-type']
-
-    const profissional = await formatarJson(dados, 'inserir')
-
-    let result = await inserirNovaProfissional(profissional,foto_avatar,contentType)
+    let result = await listarDisponibilidadeByToken(token)
     res.status(result.status_code).json(result)
 })
 
@@ -109,6 +89,51 @@ router.get('/', async (req,res) => {
 router.get('/:id', async (req,res) => {
     let id = req.params.id
     let result = await buscarProfissional(id)
+    res.status(result.status_code).json(result)
+})
+
+// endpoint para inserir um vinculo entre paciente e profissional
+router.post('/me/pacientes/:id', async (req,res) => {
+    let token = req.headers['x-access-token']
+    let idPaciente = req.params.id
+    let contentType = req.headers['content-type']
+
+    let result = await inserirNovoVinculo(token, idPaciente)
+    res.status(result.status_code).json(result)
+})
+
+// endpoint para inserir uma nova disponibilidade para um profissional
+router.post('/me/disponibilidades',bodyParserJSON, async (req,res) => {
+    // recebe o conteudo dentro do body da requisição
+    let dados = req.body
+    let token = req.headers['x-access-token']
+    let contentType = req.headers['content-type']
+
+    const disponibilidade = await formatarJson(dados, 'inserir')
+
+    let result = await inserirNovaDisponibilidadeByToken(disponibilidade, token, contentType)
+    res.status(result.status_code).json(result)
+})
+
+
+// endpoint para inserir profissional
+router.post('/',upload.single('foto_avatar'), async (req,res) => {
+    // recebe o conteudo dentro do body da requisição
+    let dados = req.body
+    let foto_avatar = req.file
+    let contentType = req.headers['content-type']
+
+    const profissional = await formatarJson(dados, 'inserir')
+
+    let result = await inserirNovaProfissional(profissional,foto_avatar,contentType)
+    res.status(result.status_code).json(result)
+})
+
+// endpoint para deletar um vinculo de  paciente pelo id
+router.delete('/me/pacientes/:id', async (req,res) => {
+    let id = req.params.id
+    let token = req.headers['x-access-token']
+    let result = await excluirVinculo(token, id)
     res.status(result.status_code).json(result)
 })
 

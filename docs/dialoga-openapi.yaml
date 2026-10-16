@@ -8,7 +8,7 @@ info:
     Gerado a partir do modelo lógico `BD-lógico-Dialoga_2026.mwb` e validado contra os 16 documentos de
     Requisitos Funcionais (RF_2026_001 a RF_2026_016). Cada operação referencia os IDs de RF que originaram
     a rota, para rastreabilidade acadêmica.'
-    
+
   version: 1.0.0
   contact:
     name: Dialoga — Projeto Profissional de Software, SENAI Jandira
@@ -63,7 +63,8 @@ tags:
 paths:
   /auth/login:
     post:
-      summary: Login por e-mail e senha
+      x-status: concluido
+      summary: "✅ Login por e-mail e senha"
       description: 'Requisitos relacionados: RF85'
       tags:
       - Autenticação
@@ -106,9 +107,9 @@ paths:
       security: []
   /auth/login/google:
     post:
-      summary: Login via Google OAuth
-      description: 'Requisitos relacionados: RF86 — TODO: requer coluna de senha opcional no modelo (ver
-        observações)'
+      x-status: concluido
+      summary: "✅ Login via Google OAuth"
+      description: 'Requisitos relacionados: RF86 — TODO: requer coluna de senha opcional no modelo (ver observações)'
       tags:
       - Autenticação
       requestBody:
@@ -150,7 +151,8 @@ paths:
       security: []
   /auth/recuperar-senha/solicitar:
     post:
-      summary: Solicitar código de recuperação de senha
+      x-status: concluido
+      summary: "✅ Solicitar código de recuperação de senha"
       description: 'Requisitos relacionados: RF87, RF88, RF92, RF93'
       tags:
       - Autenticação
@@ -197,7 +199,8 @@ paths:
       security: []
   /auth/recuperar-senha/validar-codigo:
     post:
-      summary: Validar código de recuperação recebido por e-mail
+      x-status: concluido
+      summary: "✅ Validar código de recuperação recebido por e-mail"
       description: 'Requisitos relacionados: RF89, RF94, RF95'
       tags:
       - Autenticação
@@ -244,7 +247,8 @@ paths:
       security: []
   /auth/recuperar-senha/redefinir:
     post:
-      summary: Redefinir senha após validação do código
+      x-status: concluido
+      summary: "✅ Redefinir senha após validação do código"
       description: 'Requisitos relacionados: RF90, RF96, RF97'
       tags:
       - Autenticação
@@ -291,7 +295,8 @@ paths:
       security: []
   /pacientes:
     post:
-      summary: Cadastrar novo paciente
+      x-status: concluido
+      summary: "✅ Cadastrar novo paciente"
       description: 'Requisitos relacionados: RF98-106'
       tags:
       - Pacientes
@@ -339,7 +344,8 @@ paths:
       security: []
   /profissionais:
     post:
-      summary: Cadastrar novo profissional (aguarda aprovação do Admin)
+      x-status: concluido
+      summary: "✅ Cadastrar novo profissional (aguarda aprovação do Admin)"
       description: 'Requisitos relacionados: RF107-119'
       tags:
       - Profissionais
@@ -387,7 +393,8 @@ paths:
       security: []
   /administradores:
     get:
-      summary: Listar/buscar administradores
+      x-status: concluido
+      summary: "✅ Listar/buscar administradores"
       description: 'Requisitos relacionados: RF01-03'
       tags:
       - Administradores
@@ -429,7 +436,8 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
     post:
-      summary: Criar novo administrador
+      x-status: concluido
+      summary: "✅ Criar novo administrador"
       description: 'Requisitos relacionados: RF05-11'
       tags:
       - Administradores
@@ -474,7 +482,8 @@ paths:
           $ref: '#/components/responses/InternalServerError'
   /administradores/{id}:
     delete:
-      summary: Remover administrador
+      x-status: concluido
+      summary: "✅ Remover administrador"
       description: 'Requisitos relacionados: RF12-17'
       tags:
       - Administradores
@@ -520,7 +529,8 @@ paths:
           $ref: '#/components/responses/InternalServerError'
   /administradores/me:
     get:
-      summary: Consultar próprio perfil de administrador
+      x-status: concluido
+      summary: "✅ Consultar próprio perfil de administrador"
       description: 'Requisitos relacionados: RF135-141'
       tags:
       - Administradores
@@ -553,7 +563,8 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
     put:
-      summary: Editar próprio perfil de administrador
+      x-status: concluido
+      summary: "✅ Editar próprio perfil de administrador"
       description: 'Requisitos relacionados: RF141, RF142-149'
       tags:
       - Administradores
@@ -598,7 +609,8 @@ paths:
           $ref: '#/components/responses/InternalServerError'
   /aprovacoes-profissionais:
     get:
-      summary: Listar solicitações de acesso de profissionais
+      x-status: concluido
+      summary: "✅ Listar solicitações de acesso de profissionais"
       description: 'Requisitos relacionados: RF41-48'
       tags:
       - Administrador × Profissional
@@ -652,7 +664,8 @@ paths:
           $ref: '#/components/responses/InternalServerError'
   /aprovacoes-profissionais/{id}:
     get:
-      summary: Detalhar solicitação de acesso de um profissional
+      x-status: concluido
+      summary: "✅ Detalhar solicitação de acesso de um profissional"
       description: 'Requisitos relacionados: RF49-50'
       tags:
       - Administrador × Profissional
@@ -694,7 +707,8 @@ paths:
           $ref: '#/components/responses/InternalServerError'
   /aprovacoes-profissionais/{id}/aprovar:
     put:
-      summary: Aprovar profissional
+      x-status: concluido
+      summary: "✅ Aprovar profissional"
       description: 'Requisitos relacionados: RF51-56'
       tags:
       - Administrador × Profissional
@@ -739,7 +753,8 @@ paths:
           $ref: '#/components/responses/InternalServerError'
   /aprovacoes-profissionais/{id}/recusar:
     put:
-      summary: Recusar profissional
+      x-status: concluido
+      summary: "✅ Recusar profissional"
       description: 'Requisitos relacionados: RF52, RF57-60'
       tags:
       - Administrador × Profissional
@@ -784,7 +799,8 @@ paths:
           $ref: '#/components/responses/InternalServerError'
   /pacientes/me:
     get:
-      summary: Consultar próprio perfil de paciente
+      x-status: concluido
+      summary: "✅ Consultar próprio perfil de paciente"
       description: 'Requisitos relacionados: RF153'
       tags:
       - Pacientes
@@ -817,7 +833,8 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
     put:
-      summary: Editar próprio perfil de paciente
+      x-status: concluido
+      summary: "✅ Editar próprio perfil de paciente"
       description: 'Requisitos relacionados: RF154, RF157-159'
       tags:
       - Pacientes
@@ -862,7 +879,8 @@ paths:
           $ref: '#/components/responses/InternalServerError'
   /pacientes/me/primeiro-acesso:
     post:
-      summary: Responder formulário de primeiro acesso
+      x-status: concluido
+      summary: "✅ Responder formulário de primeiro acesso"
       description: 'Requisitos relacionados: RF168-171, RF179'
       tags:
       - Pacientes
@@ -904,7 +922,8 @@ paths:
           $ref: '#/components/responses/InternalServerError'
   /profissionais/me:
     get:
-      summary: Consultar próprio perfil de profissional
+      x-status: concluido
+      summary: "✅ Consultar próprio perfil de profissional"
       description: 'Requisitos relacionados: RF160'
       tags:
       - Profissionais
@@ -937,7 +956,8 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
     put:
-      summary: Editar próprio perfil de profissional
+      x-status: concluido
+      summary: "✅ Editar próprio perfil de profissional"
       description: 'Requisitos relacionados: RF161-167'
       tags:
       - Profissionais
@@ -982,7 +1002,8 @@ paths:
           $ref: '#/components/responses/InternalServerError'
   /profissionais/me/pacientes:
     get:
-      summary: Listar pacientes vinculados ao profissional autenticado
+      x-status: concluido
+      summary: "✅ Listar pacientes vinculados ao profissional autenticado"
       description: 'Requisitos relacionados: RF299-301, RF306'
       tags:
       - Vínculos
@@ -1034,7 +1055,8 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
     post:
-      summary: Adicionar paciente (busca na plataforma ou cadastro externo)
+      x-status: concluido
+      summary: "✅ Adicionar paciente (busca na plataforma ou cadastro externo)"
       description: 'Requisitos relacionados: RF302-305'
       tags:
       - Vínculos
@@ -1083,7 +1105,8 @@ paths:
           $ref: '#/components/responses/InternalServerError'
   /profissionais/me/pacientes/{vinculoId}:
     delete:
-      summary: Remover paciente da lista de acompanhamento
+      x-status: concluido
+      summary: "✅ Remover paciente da lista de acompanhamento"
       description: 'Requisitos relacionados: RF315, RF326-330'
       tags:
       - Vínculos
@@ -1129,7 +1152,8 @@ paths:
           $ref: '#/components/responses/InternalServerError'
   /pacientes/{id}/perfil-profissional:
     get:
-      summary: Ver perfil detalhado de um paciente (visão do profissional)
+      x-status: concluido
+      summary: "✅ Ver perfil detalhado de um paciente (visão do profissional)"
       description: 'Requisitos relacionados: RF214-220, RF307-309'
       tags:
       - Pacientes
@@ -1171,7 +1195,8 @@ paths:
           $ref: '#/components/responses/InternalServerError'
   /pacientes/me/profissionais:
     get:
-      summary: Listar profissionais vinculados ao paciente autenticado
+      x-status: concluido
+      summary: "✅ Listar profissionais vinculados ao paciente autenticado"
       description: 'Requisitos relacionados: RF317-319'
       tags:
       - Vínculos
@@ -1216,7 +1241,8 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
     post:
-      summary: Adicionar profissional (busca por CPF na plataforma ou cadastro externo)
+      x-status: concluido
+      summary: "✅ Adicionar profissional (busca por CPF na plataforma ou cadastro externo)"
       description: 'Requisitos relacionados: RF320-324'
       tags:
       - Vínculos
@@ -1265,7 +1291,8 @@ paths:
           $ref: '#/components/responses/InternalServerError'
   /pacientes/me/profissionais/{vinculoId}:
     delete:
-      summary: Excluir vínculo com profissional (move para Histórico)
+      x-status: concluido
+      summary: "✅ Excluir vínculo com profissional (move para Histórico)"
       description: 'Requisitos relacionados: RF326-330'
       tags:
       - Vínculos
@@ -1311,7 +1338,8 @@ paths:
           $ref: '#/components/responses/InternalServerError'
   /vinculos:
     get:
-      summary: Listar vínculos do usuário autenticado
+      x-status: concluido
+      summary: "✅ Listar vínculos do usuário autenticado"
       description: 'Requisitos relacionados: RF172, RF299, RF317'
       tags:
       - Vínculos
@@ -1352,7 +1380,8 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
     post:
-      summary: Solicitar vínculo entre paciente e profissional
+      x-status: concluido
+      summary: "✅ Solicitar vínculo entre paciente e profissional"
       description: 'Requisitos relacionados: RF172-176, RF185, RF305'
       tags:
       - Vínculos
@@ -1397,7 +1426,8 @@ paths:
           $ref: '#/components/responses/InternalServerError'
   /vinculos/{id}:
     get:
-      summary: Detalhar vínculo
+      x-status: concluido
+      summary: "✅ Detalhar vínculo"
       description: 'Requisitos relacionados: RF176-177, RF186'
       tags:
       - Vínculos
@@ -1438,7 +1468,8 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
     delete:
-      summary: Excluir vínculo
+      x-status: concluido
+      summary: "✅ Excluir vínculo"
       description: 'Requisitos relacionados: RF178, RF188, RF326'
       tags:
       - Vínculos
@@ -1484,7 +1515,8 @@ paths:
           $ref: '#/components/responses/InternalServerError'
   /vinculos/{id}/aceitar:
     put:
-      summary: Aceitar solicitação de vínculo
+      x-status: concluido
+      summary: "✅ Aceitar solicitação de vínculo"
       description: 'Requisitos relacionados: RF175'
       tags:
       - Vínculos
@@ -1529,7 +1561,8 @@ paths:
           $ref: '#/components/responses/InternalServerError'
   /vinculos/{id}/recusar:
     put:
-      summary: Recusar solicitação de vínculo
+      x-status: concluido
+      summary: "✅ Recusar solicitação de vínculo"
       description: 'Requisitos relacionados: RF185'
       tags:
       - Vínculos
@@ -1574,7 +1607,8 @@ paths:
           $ref: '#/components/responses/InternalServerError'
   /consultas:
     get:
-      summary: Listar consultas do usuário autenticado
+      x-status: concluido
+      summary: "✅ Listar consultas do usuário autenticado"
       description: 'Requisitos relacionados: RF21, RF28, RF31-35'
       tags:
       - Consultas
@@ -1632,7 +1666,8 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
     post:
-      summary: Cadastrar nova consulta
+      x-status: concluido
+      summary: "✅ Cadastrar nova consulta"
       description: 'Requisitos relacionados: RF22-27, RF34'
       tags:
       - Consultas
@@ -1677,7 +1712,8 @@ paths:
           $ref: '#/components/responses/InternalServerError'
   /consultas/{id}:
     get:
-      summary: Detalhar consulta
+      x-status: concluido
+      summary: "✅ Detalhar consulta"
       description: 'Requisitos relacionados: RF28, RF35'
       tags:
       - Consultas
@@ -1718,7 +1754,8 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
     delete:
-      summary: Cancelar/excluir consulta
+      x-status: concluido
+      summary: "✅ Cancelar/excluir consulta"
       description: 'Requisitos relacionados: RF34'
       tags:
       - Consultas
@@ -1763,7 +1800,8 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
     put:
-      summary: Editar consulta
+      x-status: concluido
+      summary: "✅ Editar consulta"
       description: 'Requisitos relacionados: RF23-25'
       tags:
       - Consultas
@@ -1816,7 +1854,8 @@ paths:
           $ref: '#/components/responses/InternalServerError'
   /profissionais/me/disponibilidades:
     get:
-      summary: Listar disponibilidades cadastradas
+      x-status: pendente
+      summary: "Listar disponibilidades cadastradas"
       description: 'Requisitos relacionados: RF36-38, RF40'
       tags:
       - Disponibilidades
@@ -1851,7 +1890,8 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
     post:
-      summary: Informar nova disponibilidade
+      x-status: pendente
+      summary: "Informar nova disponibilidade"
       description: 'Requisitos relacionados: RF39'
       tags:
       - Disponibilidades
@@ -1896,7 +1936,8 @@ paths:
           $ref: '#/components/responses/InternalServerError'
   /disponibilidades/{id}:
     delete:
-      summary: Excluir disponibilidade
+      x-status: pendente
+      summary: "Excluir disponibilidade"
       description: 'Requisitos relacionados: RF37, RF40'
       tags:
       - Disponibilidades
@@ -1941,7 +1982,8 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
     put:
-      summary: Editar disponibilidade
+      x-status: pendente
+      summary: "Editar disponibilidade"
       description: 'Requisitos relacionados: RF37, RF40'
       tags:
       - Disponibilidades
@@ -1994,7 +2036,8 @@ paths:
           $ref: '#/components/responses/InternalServerError'
   /pacientes/me/registros-humor:
     get:
-      summary: Listar registros diários de humor do paciente autenticado
+      x-status: pendente
+      summary: "Listar registros diários de humor do paciente autenticado"
       description: 'Requisitos relacionados: RF82, RF84'
       tags:
       - Registros de Humor
@@ -2042,7 +2085,8 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
     post:
-      summary: Salvar registro diário 'Como você está hoje?'
+      x-status: pendente
+      summary: "Salvar registro diário 'Como você está hoje?'"
       description: 'Requisitos relacionados: RF71-81, RF83'
       tags:
       - Registros de Humor
@@ -2093,7 +2137,8 @@ paths:
           $ref: '#/components/responses/InternalServerError'
   /pacientes/{id}/anotacoes:
     get:
-      summary: Listar anotações privadas do profissional sobre o paciente
+      x-status: pendente
+      summary: "Listar anotações privadas do profissional sobre o paciente"
       description: 'Requisitos relacionados: RF221-222, RF310, RF234-235'
       tags:
       - Anotações
@@ -2136,7 +2181,8 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
     post:
-      summary: Registrar nova anotação privada
+      x-status: pendente
+      summary: "Registrar nova anotação privada"
       description: 'Requisitos relacionados: RF221, RF310'
       tags:
       - Anotações
@@ -2189,7 +2235,8 @@ paths:
           $ref: '#/components/responses/InternalServerError'
   /anotacoes/{id}:
     delete:
-      summary: Excluir anotação
+      x-status: pendente
+      summary: "Excluir anotação"
       description: 'Requisitos relacionados: RF311'
       tags:
       - Anotações
@@ -2234,7 +2281,8 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
     put:
-      summary: Editar anotação
+      x-status: pendente
+      summary: "Editar anotação"
       description: 'Requisitos relacionados: RF311'
       tags:
       - Anotações
@@ -2287,7 +2335,8 @@ paths:
           $ref: '#/components/responses/InternalServerError'
   /pacientes/{id}/solicitacoes-acesso:
     post:
-      summary: Profissional solicita acesso aos indicadores do paciente
+      x-status: pendente
+      summary: "Profissional solicita acesso aos indicadores do paciente"
       description: 'Requisitos relacionados: RF223-225, RF312'
       tags:
       - Solicitações de Acesso
@@ -2340,7 +2389,8 @@ paths:
           $ref: '#/components/responses/InternalServerError'
   /solicitacoes-acesso:
     get:
-      summary: Listar solicitações de acesso (enviadas ou recebidas conforme o perfil)
+      x-status: pendente
+      summary: "Listar solicitações de acesso (enviadas ou recebidas conforme o perfil)"
       description: 'Requisitos relacionados: RF202-203, RF313'
       tags:
       - Solicitações de Acesso
@@ -2376,7 +2426,8 @@ paths:
           $ref: '#/components/responses/InternalServerError'
   /solicitacoes-acesso/{id}:
     get:
-      summary: Detalhar solicitação de acesso
+      x-status: pendente
+      summary: "Detalhar solicitação de acesso"
       description: 'Requisitos relacionados: RF204'
       tags:
       - Solicitações de Acesso
@@ -2418,7 +2469,8 @@ paths:
           $ref: '#/components/responses/InternalServerError'
   /solicitacoes-acesso/{id}/aprovar:
     put:
-      summary: Paciente aprova solicitação, selecionando categorias de dados
+      x-status: pendente
+      summary: "Paciente aprova solicitação, selecionando categorias de dados"
       description: 'Requisitos relacionados: RF205-206'
       tags:
       - Solicitações de Acesso
@@ -2471,7 +2523,8 @@ paths:
           $ref: '#/components/responses/InternalServerError'
   /solicitacoes-acesso/{id}/recusar:
     put:
-      summary: Paciente recusa solicitação de acesso
+      x-status: pendente
+      summary: "Paciente recusa solicitação de acesso"
       description: 'Requisitos relacionados: RF207'
       tags:
       - Solicitações de Acesso
@@ -2516,7 +2569,8 @@ paths:
           $ref: '#/components/responses/InternalServerError'
   /notificacoes:
     get:
-      summary: Listar notificações do usuário autenticado
+      x-status: pendente
+      summary: "Listar notificações do usuário autenticado"
       description: 'Requisitos relacionados: RF120-121, RF128-129'
       tags:
       - Notificações
@@ -2561,7 +2615,8 @@ paths:
           $ref: '#/components/responses/InternalServerError'
   /notificacoes/{id}/marcar-lida:
     put:
-      summary: Marcar notificação individual como lida
+      x-status: pendente
+      summary: "Marcar notificação individual como lida"
       description: 'Requisitos relacionados: RF124, RF131'
       tags:
       - Notificações
@@ -2607,7 +2662,8 @@ paths:
           $ref: '#/components/responses/InternalServerError'
   /notificacoes/marcar-todas-lidas:
     put:
-      summary: Marcar todas as notificações como lidas
+      x-status: pendente
+      summary: "Marcar todas as notificações como lidas"
       description: 'Requisitos relacionados: RF124, RF131'
       tags:
       - Notificações
@@ -2645,7 +2701,8 @@ paths:
           $ref: '#/components/responses/InternalServerError'
   /preferencias-notificacao:
     get:
-      summary: Listar preferências de notificação por categoria
+      x-status: pendente
+      summary: "Listar preferências de notificação por categoria"
       description: 'Requisitos relacionados: RF125, RF132'
       tags:
       - Preferências de Notificação
@@ -2680,7 +2737,8 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
     put:
-      summary: Salvar preferências de notificação (inclui 'Desligar todas')
+      x-status: pendente
+      summary: "Salvar preferências de notificação (inclui 'Desligar todas')"
       description: 'Requisitos relacionados: RF125-127, RF132-134'
       tags:
       - Preferências de Notificação
@@ -2727,7 +2785,8 @@ paths:
           $ref: '#/components/responses/InternalServerError'
   /tarefas:
     get:
-      summary: Listar tarefas (abas Todas/Pendentes/Em andamento/Concluídas/Em atraso, ou Enviadas/Rascunhos)
+      x-status: pendente
+      summary: "Listar tarefas (abas Todas/Pendentes/Em andamento/Concluídas/Em atraso, ou Enviadas/Rascunhos)"
       description: 'Requisitos relacionados: RF257-261, RF274'
       tags:
       - Tarefas
@@ -2776,7 +2835,8 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
     post:
-      summary: Criar tarefa (formulário, arquivo ou auto-tarefa)
+      x-status: pendente
+      summary: "Criar tarefa (formulário, arquivo ou auto-tarefa)"
       description: 'Requisitos relacionados: RF262, RF275-277, RF289'
       tags:
       - Tarefas
@@ -2821,7 +2881,8 @@ paths:
           $ref: '#/components/responses/InternalServerError'
   /tarefas/{id}:
     get:
-      summary: Detalhar tarefa
+      x-status: pendente
+      summary: "Detalhar tarefa"
       description: 'Requisitos relacionados: RF264-265, RF285'
       tags:
       - Tarefas
@@ -2862,7 +2923,8 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
     delete:
-      summary: Excluir tarefa (bloqueado se já houver respostas)
+      x-status: pendente
+      summary: "Excluir tarefa (bloqueado se já houver respostas)"
       description: 'Requisitos relacionados: RF291-292'
       tags:
       - Tarefas
@@ -2913,7 +2975,8 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
     put:
-      summary: Editar tarefa existente
+      x-status: pendente
+      summary: "Editar tarefa existente"
       description: 'Requisitos relacionados: RF284, RF290'
       tags:
       - Tarefas
@@ -2966,7 +3029,8 @@ paths:
           $ref: '#/components/responses/InternalServerError'
   /tarefas/{id}/enviar:
     post:
-      summary: Enviar tarefa aos pacientes selecionados
+      x-status: pendente
+      summary: "Enviar tarefa aos pacientes selecionados"
       description: 'Requisitos relacionados: RF287-288'
       tags:
       - Tarefas
@@ -3008,7 +3072,8 @@ paths:
           $ref: '#/components/responses/InternalServerError'
   /tarefas/{id}/perguntas:
     get:
-      summary: Listar perguntas da tarefa
+      x-status: pendente
+      summary: "Listar perguntas da tarefa"
       description: 'Requisitos relacionados: RF265-266'
       tags:
       - Perguntas
@@ -3051,7 +3116,8 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
     post:
-      summary: Adicionar pergunta à tarefa
+      x-status: pendente
+      summary: "Adicionar pergunta à tarefa"
       description: 'Requisitos relacionados: RF280-283'
       tags:
       - Perguntas
@@ -3104,7 +3170,8 @@ paths:
           $ref: '#/components/responses/InternalServerError'
   /perguntas/{id}:
     delete:
-      summary: Excluir pergunta
+      x-status: pendente
+      summary: "Excluir pergunta"
       description: 'Requisitos relacionados: RF284'
       tags:
       - Perguntas
@@ -3149,7 +3216,8 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
     put:
-      summary: Editar pergunta (texto, tipo, ordem, obrigatoriedade)
+      x-status: pendente
+      summary: "Editar pergunta (texto, tipo, ordem, obrigatoriedade)"
       description: 'Requisitos relacionados: RF284'
       tags:
       - Perguntas
@@ -3202,7 +3270,8 @@ paths:
           $ref: '#/components/responses/InternalServerError'
   /perguntas/{id}/duplicar:
     post:
-      summary: Duplicar pergunta
+      x-status: pendente
+      summary: "Duplicar pergunta"
       description: 'Requisitos relacionados: RF284'
       tags:
       - Perguntas
@@ -3247,7 +3316,8 @@ paths:
           $ref: '#/components/responses/InternalServerError'
   /tarefas-destinatarios:
     get:
-      summary: Acompanhar respostas dos pacientes (visão do profissional)
+      x-status: pendente
+      summary: "Acompanhar respostas dos pacientes (visão do profissional)"
       description: 'Requisitos relacionados: RF293-296'
       tags:
       - Destinatários de Tarefas
@@ -3317,7 +3387,8 @@ paths:
           $ref: '#/components/responses/InternalServerError'
   /tarefas-destinatarios/{id}:
     get:
-      summary: Detalhar resposta de um destinatário (dados do paciente, perguntas e respostas)
+      x-status: pendente
+      summary: "Detalhar resposta de um destinatário (dados do paciente, perguntas e respostas)"
       description: 'Requisitos relacionados: RF272, RF297-298'
       tags:
       - Destinatários de Tarefas
@@ -3359,7 +3430,8 @@ paths:
           $ref: '#/components/responses/InternalServerError'
   /tarefas-destinatarios/{id}/respostas:
     get:
-      summary: Listar respostas já enviadas (somente leitura)
+      x-status: pendente
+      summary: "Listar respostas já enviadas (somente leitura)"
       description: 'Requisitos relacionados: RF272'
       tags:
       - Respostas
@@ -3402,7 +3474,8 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
     post:
-      summary: Salvar rascunho ou enviar respostas da tarefa
+      x-status: pendente
+      summary: "Salvar rascunho ou enviar respostas da tarefa"
       description: 'Requisitos relacionados: RF266-271, RF273'
       tags:
       - Respostas
@@ -3460,7 +3533,8 @@ paths:
           $ref: '#/components/responses/InternalServerError'
   /pacientes/me/tratamentos:
     get:
-      summary: Listar tratamentos cadastrados
+      x-status: pendente
+      summary: "Listar tratamentos cadastrados"
       description: 'Requisitos relacionados: RF332-335'
       tags:
       - Tratamentos
@@ -3495,7 +3569,8 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
     post:
-      summary: Cadastrar novo tratamento
+      x-status: pendente
+      summary: "Cadastrar novo tratamento"
       description: 'Requisitos relacionados: RF339-346'
       tags:
       - Tratamentos
@@ -3540,7 +3615,8 @@ paths:
           $ref: '#/components/responses/InternalServerError'
   /tratamentos/{id}:
     delete:
-      summary: Excluir tratamento
+      x-status: pendente
+      summary: "Excluir tratamento"
       description: 'Requisitos relacionados: RF357-361'
       tags:
       - Tratamentos
@@ -3585,7 +3661,8 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
     put:
-      summary: Editar tratamento
+      x-status: pendente
+      summary: "Editar tratamento"
       description: 'Requisitos relacionados: RF349-355'
       tags:
       - Tratamentos
@@ -3638,7 +3715,8 @@ paths:
           $ref: '#/components/responses/InternalServerError'
   /tratamentos/{id}/horarios:
     post:
-      summary: Adicionar horário ao tratamento
+      x-status: pendente
+      summary: "Adicionar horário ao tratamento"
       description: 'Requisitos relacionados: RF334, RF343'
       tags:
       - Horários de Tratamento
@@ -3695,7 +3773,8 @@ paths:
           $ref: '#/components/responses/InternalServerError'
   /horarios-tratamento/{id}:
     delete:
-      summary: Remover horário do tratamento
+      x-status: pendente
+      summary: "Remover horário do tratamento"
       description: 'Requisitos relacionados: RF334'
       tags:
       - Horários de Tratamento
@@ -3741,7 +3820,8 @@ paths:
           $ref: '#/components/responses/InternalServerError'
   /horarios-tratamento/{id}/registros-dose:
     get:
-      summary: Listar histórico de doses de um horário (base para aderência, RF237)
+      x-status: pendente
+      summary: "Listar histórico de doses de um horário (base para aderência, RF237)"
       description: 'Requisitos relacionados: RF237'
       tags:
       - Registros de Dose
@@ -3784,7 +3864,8 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
     post:
-      summary: Confirmar ou registrar dose não tomada
+      x-status: pendente
+      summary: "Confirmar ou registrar dose não tomada"
       description: 'Requisitos relacionados: RF130 (lembrete origina este registro)'
       tags:
       - Registros de Dose
@@ -3837,7 +3918,8 @@ paths:
           $ref: '#/components/responses/InternalServerError'
   /pacientes/{id}/relatorios:
     get:
-      summary: Relatório de um paciente, visão do profissional (requer solicitação de acesso aprovada)
+      x-status: pendente
+      summary: "Relatório de um paciente, visão do profissional (requer solicitação de acesso aprovada)"
       description: 'Requisitos relacionados: RF228-238'
       tags:
       - Pacientes
@@ -3889,7 +3971,8 @@ paths:
           $ref: '#/components/responses/InternalServerError'
   /especialidades:
     get:
-      summary: Listar especialidades cadastradas
+      x-status: pendente
+      summary: "Listar especialidades cadastradas"
       description: 'Requisitos relacionados: RF160, RF321'
       tags:
       - Especialidades
@@ -3924,7 +4007,8 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
     post:
-      summary: Cadastrar nova especialidade (Admin)
+      x-status: pendente
+      summary: "Cadastrar nova especialidade (Admin)"
       description: 'Requisitos relacionados: -'
       tags:
       - Especialidades
@@ -3972,7 +4056,8 @@ paths:
           $ref: '#/components/responses/InternalServerError'
   /categorias:
     get:
-      summary: Listar categorias de notificação
+      x-status: pendente
+      summary: "Listar categorias de notificação"
       description: 'Requisitos relacionados: RF121, RF129, RF125, RF132'
       tags:
       - Categorias
