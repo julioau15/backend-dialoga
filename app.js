@@ -21,7 +21,7 @@ const port = 8080
 const corsOptions = {
     origin: '*',
     methods: 'GET, POST, PUT, DELETE, OPTIONS',
-    allowedHeaders: ['Content-type', 'Authorization'] 
+    allowedHeaders: ['Content-type', 'Authorization', 'x-access-token'], 
 }
 
 app.use(cors(corsOptions))

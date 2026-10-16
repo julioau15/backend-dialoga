@@ -12,28 +12,20 @@ const bodyParser = require('body-parser')
 const bodyParserJSON = bodyParser.json()
 
 const {
-    inserirNovaSolicitacaoAcesso,
     atualizarSolicitacaoAcesso,
     listarSolicitacaoAcesso,
     buscarSolicitacaoAcesso,
-    excluirSolicitacaoAcesso
+    excluirSolicitacaoAcesso,
+    aprovarSolicitacaoAcesso,
+    reprovarSolicitacaoAcesso
 } = require('../controller/solicitacao_acesso/controller_solicitacao_acesso.js')
 
 // ---------------- solicitacaoAcesso -----------------
 
-// endpoint para inserir solicitacaoAcesso
-router.post('/',bodyParserJSON, async (req,res) => {
-    // recebe o conteudo dentro do body da requisição
-    let dados = req.body
-    let contentType = req.headers['content-type']
-
-    let result = await inserirNovaSolicitacaoAcesso(dados,contentType)
-    res.status(result.status_code).json(result)
-})
-
 // endpoint para retornar todas solicitacaoAcessos
 router.get('/', async (req,res) => {
-    let result = await listarSolicitacaoAcesso()
+    let token = req.headers['authorization']
+    let result = await listarSolicitacaoAcesso(token)
     res.status(result.status_code).json(result)
 })
 
@@ -58,6 +50,20 @@ router.put('/:id', bodyParserJSON, async (req,res) => {
 router.delete('/:id', async (req,res) => {
     let id = req.params.id
     let result = await excluirSolicitacaoAcesso(id)
+    res.status(result.status_code).json(result)
+})
+
+// endpoint para aprovar uma solicitacaoAcesso pelo id
+router.put('/:id', async (req,res) => {
+    let id          = req.params.id
+    let result      = await aprovarSolicitacaoAcesso(id)
+    res.status(result.status_code).json(result)
+})
+
+// endpoint para reprovar uma solicitacaoAcesso pelo id
+router.put('/:id', async (req,res) => {
+    let id          = req.params.id
+    let result      = await reprovarSolicitacaoAcesso(id)
     res.status(result.status_code).json(result)
 })
 

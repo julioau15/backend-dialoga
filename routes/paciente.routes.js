@@ -39,6 +39,10 @@ const {
     inserirNovaAnotacao
 } = require('../controller/anotacao/controller_anotacao.js')
 
+const {
+    inserirNovaSolicitacaoAcesso
+} = require('../controller/solicitacao_acesso/controller_solicitacao_acesso.js')
+
 const formatarJson = async (dados, acao) => {
     const pacienteInserir = {
         nome_completo     : String(dados.nome_completo),
@@ -115,6 +119,14 @@ router.post('/:id/anotacoes', bodyParserJSON, async (req,res) => {
     res.status(result.status_code).json(result)
 })
 
+// endpoint para uma solicitação de acesso de um profissional a um paciente
+router.post('/:id/solicitacoes-acesso', async (req,res) => {
+    let token = req.headers['x-access-token']
+    let idPaciente = req.params.id
+    let result = await inserirNovaSolicitacaoAcesso(token, idPaciente)
+    res.status(result.status_code).json(result)
+})
+
 // endpoint para inserir um vinculo entre paciente e profissional
 router.post('/me/profissionais/:id', async (req,res) => {
     let token = req.headers['x-access-token']
@@ -124,7 +136,6 @@ router.post('/me/profissionais/:id', async (req,res) => {
     let result = await inserirNovoVinculo(token, idProfissional)
     res.status(result.status_code).json(result)
 })
-
 
 // endpoint para inserir um registro de humor de um paciente pelo token
 router.post('/me/registros-humor', async (req,res) => {

@@ -7,13 +7,27 @@
 
 const config_message = require('../module/configMessages.js')
 const solicitacaoAcessoDAO = require('../../model/DAO/solicitacao_acesso/solicitacao_acesso.js')
+const { decodeJWT } = require('../../middleware/middlewareJWT.js')
 
 // inserir nova solicitacaoAcesso
-const inserirNovaSolicitacaoAcesso = async (solicitacaoAcesso, contentType) => {
+const inserirNovaSolicitacaoAcesso = async (token, idPaciente) => {
     let message = JSON.parse(JSON.stringify(config_message))
     try {
-        let validar = await validarDados(solicitacaoAcesso, contentType)
-        if(validar) return validar // 400 ou 415
+        let decodedToken = await decodeJWT(token)
+        if(!decodedToken.status) return message.ERROR_INVALID_TOKEN
+
+        let idProfissional = decodedToken.decode.id
+
+        let solicitacaoAcesso = {
+            id_profissional: idProfissional,
+            id_paciente: idPaciente
+        }
+
+        let validarIdProfissional = await validarId(solicitacaoAcesso.id_profissional)
+        if(validarIdProfissional) return validarIdProfissional // 400
+
+        let validarIdPaciente = await validarId(solicitacaoAcesso.id_paciente)
+        if(validarIdPaciente) return validarIdPaciente // 400
 
         let result = await solicitacaoAcessoDAO.insertSolicitacaoAcesso(solicitacaoAcesso)
 
@@ -49,11 +63,28 @@ const atualizarSolicitacaoAcesso = async (solicitacaoAcesso, id, contentType) =>
 }
 
 // listar todas solicitacaoAcessos
-const listarSolicitacaoAcesso = async () => {
+const listarSolicitacaoAcesso = async (token) => {
     let message = JSON.parse(JSON.stringify(config_message))
 
     try {
-        let result = await solicitacaoAcessoDAO.selectAllSolicitacaoAcesso()
+        let decodedToken = await decodeJWT(token)
+        if(!decodedToken.status) return message.ERROR_INVALID_TOKEN
+
+        let nivelDeUsuario = decodedToken.decode.nivel
+
+        let result
+
+        if(nivelDeUsuario == 0){
+            result = await solicitacaoAcessoDAO.selectAllSolicitacaoAcesso()
+        }
+
+        if(nivelDeUsuario == 1){
+            result = await solicitacaoAcessoDAO.selectSolicitacaoAcessoByIdProfissional(decodedToken.decode.id)
+        }
+
+        if(nivelDeUsuario == 2){
+            result = await solicitacaoAcessoDAO.selectSolicitacaoAcessoByIdPaciente(decodedToken.decode.id)
+        }
 
         if(!result) return message.ERROR_INTERNAL_SERVER_MODEL // 500
 
@@ -104,6 +135,48 @@ const excluirSolicitacaoAcesso = async (id) => {
         if(!result) return message.ERROR_INTERNAL_SERVER_MODEL // 500
 
         return await montarMensagem(message, message.SUCESS_DELETE_ITEM)
+
+    } catch (error) {console.log(error)}
+    return message.ERROR_INTERNAL_SERVER_CONTROLLER // 500
+}
+
+// aprovar solicitacaoAcesso pelo id
+const aprovarSolicitacaoAcesso = async (id) => {
+    let message = JSON.parse(JSON.stringify(config_message))
+
+    try {
+        let validarIdSolicitacaoAcesso = await validarId(id)
+        if(validarIdSolicitacaoAcesso) return validarIdSolicitacaoAcesso // 400
+
+        let resultBuscarId = await buscarSolicitacaoAcesso(id)
+        if(!resultBuscarId.status) return resultBuscarId // 400 e 404
+
+        let result = await solicitacaoAcessoDAO.aprovarSolicitacaoAcesso(id)
+
+        if(!result) return message.ERROR_INTERNAL_SERVER_MODEL // 500
+
+        return await montarMensagem(message, message.SUCESS_UPDATE_ITEM)
+
+    } catch (error) {console.log(error)}
+    return message.ERROR_INTERNAL_SERVER_CONTROLLER // 500
+}
+
+// reprovar solicitacaoAcesso pelo id
+const reprovarSolicitacaoAcesso = async (id) => {
+    let message = JSON.parse(JSON.stringify(config_message))
+
+    try {
+        let validarIdSolicitacaoAcesso = await validarId(id)
+        if(validarIdSolicitacaoAcesso) return validarIdSolicitacaoAcesso // 400
+
+        let resultBuscarId = await buscarSolicitacaoAcesso(id)
+        if(!resultBuscarId.status) return resultBuscarId // 400 e 404
+
+        let result = await solicitacaoAcessoDAO.reprovarSolicitacaoAcesso(id)
+
+        if(!result) return message.ERROR_INTERNAL_SERVER_MODEL // 500
+
+        return await montarMensagem(message, message.SUCESS_UPDATE_ITEM)
 
     } catch (error) {console.log(error)}
     return message.ERROR_INTERNAL_SERVER_CONTROLLER // 500
@@ -182,5 +255,7 @@ module.exports = {
     atualizarSolicitacaoAcesso,
     listarSolicitacaoAcesso,
     buscarSolicitacaoAcesso,
-    excluirSolicitacaoAcesso
+    excluirSolicitacaoAcesso,
+    aprovarSolicitacaoAcesso,
+    reprovarSolicitacaoAcesso
 }

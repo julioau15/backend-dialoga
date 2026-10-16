@@ -2335,8 +2335,8 @@ paths:
           $ref: '#/components/responses/InternalServerError'
   /pacientes/{id}/solicitacoes-acesso:
     post:
-      x-status: pendente
-      summary: "Profissional solicita acesso aos indicadores do paciente"
+      x-status: concluido
+      summary: "✅ Profissional solicita acesso aos indicadores do paciente"
       description: 'Requisitos relacionados: RF223-225, RF312'
       tags:
       - Solicitações de Acesso
@@ -2389,8 +2389,8 @@ paths:
           $ref: '#/components/responses/InternalServerError'
   /solicitacoes-acesso:
     get:
-      x-status: pendente
-      summary: "Listar solicitações de acesso (enviadas ou recebidas conforme o perfil)"
+      x-status: concluido
+      summary: "✅ Listar solicitações de acesso (enviadas ou recebidas conforme o perfil)"
       description: 'Requisitos relacionados: RF202-203, RF313'
       tags:
       - Solicitações de Acesso
@@ -2426,8 +2426,8 @@ paths:
           $ref: '#/components/responses/InternalServerError'
   /solicitacoes-acesso/{id}:
     get:
-      x-status: pendente
-      summary: "Detalhar solicitação de acesso"
+      x-status: concluido
+      summary: "✅ Detalhar solicitação de acesso"
       description: 'Requisitos relacionados: RF204'
       tags:
       - Solicitações de Acesso
@@ -2469,8 +2469,8 @@ paths:
           $ref: '#/components/responses/InternalServerError'
   /solicitacoes-acesso/{id}/aprovar:
     put:
-      x-status: pendente
-      summary: "Paciente aprova solicitação, selecionando categorias de dados"
+      x-status: concluido
+      summary: "✅ Paciente aprova solicitação, selecionando categorias de dados"
       description: 'Requisitos relacionados: RF205-206'
       tags:
       - Solicitações de Acesso
@@ -2523,8 +2523,8 @@ paths:
           $ref: '#/components/responses/InternalServerError'
   /solicitacoes-acesso/{id}/recusar:
     put:
-      x-status: pendente
-      summary: "Paciente recusa solicitação de acesso"
+      x-status: concluido
+      summary: "✅ Paciente recusa solicitação de acesso"
       description: 'Requisitos relacionados: RF207'
       tags:
       - Solicitações de Acesso

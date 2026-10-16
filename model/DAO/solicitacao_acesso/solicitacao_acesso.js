@@ -13,13 +13,10 @@ const knexConex = knex(knexConfig.development)
 // insert de solicitacaoAcesso
 const insertSolicitacaoAcesso = async (solicitacaoAcesso) => {
     let sql = `INSERT INTO tbl_solicitacao_acesso (status, data_solicitacao, data_resposta, id_profissional, id_paciente)
-               VALUES (?, ?, ?, ?, ?)`
+               VALUES (0, now(), null, ?, ?)`
 
     try {
         let response = await knexConex.raw(sql, [
-            solicitacaoAcesso.status,
-            solicitacaoAcesso.data_solicitacao,
-            solicitacaoAcesso.data_resposta,
             solicitacaoAcesso.id_profissional,
             solicitacaoAcesso.id_paciente
         ])
@@ -116,10 +113,88 @@ const deleteSolicitacaoAcesso = async (id) => {
     return false
 }
 
+// aprova uma solicitação de acesso
+const aprovarSolicitacaoAcesso = async (id) => {
+    let sql = `UPDATE tbl_solicitacao_acesso
+               SET status = 1,
+                   data_resposta = now()
+               WHERE id = ?`
+    try {
+        let response = await knexConex.raw(sql, [id])
+
+        if(response) return response
+
+    } catch (error) { console.log(error) }
+
+    return false
+}
+
+// reprovar uma solicitação de acesso
+const reprovarSolicitacaoAcesso = async (id) => {
+    let sql = `UPDATE tbl_solicitacao_acesso
+               SET status = 2,
+                   data_resposta = now()
+               WHERE id = ?`
+    try {
+        let response = await knexConex.raw(sql, [id])
+
+        if(response) return response
+
+    } catch (error) { console.log(error) }
+
+    return false
+}
+
+// lista solicitações recebidas pelo paciente
+const selectSolicitacaoAcessoByIdPaciente = async (idPaciente) => {
+    let sql = `SELECT
+                   id,
+                   status,
+                   data_solicitacao,
+                   data_resposta,
+                   id_profissional,
+                   id_paciente
+               FROM tbl_solicitacao_acesso
+               WHERE id_paciente = ?`
+    try {
+        let response = await knexConex.raw(sql, [idPaciente])
+
+        if(response) return response[0]
+
+    } catch (error) { console.log(error) }
+
+    return false
+}
+
+// lista solicitações enviadas pelo profissional
+const selectSolicitacaoAcessoByIdProfissional = async (idProfissional) => {
+    let sql = `SELECT
+                   id,
+                   status,
+                   data_solicitacao,
+                   data_resposta,
+                   id_profissional,
+                   id_paciente
+               FROM tbl_solicitacao_acesso
+               WHERE id_profissional = ?`
+    try {
+        let response = await knexConex.raw(sql, [idProfissional])
+
+        if(response) return response[0]
+
+    } catch (error) { console.log(error) }
+
+    return false
+}
+
 module.exports = {
     insertSolicitacaoAcesso,
     updateSolicitacaoAcesso,
     selectAllSolicitacaoAcesso,
     selectByIdSolicitacaoAcesso,
-    deleteSolicitacaoAcesso
+    deleteSolicitacaoAcesso,
+    aprovarSolicitacaoAcesso,
+    reprovarSolicitacaoAcesso,
+    selectSolicitacaoAcessoByIdPaciente,
+    selectSolicitacaoAcessoByIdProfissional
 }
