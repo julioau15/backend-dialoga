@@ -114,8 +114,10 @@ const listarDisponibilidadeByToken = async (token) => {
     let message = JSON.parse(JSON.stringify(config_message))
 
     try {
-        let decodificarToken = await disponibilidadeDAO.decodeToken(token)
-        let idProfissional = decodificarToken.id_profissional
+        let decodedToken = await decodeJWT(token)
+        if(!decodedToken.status) return message.ERROR_INVALID_TOKEN
+
+        let idProfissional = decodedToken.decode.id
 
         let result = await disponibilidadeDAO.selectAllDisponibilidadeByIdProfissional(idProfissional)
 
@@ -137,11 +139,15 @@ const listarDisponibilidadeByToken = async (token) => {
 const inserirNovaDisponibilidadeByToken = async (disponibilidade, token, contentType) => {
     let message = JSON.parse(JSON.stringify(config_message))
     try {
+        let decodedToken = await decodeJWT(token)
+        if(!decodedToken.status) return message.ERROR_INVALID_TOKEN
+
+        let idProfissional = decodedToken.decode.id
+
+        disponibilidade.id_profissional = idProfissional
+
         let validar = await validarDados(disponibilidade, contentType)
         if(validar) return validar // 400 ou 415
-
-        let decodificarToken = await disponibilidadeDAO.decodeToken(token)
-        let idProfissional = decodificarToken.id_profissional
 
         let result = await disponibilidadeDAO.insertDisponibilidadeByIdProfissional(disponibilidade, idProfissional)
 

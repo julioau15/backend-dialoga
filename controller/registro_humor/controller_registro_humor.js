@@ -7,8 +7,9 @@
 
 const config_message = require('../module/configMessages.js')
 const registroHumorDAO = require('../../model/DAO/registro_humor/registro_humor.js')
+const { decodeJWT } = require('../../middleware/middlewareJWT.js')
 
-// inserir nova registroHumor
+// inserir novo registroHumor
 const inserirNovaRegistroHumor = async (registroHumor, contentType) => {
     let message = JSON.parse(JSON.stringify(config_message))
     try {
@@ -104,6 +105,57 @@ const excluirRegistroHumor = async (id) => {
         if(!result) return message.ERROR_INTERNAL_SERVER_MODEL // 500
 
         return await montarMensagem(message, message.SUCESS_DELETE_ITEM)
+
+    } catch (error) {console.log(error)}
+    return message.ERROR_INTERNAL_SERVER_CONTROLLER // 500
+}
+
+// inserir novo registroHumor pelo token
+const inserirNovaRegistroHumorByToken = async (registroHumor, token, contentType) => {
+    let message = JSON.parse(JSON.stringify(config_message))
+    try {
+        let decodedToken = await decodeJWT(token)
+        if(!decodedToken.status) return message.ERROR_INVALID_TOKEN
+
+        let idPaciente = decodedToken.decode.id
+
+        registroHumor.id_paciente = Number(idPaciente)
+
+        let validar = await validarDados(registroHumor, contentType)
+        if(validar) return validar // 400 ou 415
+
+        let result = await registroHumorDAO.insertRegistroHumor(registroHumor)
+
+        if(!result) return message.ERROR_INTERNAL_SERVER_MODEL
+
+        registroHumor.id = result
+        return await montarMensagem(message, message.SUCESS_CREATED_ITEM, registroHumor)
+
+    } catch (error) {console.log(error)}
+    return message.ERROR_INTERNAL_SERVER_CONTROLLER
+}
+
+// listar registroHumors do paciente pelo token
+const listarRegistroHumorByToken = async (token) => {
+    let message = JSON.parse(JSON.stringify(config_message))
+
+    try {
+        let decodedToken = await decodeJWT(token)
+        if(!decodedToken.status) return message.ERROR_INVALID_TOKEN
+
+        let idPaciente = decodedToken.decode.id
+
+        let result = await registroHumorDAO.selectByIdPacienteRegistroHumor(idPaciente)
+
+        if(!result) return message.ERROR_INTERNAL_SERVER_MODEL // 500
+
+        // verfica se o array é vazio
+        if(result.length <= 0) return message.ERROR_NOT_FOUND // status_code 404
+
+        let listarRegistroHumorMessage = await montarMensagem(message, message.SUCESS_RESPONSE, result)
+        message.DEFAULT_MESSAGE.response.count = result.length
+
+        return listarRegistroHumorMessage // status_code 200
 
     } catch (error) {console.log(error)}
     return message.ERROR_INTERNAL_SERVER_CONTROLLER // 500
@@ -206,5 +258,7 @@ module.exports = {
     atualizarRegistroHumor,
     listarRegistroHumor,
     buscarRegistroHumor,
-    excluirRegistroHumor
+    excluirRegistroHumor,
+    inserirNovaRegistroHumorByToken,
+    listarRegistroHumorByToken
 }

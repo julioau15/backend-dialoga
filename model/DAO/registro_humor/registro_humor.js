@@ -13,10 +13,18 @@ const knexConex = knex(knexConfig.development)
 // insert de registroHumor
 const insertRegistroHumor = async (registroHumor) => {
     let sql = `INSERT INTO tbl_registro_humor (data, sentimento, energia, humor, padrao_pensamentos, horas_sono, relato, data_criacao, id_paciente)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+               VALUES (NOW(), ?, ?, ?, ?, ?, ?, now(), ?)`
 
     try {
-        let response = await knexConex.raw(sql, [registroHumor.data, registroHumor.sentimento, registroHumor.energia, registroHumor.humor, registroHumor.padrao_pensamentos, registroHumor.horas_sono, registroHumor.relato, registroHumor.data_criacao, registroHumor.id_paciente])
+        let response = await knexConex.raw(sql, [
+            registroHumor.sentimento, 
+            registroHumor.energia, 
+            registroHumor.humor, 
+            registroHumor.padrao_pensamentos, 
+            registroHumor.horas_sono, 
+            registroHumor.relato, 
+            registroHumor.id_paciente
+        ])
 
         if(response) return response[0].insertId 
 
@@ -115,10 +123,34 @@ const deleteRegistroHumor = async (id) => {
     return false
 }
 
+// select dos registros de humor do paciente pelo id do paciente
+const selectByIdPacienteRegistroHumor = async (idPaciente) => {
+    let sql = `SELECT
+                   id,
+                   data,
+                   sentimento,
+                   energia,
+                   humor,
+                   padrao_pensamentos,
+                   horas_sono,
+                   relato,
+                   data_criacao,
+                   id_paciente
+               FROM tbl_registro_humor
+               WHERE id_paciente = ?`
+    try {
+        let response = await knexConex.raw(sql, [idPaciente])
+
+        if(response) return response[0]
+
+    } catch (error) { console.log(error) }
+}
+
 module.exports = {
     insertRegistroHumor,
     updateRegistroHumor,
     selectAllRegistroHumor,
     selectByIdRegistroHumor,
-    deleteRegistroHumor
+    deleteRegistroHumor,
+    selectByIdPacienteRegistroHumor
 }

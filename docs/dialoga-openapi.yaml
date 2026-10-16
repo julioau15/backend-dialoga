@@ -1854,8 +1854,8 @@ paths:
           $ref: '#/components/responses/InternalServerError'
   /profissionais/me/disponibilidades:
     get:
-      x-status: pendente
-      summary: "Listar disponibilidades cadastradas"
+      x-status: concluido
+      summary: "✅ Login por e-mail e senha"
       description: 'Requisitos relacionados: RF36-38, RF40'
       tags:
       - Disponibilidades
@@ -1890,8 +1890,8 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
     post:
-      x-status: pendente
-      summary: "Informar nova disponibilidade"
+      x-status: concluido
+      summary: "✅ Login por e-mail e senha"
       description: 'Requisitos relacionados: RF39'
       tags:
       - Disponibilidades
@@ -1936,8 +1936,8 @@ paths:
           $ref: '#/components/responses/InternalServerError'
   /disponibilidades/{id}:
     delete:
-      x-status: pendente
-      summary: "Excluir disponibilidade"
+      x-status: concluido
+      summary: "✅ Login por e-mail e senha"
       description: 'Requisitos relacionados: RF37, RF40'
       tags:
       - Disponibilidades
@@ -1982,8 +1982,8 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
     put:
-      x-status: pendente
-      summary: "Editar disponibilidade"
+      x-status: concluido
+      summary: "✅ Login por e-mail e senha"
       description: 'Requisitos relacionados: RF37, RF40'
       tags:
       - Disponibilidades
@@ -3916,59 +3916,6 @@ paths:
           $ref: '#/components/responses/UnsupportedMediaType'
         '500':
           $ref: '#/components/responses/InternalServerError'
-  /pacientes/{id}/relatorios:
-    get:
-      x-status: pendente
-      summary: "Relatório de um paciente, visão do profissional (requer solicitação de acesso aprovada)"
-      description: 'Requisitos relacionados: RF228-238'
-      tags:
-      - Pacientes
-      parameters:
-      - name: id
-        in: path
-        required: true
-        description: Identificador do recurso
-        schema:
-          type: integer
-          format: int64
-      - name: periodo
-        in: query
-        required: false
-        schema:
-          type: string
-          enum:
-          - 7d
-          - 14d
-          - 30d
-        description: Janela de análise (RF228)
-      responses:
-        '200':
-          description: Relatório do período
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  status:
-                    type: boolean
-                    example: true
-                  status_code:
-                    type: integer
-                    example: 200
-                  response:
-                    $ref: '#/components/schemas/RelatorioPeriodo'
-                required:
-                - status
-                - status_code
-                - response
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
   /especialidades:
     get:
       x-status: pendente
@@ -4658,18 +4605,6 @@ components:
         id:
           type: integer
           format: int64
-        dias_da_semana:
-          type: array
-          items:
-            type: string
-            enum:
-            - SEG
-            - TER
-            - QUA
-            - QUI
-            - SEX
-            - SAB
-            - DOM
         hora_inicio:
           type: string
           format: time
@@ -4693,10 +4628,6 @@ components:
     DisponibilidadeCriarRequest:
       type: object
       properties:
-        dias_da_semana:
-          type: array
-          items:
-            type: string
         hora_inicio:
           type: string
           format: time

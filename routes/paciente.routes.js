@@ -29,6 +29,11 @@ const {
     excluirVinculo
 } = require('../controller/paciente/controller_paciente.js')
 
+const {
+    inserirNovaRegistroHumorByToken,
+    listarRegistroHumorByToken
+} = require('../controller/registro_humor/controller_registro_humor.js')
+
 const formatarJson = async (dados, acao) => {
     const pacienteInserir = {
         nome_completo     : String(dados.nome_completo),
@@ -52,10 +57,37 @@ const formatarJson = async (dados, acao) => {
 
 // ---------------- paciente -----------------
 
+// endpoint para listar os regitros de humor de um paciente pelo token
+router.get('/me/registros-humor', async (req,res) => {
+    let token = req.headers['x-access-token']
+    let result = await listarRegistroHumorByToken(token)
+    res.status(result.status_code).json(result)
+})
+
 // endpoint para retornar profissionais vinculados a um paciente
 router.get('/me/profissionais', async (req,res) => {
     let token = req.headers['x-access-token']
     let result = await listarProfissionaisVinculados(token)
+    res.status(result.status_code).json(result)
+})
+
+// endpoint para retornar um paciente pelo token
+router.get('/me', async (req,res) => {
+    let token = req.headers['x-access-token']
+    let result = await buscarPacienteByToken(token)
+    res.status(result.status_code).json(result)
+})
+
+// endpoint para retornar todas pacientes
+router.get('/', async (req,res) => {
+    let result = await listarPaciente()
+    res.status(result.status_code).json(result)
+})
+
+// endpoint para buscar um paciente pelo id
+router.get('/:id', async (req,res) => {
+    let id = req.params.id
+    let result = await buscarPaciente(id)
     res.status(result.status_code).json(result)
 })
 
@@ -69,11 +101,15 @@ router.post('/me/profissionais/:id', async (req,res) => {
     res.status(result.status_code).json(result)
 })
 
-// endpoint para deletar um paciente pelo id
-router.delete('/me/profissionais/:id', async (req,res) => {
-    let id = req.params.id
+
+// endpoint para inserir um registro de humor de um paciente pelo token
+router.post('/me/registros-humor', async (req,res) => {
+    // recebe o conteudo dentro do body da requisição
+    let dados = req.body
     let token = req.headers['x-access-token']
-    let result = await excluirVinculo(token, id)
+    let contentType = req.headers['content-type']
+
+    let result = await inserirNovaRegistroHumorByToken(dados, token, contentType)
     res.status(result.status_code).json(result)
 })
 
@@ -100,23 +136,18 @@ router.post('/',upload.single('foto_avatar'), async (req,res) => {
     res.status(result.status_code).json(result)
 })
 
-// endpoint para retornar um paciente pelo token
-router.get('/me', async (req,res) => {
-    let token = req.headers['x-access-token']
-    let result = await buscarPacienteByToken(token)
-    res.status(result.status_code).json(result)
-})
-
-// endpoint para retornar todas pacientes
-router.get('/', async (req,res) => {
-    let result = await listarPaciente()
-    res.status(result.status_code).json(result)
-})
-
-// endpoint para buscar um paciente pelo id
-router.get('/:id', async (req,res) => {
+// endpoint para deletar um paciente pelo id
+router.delete('/me/profissionais/:id', async (req,res) => {
     let id = req.params.id
-    let result = await buscarPaciente(id)
+    let token = req.headers['x-access-token']
+    let result = await excluirVinculo(token, id)
+    res.status(result.status_code).json(result)
+})
+
+// endpoint para deletar um paciente pelo id
+router.delete('/:id', async (req,res) => {
+    let id = req.params.id
+    let result = await excluirPaciente(id)
     res.status(result.status_code).json(result)
 })
 
@@ -145,13 +176,5 @@ router.put('/:id', upload.single('foto_avatar'), async (req,res) => {
     let result      = await atualizarPaciente(paciente, id, foto_avatar, contentType)
     res.status(result.status_code).json(result)
 })
-
-// endpoint para deletar um paciente pelo id
-router.delete('/:id', async (req,res) => {
-    let id = req.params.id
-    let result = await excluirPaciente(id)
-    res.status(result.status_code).json(result)
-})
-
 
 module.exports = router
