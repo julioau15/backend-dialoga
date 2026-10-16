@@ -7,11 +7,20 @@
 
 const config_message = require('../module/configMessages.js')
 const anotacaoDAO = require('../../model/DAO/anotacao/anotacao.js')
+const { decodeJWT } = require('../../middleware/middlewareJWT.js')
 
 // inserir nova anotacao
-const inserirNovaAnotacao = async (anotacao, contentType) => {
+const inserirNovaAnotacao = async (anotacao, idPaciente, token, contentType) => {
     let message = JSON.parse(JSON.stringify(config_message))
     try {
+        let decodedToken = await decodeJWT(token)
+        if(!decodedToken.status) return message.ERROR_INVALID_TOKEN
+
+        let idProfissional = decodedToken.decode.id
+
+        anotacao.id_profissional = Number(idProfissional)
+        anotacao.id_paciente = Number(idPaciente)
+
         let validar = await validarDados(anotacao, contentType)
         if(validar) return validar // 400 ou 415
 
@@ -109,6 +118,32 @@ const excluirAnotacao = async (id) => {
     return message.ERROR_INTERNAL_SERVER_CONTROLLER // 500
 }
 
+// listar anotações pelo id do paciente e profissional
+const listarAnotacaoByIdPaciente = async (token, idPaciente) => {
+    let message = JSON.parse(JSON.stringify(config_message))
+
+    try {
+        let decodedToken = await decodeJWT(token)
+        if(!decodedToken.status) return message.ERROR_INVALID_TOKEN
+
+        let idProfissional = decodedToken.decode.id
+
+        let result = await anotacaoDAO.selectByIdPacienteAnotacao(idPaciente, idProfissional)
+
+        if(!result) return message.ERROR_INTERNAL_SERVER_MODEL // 500
+
+        // verfica se o array é vazio
+        if(result.length <= 0) return message.ERROR_NOT_FOUND // status_code 404
+
+        let listarAnotacaoMessage = await montarMensagem(message, message.SUCESS_RESPONSE, result)
+        message.DEFAULT_MESSAGE.response.count = result.length
+
+        return listarAnotacaoMessage // status_code 200
+
+    } catch (error) {console.log(error)}
+    return message.ERROR_INTERNAL_SERVER_CONTROLLER // 500
+}
+
 const validarDados = async (anotacao, contentType) => {
     let message = JSON.parse(JSON.stringify(config_message))
 
@@ -182,11 +217,11 @@ const montarMensagem = async (base,status,response = null) => {
     return base.DEFAULT_MESSAGE // 200 ou 201
 }
 
-
 module.exports = {
     inserirNovaAnotacao,
     atualizarAnotacao,
     listarAnotacao,
     buscarAnotacao,
-    excluirAnotacao
+    excluirAnotacao,
+    listarAnotacaoByIdPaciente
 }

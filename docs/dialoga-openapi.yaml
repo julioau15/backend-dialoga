@@ -1855,7 +1855,7 @@ paths:
   /profissionais/me/disponibilidades:
     get:
       x-status: concluido
-      summary: "✅ Login por e-mail e senha"
+      summary: "✅ lista disponibilidades de um profissional"
       description: 'Requisitos relacionados: RF36-38, RF40'
       tags:
       - Disponibilidades
@@ -1891,7 +1891,7 @@ paths:
           $ref: '#/components/responses/InternalServerError'
     post:
       x-status: concluido
-      summary: "✅ Login por e-mail e senha"
+      summary: "✅ insere uma disponibilidade de um profissional"
       description: 'Requisitos relacionados: RF39'
       tags:
       - Disponibilidades
@@ -1937,7 +1937,7 @@ paths:
   /disponibilidades/{id}:
     delete:
       x-status: concluido
-      summary: "✅ Login por e-mail e senha"
+      summary: "✅ deleta uma disponibilidade"
       description: 'Requisitos relacionados: RF37, RF40'
       tags:
       - Disponibilidades
@@ -1983,7 +1983,7 @@ paths:
           $ref: '#/components/responses/InternalServerError'
     put:
       x-status: concluido
-      summary: "✅ Login por e-mail e senha"
+      summary: "✅ Atualiza uma disponibilidade"
       description: 'Requisitos relacionados: RF37, RF40'
       tags:
       - Disponibilidades
@@ -2036,8 +2036,8 @@ paths:
           $ref: '#/components/responses/InternalServerError'
   /pacientes/me/registros-humor:
     get:
-      x-status: pendente
-      summary: "Listar registros diários de humor do paciente autenticado"
+      x-status: concluido
+      summary: "✅ Remover paciente da lista de acompanhamento"
       description: 'Requisitos relacionados: RF82, RF84'
       tags:
       - Registros de Humor
@@ -2085,8 +2085,8 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
     post:
-      x-status: pendente
-      summary: "Salvar registro diário 'Como você está hoje?'"
+      x-status: concluido
+      summary: "✅ Remover paciente da lista de acompanhamento"
       description: 'Requisitos relacionados: RF71-81, RF83'
       tags:
       - Registros de Humor
@@ -2137,8 +2137,8 @@ paths:
           $ref: '#/components/responses/InternalServerError'
   /pacientes/{id}/anotacoes:
     get:
-      x-status: pendente
-      summary: "Listar anotações privadas do profissional sobre o paciente"
+      x-status: concluido
+      summary: "✅ Listar anotações privadas do profissional sobre o paciente"
       description: 'Requisitos relacionados: RF221-222, RF310, RF234-235'
       tags:
       - Anotações
@@ -2181,8 +2181,8 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
     post:
-      x-status: pendente
-      summary: "Registrar nova anotação privada"
+      x-status: concluido
+      summary: "✅ Registrar nova anotação privada"
       description: 'Requisitos relacionados: RF221, RF310'
       tags:
       - Anotações
@@ -2235,8 +2235,8 @@ paths:
           $ref: '#/components/responses/InternalServerError'
   /anotacoes/{id}:
     delete:
-      x-status: pendente
-      summary: "Excluir anotação"
+      x-status: concluido
+      summary: "✅ Excluir anotação"
       description: 'Requisitos relacionados: RF311'
       tags:
       - Anotações
@@ -2281,8 +2281,8 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
     put:
-      x-status: pendente
-      summary: "Editar anotação"
+      x-status: concluido
+      summary: "✅ Editar anotação"
       description: 'Requisitos relacionados: RF311'
       tags:
       - Anotações

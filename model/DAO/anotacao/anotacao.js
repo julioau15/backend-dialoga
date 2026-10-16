@@ -37,19 +37,13 @@ const updateAnotacao = async (anotacao) => {
     let sql = `UPDATE tbl_anotacao
                SET titulo = ?,
                    conteudo = ?,
-                   data_criacao = ?,
                    data_edicao = ?,
-                   id_profissional = ?,
-                   id_paciente = ?
                WHERE id = ?`
     try {
         let response = await knexConex.raw(sql, [
             anotacao.titulo,
             anotacao.conteudo,
-            anotacao.data_criacao,
             anotacao.data_edicao,
-            anotacao.id_profissional,
-            anotacao.id_paciente,
             anotacao.id
         ])
 
@@ -121,10 +115,32 @@ const deleteAnotacao = async (id) => {
     return false
 }
 
+// listar anotações pelo id do paciente
+const selectByIdPacienteAnotacao = async (idPaciente, idProfissional) => {
+    let sql = `SELECT
+                   id,
+                   titulo,
+                   conteudo,
+                   data_criacao,
+                   data_edicao,
+                   id_profissional,
+                   id_paciente
+               FROM tbl_anotacao
+               WHERE id_paciente = ?
+               AND id_profissional = ?`
+    try {
+        let response = await knexConex.raw(sql, [idPaciente, idProfissional])
+
+        if(response) return response[0]
+
+    } catch (error) { console.log(error) }
+}
+
 module.exports = {
     insertAnotacao,
     updateAnotacao,
     selectAllAnotacao,
     selectByIdAnotacao,
-    deleteAnotacao
+    deleteAnotacao,
+    selectByIdPacienteAnotacao
 }

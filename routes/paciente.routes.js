@@ -34,6 +34,11 @@ const {
     listarRegistroHumorByToken
 } = require('../controller/registro_humor/controller_registro_humor.js')
 
+const {
+    listarAnotacaoByIdPaciente,
+    inserirNovaAnotacao
+} = require('../controller/anotacao/controller_anotacao.js')
+
 const formatarJson = async (dados, acao) => {
     const pacienteInserir = {
         nome_completo     : String(dados.nome_completo),
@@ -64,6 +69,14 @@ router.get('/me/registros-humor', async (req,res) => {
     res.status(result.status_code).json(result)
 })
 
+// endpoint para retornar anotacoes de um paciente pelo token
+router.get('/:id/anotacoes', async (req,res) => {
+    let token = req.headers['x-access-token']
+    let idPaciente = req.params.id
+    let result = await listarAnotacaoByIdPaciente(token, idPaciente)
+    res.status(result.status_code).json(result)
+})
+
 // endpoint para retornar profissionais vinculados a um paciente
 router.get('/me/profissionais', async (req,res) => {
     let token = req.headers['x-access-token']
@@ -88,6 +101,17 @@ router.get('/', async (req,res) => {
 router.get('/:id', async (req,res) => {
     let id = req.params.id
     let result = await buscarPaciente(id)
+    res.status(result.status_code).json(result)
+})
+
+// endpoint para inserir um vinculo entre paciente e profissional
+router.post('/:id/anotacoes', bodyParserJSON, async (req,res) => {
+    let token = req.headers['x-access-token']
+    let idPaciente = req.params.id
+    let dados = req.body
+    let contentType = req.headers['content-type']
+
+    let result = await inserirNovaAnotacao(dados, idPaciente, token, contentType)
     res.status(result.status_code).json(result)
 })
 
