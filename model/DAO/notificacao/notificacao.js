@@ -109,10 +109,104 @@ const deleteNotificacao = async (id) => {
     return false
 }
 
+// seleciona notificacoes por id de paciente
+const selectNotificacaoByIdPaciente = async (idPaciente) => {
+    let sql = `SELECT
+                   id,
+                   titulo_mensagem,
+                   lida,
+                   data_criacao,
+                   referencia_evento,
+                   id_categoria,
+                   id_paciente
+               FROM tbl_notificacao
+               WHERE id_paciente = ?`
+    try {
+        let response = await knexConex.raw(sql, [idPaciente])
+
+        if(response) return response[0]
+        
+    } catch (error) { console.log(error) }
+
+    return false
+}
+
+// seleciona notificacoes por id de profissional
+const selectNotificacaoByIdProfissional = async (idProfissional) => {
+    let sql = `SELECT
+                   id,
+                   titulo_mensagem,
+                   lida,
+                   data_criacao,
+                   referencia_evento,
+                   id_categoria,
+                   id_profissional
+               FROM tbl_notificacao
+               WHERE id_profissional = ?`
+    try {
+        let response = await knexConex.raw(sql, [idProfissional])
+
+        if(response) return response[0]
+        
+    } catch (error) { console.log(error) }
+
+    return false
+}
+
+// marca notificacao como lida
+const marcarNotificacaoComoLida = async (id) => {
+    let sql = `UPDATE tbl_notificacao
+               SET lida = 1
+               WHERE id = ?`
+    try {
+        let response = await knexConex.raw(sql, [id])
+
+        if(response) return response
+        
+    } catch (error) { console.log(error) }
+
+    return false
+}
+
+// marcar todas notificacoes como lidas por id de paciente
+const marcarTodasNotificacoesComoLidasByIdPaciente = async (idPaciente) => {
+    let sql = `UPDATE tbl_notificacao
+               SET lida = 1
+               WHERE id_paciente = ?`
+    try {
+        let response = await knexConex.raw(sql, [idPaciente])
+
+        if(response) return response
+        
+    } catch (error) { console.log(error) }
+
+    return false
+}
+
+// marcar todas notificacoes como lidas por id de profissional
+const marcarTodasNotificacoesComoLidasByIdProfissional = async (idProfissional) => {
+    let sql = `UPDATE tbl_notificacao
+               SET lida = 1
+               WHERE id_profissional = ?`
+    try {
+        let response = await knexConex.raw(sql, [idProfissional])
+
+        if(response) return response
+        
+    } catch (error) { console.log(error) }
+
+    return false
+}
+
 module.exports = {
     insertNotificacao,
     updateNotificacao,
     selectAllNotificacao,
     selectByIdNotificacao,
-    deleteNotificacao
+    deleteNotificacao,
+    selectNotificacaoByIdPaciente,
+    selectNotificacaoByIdProfissional,
+    marcarNotificacaoComoLida,
+    marcarTodasNotificacoesComoLidasByIdPaciente,
+    marcarTodasNotificacoesComoLidasByIdProfissional
 }

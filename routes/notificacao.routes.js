@@ -16,7 +16,10 @@ const {
     atualizarNotificacao,
     listarNotificacao,
     buscarNotificacao,
-    excluirNotificacao
+    excluirNotificacao,
+    marcarNotificacaoComoLida,
+    marcarTodasNotificacoesComoLidasByToken,
+    listarNotificacaoByToken
 } = require('../controller/notificacao/controller_notificacao.js')
 
 // ---------------- notificacao -----------------
@@ -31,9 +34,10 @@ router.post('/',bodyParserJSON, async (req,res) => {
     res.status(result.status_code).json(result)
 })
 
-// endpoint para retornar todas notificacaos
+// endpoint para listar notificações por token
 router.get('/', async (req,res) => {
-    let result = await listarNotificacao()
+    let token = req.headers['x-access-token']
+    let result = await listarNotificacaoByToken(token)
     res.status(result.status_code).json(result)
 })
 
@@ -41,6 +45,20 @@ router.get('/', async (req,res) => {
 router.get('/:id', async (req,res) => {
     let id = req.params.id
     let result = await buscarNotificacao(id)
+    res.status(result.status_code).json(result)
+})
+
+// endpoint para marcar uma notificação como lida
+router.put('/:id/marcar-lida', bodyParserJSON, async (req,res) => {
+    let id = req.params.id
+    let result = await marcarNotificacaoComoLida(id)
+    res.status(result.status_code).json(result)
+})
+
+// endpoint para marcar todas as notificações como lidas por token
+router.put('/marcar-todas-lida', bodyParserJSON, async (req,res) => {
+    let token = req.headers['x-access-token']
+    let result = await marcarTodasNotificacoesComoLidasByToken(token)
     res.status(result.status_code).json(result)
 })
 

@@ -7,6 +7,7 @@
 
 const config_message = require('../module/configMessages.js')
 const notificacaoDAO = require('../../model/DAO/notificacao/notificacao.js')
+const { decodeJWT } = require('../../middleware/middlewareJWT.js')
 
 // inserir nova notificacao
 const inserirNovaNotificacao = async (notificacao, contentType) => {
@@ -109,6 +110,83 @@ const excluirNotificacao = async (id) => {
     return message.ERROR_INTERNAL_SERVER_CONTROLLER // 500
 }
 
+// marcar notificacao como lida
+const marcarNotificacaoComoLida = async (id) => {
+    let message = JSON.parse(JSON.stringify(config_message))
+
+    try {
+
+        let resultBuscarId = await buscarNotificacao(id)
+        if(!resultBuscarId.status) return resultBuscarId // 400 e 404
+
+        let result = await notificacaoDAO.marcarNotificacaoComoLida(id)
+
+        if(!result) return message.ERROR_INTERNAL_SERVER_MODEL // 500
+
+        return await montarMensagem(message, message.SUCESS_UPDATE_ITEM)
+
+    } catch (error) {console.log(error)}
+    return message.ERROR_INTERNAL_SERVER_CONTROLLER // 500
+}
+
+// marcar todas notificacoes como lidas
+const marcarTodasNotificacoesComoLidasByToken = async (token) => {
+    let message = JSON.parse(JSON.stringify(config_message))
+
+    try {
+        let decodedToken = await decodeJWT(token)
+        if(!decodedToken.status) return message.ERROR_INVALID_TOKEN
+
+        let result = null
+
+        if(decodedToken.decode.nivel == 1){
+            result = await notificacaoDAO.marcarTodasNotificacoesComoLidasByIdProfissional(decodedToken.decode.id)
+        }
+
+        if(decodedToken.decode.nivel == 2){
+            result = await notificacaoDAO.marcarTodasNotificacoesComoLidasByIdPaciente(decodedToken.decode.id)
+        }
+
+        if(!result) return message.ERROR_INTERNAL_SERVER_MODEL // 500
+
+        return await montarMensagem(message, message.SUCESS_UPDATE_ITEM)
+
+    } catch (error) {console.log(error)}
+    return message.ERROR_INTERNAL_SERVER_CONTROLLER // 500
+}
+
+//listar notificacoes por token
+const listarNotificacaoByToken = async (token) => {
+    let message = JSON.parse(JSON.stringify(config_message))
+
+    try {
+        let decodedToken = await decodeJWT(token)
+        if(!decodedToken.status) return message.ERROR_INVALID_TOKEN
+
+        let result = null
+
+        if(decodedToken.decode.nivel == 1){
+            result = await notificacaoDAO.selectNotificacaoByIdProfissional(decodedToken.decode.id)
+        }
+
+        if(decodedToken.decode.nivel == 2){
+            result = await notificacaoDAO.selectNotificacaoByIdPaciente(decodedToken.decode.id)
+        }
+
+        if(!result) return message.ERROR_INTERNAL_SERVER_MODEL // 500
+
+        // verfica se o array é vazio
+        if(result.length <= 0) return message.ERROR_NOT_FOUND // status_code 404
+
+        let listarNotificacaoMessage = await montarMensagem(message, message.SUCESS_RESPONSE, result)
+        message.DEFAULT_MESSAGE.response.count = result.length
+
+        return listarNotificacaoMessage // status_code 200
+
+    } catch (error) {console.log(error)}
+    return message.ERROR_INTERNAL_SERVER_CONTROLLER // 500
+}
+
 const validarDados = async (notificacao, contentType) => {
     let message = JSON.parse(JSON.stringify(config_message))
 
@@ -198,11 +276,13 @@ const montarMensagem = async (base,status,response = null) => {
     return base.DEFAULT_MESSAGE // 200 ou 201
 }
 
-
 module.exports = {
     inserirNovaNotificacao,
     atualizarNotificacao,
     listarNotificacao,
     buscarNotificacao,
-    excluirNotificacao
+    excluirNotificacao,
+    marcarNotificacaoComoLida,
+    marcarTodasNotificacoesComoLidasByToken,
+    listarNotificacaoByToken
 }
