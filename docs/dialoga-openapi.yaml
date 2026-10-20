@@ -17,31 +17,31 @@ servers:
   description: Produção (placeholder — ajustar quando o backend for publicado)
 tags:
 - name: Autenticação
-  description: Login, login social e recuperação de senha (RF085-097).
+  description: '✅ Login, login social e recuperação de senha (RF085-097).''
 - name: Administradores
-  description: 'Tabela `administrador`: cadastro, listagem e perfil do administrador, incluindo troca de senha (RF01-20, RF135-167).'
+  description: '✅ Tabela `administrador`: cadastro, listagem e perfil do administrador, incluindo troca de senha (RF01-20, RF135-167).'
 - name: Administrador × Profissional
-  description: 'Tabela `administrador_profissional`: fila de aprovação de novos profissionais pelo Admin (RF41-64).'
+  description: '✅ Tabela `administrador_profissional`: fila de aprovação de novos profissionais pelo Admin (RF41-64).'
 - name: Pacientes
-  description: 'Tabela `paciente`: cadastro, perfil, dashboard e relatórios do paciente, incluindo a visão do profissional sobre o paciente (RF098-119, RF135-167, RF066-070, RF189-238, RF299-316).'
+  description: '✅ Tabela `paciente`: cadastro, perfil, dashboard e relatórios do paciente, incluindo a visão do profissional sobre o paciente (RF098-119, RF135-167, RF066-070, RF189-238, RF299-316).'
 - name: Profissionais
-  description: 'Tabela `profissional`: cadastro, perfil e dashboard do profissional (RF098-119, RF135-167, RF066-070, RF317-331).'
+  description: '✅ Tabela `profissional`: cadastro, perfil e dashboard do profissional (RF098-119, RF135-167, RF066-070, RF317-331).'
 - name: Vínculos
-  description: 'Tabela `vinculo`: solicitação, aceite, recusa e listagem do vínculo paciente-profissional, por ambos os lados (RF172-188, RF299-316, RF317-331).'
+  description: '✅ Tabela `vinculo`: solicitação, aceite, recusa e listagem do vínculo paciente-profissional, por ambos os lados (RF172-188, RF299-316, RF317-331).'
 - name: Consultas
-  description: 'Tabela `consulta`: agendamento de consultas (RF021-040).'
+  description: '✅ Tabela `consulta`: agendamento de consultas (RF021-040).'
 - name: Disponibilidades
-  description: 'Tabela `disponibilidade`: horários de disponibilidade cadastrados pelo profissional (RF021-040).'
+  description: '✅ Tabela `disponibilidade`: horários de disponibilidade cadastrados pelo profissional (RF021-040).'
 - name: Registros de Humor
-  description: 'Tabela `registro_humor`: formulário diário ''Como você está hoje?'' (RF071-084).'
+  description: '✅ Tabela `registro_humor`: formulário diário ''Como você está hoje?'' (RF071-084).'
 - name: Anotações
-  description: 'Tabela `anotacao`: notas privadas do profissional sobre um paciente (RF221-222, RF310-311).'
+  description: '✅ Tabela `anotacao`: notas privadas do profissional sobre um paciente (RF221-222, RF310-311).'
 - name: Solicitações de Acesso
-  description: 'Tabela `solicitacao_acesso`: profissional solicita e paciente autoriza acesso a indicadores por categoria (RF202-207, RF223-227, RF312-313).'
+  description: '✅ Tabela `solicitacao_acesso`: profissional solicita e paciente autoriza acesso a indicadores por categoria (RF202-207, RF223-227, RF312-313).'
 - name: Notificações
-  description: 'Tabela `notificacao`: listagem e marcação de leitura de notificações (RF120-134).'
+  description: '✅ Tabela `notificacao`: listagem e marcação de leitura de notificações (RF120-134).'
 - name: Preferências de Notificação
-  description: 'Tabela `preferencia_notificacao`: preferências de notificação por categoria, incluindo ''Desligar todas'' (RF120-134).'
+  description: '✅ Tabela `preferencia_notificacao`: preferências de notificação por categoria, incluindo ''Desligar todas'' (RF120-134).'
 - name: Tarefas
   description: 'Tabela `tarefa`: criação, edição e envio de tarefas/questionários (RF257-298).'
 - name: Perguntas

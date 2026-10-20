@@ -109,6 +109,27 @@ const excluirTarefaDestinatario = async (id) => {
     return message.ERROR_INTERNAL_SERVER_CONTROLLER // 500
 }
 
+// filtrar tarefas destinatarios
+const filtrarTarefasDestinatarios = async (filtro) => {
+    let message = JSON.parse(JSON.stringify(config_message))
+
+    try {
+        let result = await tarefaDestinatarioDAO.filtrarTarefasDestinatario(filtro)
+
+        if(!result) return message.ERROR_INTERNAL_SERVER_MODEL // 500
+
+        // verfica se o array é vazio
+        if(result.length <= 0) return message.ERROR_NOT_FOUND // status_code 404
+
+        let filtrarTarefaDestinatarioMessage = await montarMensagem(message, message.SUCESS_RESPONSE, result)
+        message.DEFAULT_MESSAGE.response.count = result.length
+
+        return filtrarTarefaDestinatarioMessage // status_code 200
+
+    } catch (error) {console.log(error)}
+    return message.ERROR_INTERNAL_SERVER_CONTROLLER // 500
+}
+
 const validarDados = async (tarefaDestinatario, contentType) => {
     let message = JSON.parse(JSON.stringify(config_message))
 
@@ -182,5 +203,6 @@ module.exports = {
     atualizarTarefaDestinatario,
     listarTarefaDestinatario,
     buscarTarefaDestinatario,
-    excluirTarefaDestinatario
+    excluirTarefaDestinatario,
+    filtrarTarefasDestinatarios
 }

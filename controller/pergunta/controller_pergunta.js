@@ -109,6 +109,27 @@ const excluirPergunta = async (id) => {
     return message.ERROR_INTERNAL_SERVER_CONTROLLER // 500
 }
 
+// listar pergunta pelo id da tarefa
+const listarPerguntaByIdTarefa = async (idTarefa) => {
+    let message = JSON.parse(JSON.stringify(config_message))
+
+    try {
+        let result = await perguntaDAO.selectPerguntasByIdTarefa(idTarefa)
+
+        if(!result) return message.ERROR_INTERNAL_SERVER_MODEL // 500
+
+        // verfica se o array é vazio
+        if(result.length <= 0) return message.ERROR_NOT_FOUND // status_code 404
+
+        let listarPerguntaMessage = await montarMensagem(message, message.SUCESS_RESPONSE, result)
+        message.DEFAULT_MESSAGE.response.count = result.length
+
+        return listarPerguntaMessage // status_code 200
+
+    } catch (error) {console.log(error)}
+    return message.ERROR_INTERNAL_SERVER_CONTROLLER // 500
+}
+
 const validarDados = async (pergunta, contentType) => {
     let message = JSON.parse(JSON.stringify(config_message))
 
@@ -183,11 +204,11 @@ const montarMensagem = async (base,status,response = null) => {
     return base.DEFAULT_MESSAGE // 200 ou 201
 }
 
-
 module.exports = {
     inserirNovaPergunta,
     atualizarPergunta,
     listarPergunta,
     buscarPergunta,
-    excluirPergunta
+    excluirPergunta,
+    listarPerguntaByIdTarefa
 }

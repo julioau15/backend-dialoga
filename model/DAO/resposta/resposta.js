@@ -13,10 +13,15 @@ const knexConex = knex(knexConfig.development)
 // insert de resposta
 const insertResposta = async (resposta) => {
     let sql = `INSERT INTO tbl_resposta (valor, data_envio, id_pergunta, id_opcao_pergunta, id_tarefa_destinatario)
-               VALUES (?, ?, ?, ?, ?)`
+               VALUES (?, now(), ?, ?, ?)`
 
     try {
-        let response = await knexConex.raw(sql, [resposta.valor, resposta.data_envio, resposta.id_pergunta, resposta.id_opcao_pergunta, resposta.id_tarefa_destinatario])
+        let response = await knexConex.raw(sql, [
+            resposta.valor,
+            resposta.id_pergunta, 
+            resposta.id_opcao_pergunta, 
+            resposta.id_tarefa_destinatario
+        ])
 
         if(response) return response[0].insertId 
 
@@ -103,10 +108,33 @@ const deleteResposta = async (id) => {
     return false
 }
 
+// listar respostas pelo id da tarefa
+const selectByIdTarefaDestinatario = async (idTarefa) => {
+    let sql = `SELECT
+                    tbl_resposta.id,
+                    tbl_resposta.valor,
+                    tbl_resposta.data_envio,
+                    tbl_resposta.id_pergunta,
+                    tbl_resposta.id_opcao_pergunta,
+                    tbl_resposta.id_tarefa_destinatario
+                        FROM tbl_resposta
+                    WHERE tbl_resposta.id_tarefa_destinatario = ?`
+    try {
+        let response = await knexConex.raw(sql, [idTarefa])
+
+
+        if(response) return response[0]
+        
+    } catch (error) { console.log(error) }
+
+    return false
+}
+
 module.exports = {
     insertResposta,
     updateResposta,
     selectAllResposta,
     selectByIdResposta,
-    deleteResposta
+    deleteResposta,
+    selectByIdTarefaDestinatario
 }

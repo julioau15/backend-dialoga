@@ -9,17 +9,23 @@ const config_message = require('../module/configMessages.js')
 const respostaDAO = require('../../model/DAO/resposta/resposta.js')
 
 // inserir nova resposta
-const inserirNovaResposta = async (resposta, contentType) => {
+const inserirNovaResposta = async (respostas, idTarefa, contentType) => {
     let message = JSON.parse(JSON.stringify(config_message))
     try {
-        let validar = await validarDados(resposta, contentType)
-        if(validar) return validar // 400 ou 415
 
-        let result = await respostaDAO.insertResposta(resposta)
+        let ids = []
 
-        if(!result) return message.ERROR_INTERNAL_SERVER_MODEL
+        for(let res in respostas){
+            res.id_tarefa_destinatario = idTarefa
+            let resultInserirResposta = await respostaDAO.insertResposta(res)
 
-        resposta.id = result
+            if(!resultInserirResposta) return message.ERROR_INTERNAL_SERVER_MODEL
+
+            ids.push(resultInserirResposta)
+        }
+
+        resposta.ids = ids
+
         return await montarMensagem(message, message.SUCESS_CREATED_ITEM, resposta)
 
     } catch (error) {console.log(error)}
@@ -109,6 +115,27 @@ const excluirResposta = async (id) => {
     return message.ERROR_INTERNAL_SERVER_CONTROLLER // 500
 }
 
+// listar todas respostas filtrando pelo id da tarefas-destinatario
+const listarRespostaByIdTarefaDestinatario = async (idTarefaDestinatario) => {
+    let message = JSON.parse(JSON.stringify(config_message))
+
+    try {
+        let result = await respostaDAO.selectByIdTarefaDestinatario(idTarefaDestinatario)
+
+        if(!result) return message.ERROR_INTERNAL_SERVER_MODEL // 500
+
+        // verfica se o array é vazio
+        if(result.length <= 0) return message.ERROR_NOT_FOUND // status_code 404
+
+        let listarRespostaMessage = await montarMensagem(message, message.SUCESS_RESPONSE, result)
+        message.DEFAULT_MESSAGE.response.count = result.length
+
+        return listarRespostaMessage // status_code 200
+
+    } catch (error) {console.log(error)}
+    return message.ERROR_INTERNAL_SERVER_CONTROLLER // 500
+}
+
 const validarDados = async (resposta, contentType) => {
     let message = JSON.parse(JSON.stringify(config_message))
 
@@ -125,12 +152,6 @@ const validarDados = async (resposta, contentType) => {
     // Valida o valor opcional
     if(resposta.valor != undefined && resposta.valor != null && typeof resposta.valor != 'string'){
         message.ERROR_BAD_REQUEST.field = '[VALOR] INVÁLIDO'
-        return message.ERROR_BAD_REQUEST // 400
-    }
-
-    // Valida a data de envio
-    if(resposta.data_envio == undefined || resposta.data_envio == null || String(resposta.data_envio).trim() == ''){
-        message.ERROR_BAD_REQUEST.field = '[DATA_ENVIO] INVÁLIDO'
         return message.ERROR_BAD_REQUEST // 400
     }
 
@@ -183,5 +204,6 @@ module.exports = {
     atualizarResposta,
     listarResposta,
     buscarResposta,
-    excluirResposta
+    excluirResposta,
+    listarRespostaByIdTarefaDestinatario
 }

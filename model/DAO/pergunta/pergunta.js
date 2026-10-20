@@ -39,8 +39,7 @@ const updatePergunta = async (pergunta) => {
                    texto = ?,
                    imagem = ?,
                    obrigatoria = ?,
-                   ordem = ?,
-                   id_tarefa = ?
+                   ordem = ?
                WHERE id = ?`
     try {
         let response = await knexConex.raw(sql, [
@@ -49,7 +48,6 @@ const updatePergunta = async (pergunta) => {
             pergunta.imagem,
             pergunta.obrigatoria,
             pergunta.ordem,
-            pergunta.id_tarefa,
             pergunta.id
         ])
 
@@ -121,10 +119,36 @@ const deletePergunta = async (id) => {
     return false
 }
 
+// listar perguntas por id_tarefa
+const selectPerguntasByIdTarefa = async (idTarefa) => {
+    let sql = `SELECT
+                   id,
+                   tipo,
+                   texto,
+                   imagem,
+                   obrigatoria,
+                   ordem,
+                   id_tarefa
+               FROM tbl_pergunta
+               WHERE id_tarefa = ?
+               ORDER BY ordem ASC`
+    try {
+        let response = await knexConex.raw(sql, [idTarefa])
+
+        if(response) return response[0]
+        
+    } catch (error) { console.log(error) }
+
+    return false
+}
+
+
+
 module.exports = {
     insertPergunta,
     updatePergunta,
     selectAllPergunta,
     selectByIdPergunta,
-    deletePergunta
+    deletePergunta,
+    selectPerguntasByIdTarefa
 }

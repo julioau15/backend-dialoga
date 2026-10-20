@@ -7,6 +7,7 @@
 
 const config_message = require('../module/configMessages.js')
 const tarefaDAO = require('../../model/DAO/tarefa/tarefa.js')
+const { decodeJWT } = require('../../middleware/middlewareJWT.js')
 
 // inserir nova tarefa
 const inserirNovaTarefa = async (tarefa, contentType) => {
@@ -104,6 +105,100 @@ const excluirTarefa = async (id) => {
         if(!result) return message.ERROR_INTERNAL_SERVER_MODEL // 500
 
         return await montarMensagem(message, message.SUCESS_DELETE_ITEM)
+
+    } catch (error) {console.log(error)}
+    return message.ERROR_INTERNAL_SERVER_CONTROLLER // 500
+}
+
+// listar tarefas por token
+const listarTarefasByToken = async (token) => {
+    let message = JSON.parse(JSON.stringify(config_message))
+
+    try {
+
+        let decodedToken = await decodeJWT(token)
+        if(!decodedToken.status) return message.ERROR_INVALID_TOKEN
+
+        let id = decodedToken.decode.id
+        let nivel = decodedToken.decode.nivel
+
+        let result = null
+
+        if(nivel == 1) result = await tarefaDAO.selectTarefasByIdProfissional(id)
+
+        else if(nivel == 2) result = await tarefaDAO.selectTarefasByIdPaciente(id)
+
+        else return message.ERROR_INVALID_TOKEN
+
+        if(!result) return message.ERROR_INTERNAL_SERVER_MODEL // 500
+
+        // verfica se o array é vazio
+        if(result.length <= 0) return message.ERROR_NOT_FOUND // status_code 404
+
+        let listarTarefaMessage = await montarMensagem(message, message.SUCESS_RESPONSE, result)
+        message.DEFAULT_MESSAGE.response.count = result.length
+
+        return listarTarefaMessage // status_code 200
+
+    } catch (error) {console.log(error)}
+    return message.ERROR_INTERNAL_SERVER_CONTROLLER // 500
+}
+
+// inserir tarefa por token
+const inserirTarefaByToken = async (tarefa, token, contentType) => {
+    let message = JSON.parse(JSON.stringify(config_message))
+
+    try {
+        let validar = await validarDados(tarefa, contentType)
+        if(validar) return validar // 400 ou 415
+
+        let decodedToken = await decodeJWT(token)
+        if(!decodedToken.status) return message.ERROR_INVALID_TOKEN
+
+        let id = decodedToken.decode.id
+        let nivel = decodedToken.decode.nivel
+
+        let result = null
+
+        if(nivel == 1) result = await tarefaDAO.insertTarefaByIdProfissional(tarefa, id)
+
+        else if(nivel == 2) result = await tarefaDAO.insertTarefaByIdPaciente(tarefa, id)
+
+        else return message.ERROR_INVALID_TOKEN
+
+        if(!result) return message.ERROR_INTERNAL_SERVER_MODEL // 500
+
+        tarefa.id = result
+        return await montarMensagem(message, message.SUCESS_CREATED_ITEM, tarefa)
+
+    } catch (error) {console.log(error)}
+    return message.ERROR_INTERNAL_SERVER_CONTROLLER // 500
+}
+
+// enviar tarefa para o paciente por token
+const enviarTarefaParaPacienteByToken = async (idTarefa, token) => {
+    let message = JSON.parse(JSON.stringify(config_message))
+
+    try {
+        let validarID = await validarId(idTarefa)
+        if(validarID) return validarID // 400
+
+        let decodedToken = await decodeJWT(token)
+        if(!decodedToken.status) return message.ERROR_INVALID_TOKEN
+
+        let id = decodedToken.decode.id
+        let nivel = decodedToken.decode.nivel
+
+        if(nivel != 1) return message.ERROR_INVALID_TOKEN
+
+        let resultBuscarId = await buscarTarefa(idTarefa)
+        if(!resultBuscarId.status) return resultBuscarId // 400 e 404
+
+        let result = await tarefaDAO.enviarTarefaParaPaciente(idTarefa, id)
+
+        if(!result) return message.ERROR_INTERNAL_SERVER_MODEL // 500
+
+        return await montarMensagem(message, message.SUCESS_UPDATE_ITEM)
 
     } catch (error) {console.log(error)}
     return message.ERROR_INTERNAL_SERVER_CONTROLLER // 500
@@ -210,11 +305,13 @@ const montarMensagem = async (base,status,response = null) => {
     return base.DEFAULT_MESSAGE // 200 ou 201
 }
 
-
 module.exports = {
     inserirNovaTarefa,
     atualizarTarefa,
     listarTarefa,
     buscarTarefa,
-    excluirTarefa
+    excluirTarefa,
+    listarTarefasByToken,
+    inserirTarefaByToken,
+    enviarTarefaParaPacienteByToken
 }

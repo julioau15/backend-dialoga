@@ -116,10 +116,75 @@ const deleteTarefaDestinatario = async (id) => {
     return false
 }
 
+// listar tarefaDestinatario pelo id da tarefa, nome do paciente, status da tarefa e periodo 
+const filtrarTarefasDestinatario = async (filtro = {}) => {
+    let sql = `
+        SELECT
+            tbl_tarefa_destinatario.id,
+            tbl_tarefa_destinatario.prazo,
+            tbl_tarefa_destinatario.status,
+            tbl_tarefa_destinatario.data_conclusao,
+            tbl_tarefa_destinatario.id_tarefa,
+            tbl_tarefa_destinatario.id_paciente,
+            tbl_paciente.nome AS nome_paciente,
+            tbl_tarefa.nome AS nome_tarefa
+        FROM tbl_tarefa_destinatario
+        INNER JOIN tbl_paciente
+            ON tbl_paciente.id = tbl_tarefa_destinatario.id_paciente
+        INNER JOIN tbl_tarefa
+            ON tbl_tarefa.id = tbl_tarefa_destinatario.id_tarefa
+        WHERE 1 = 1
+    `
+    const params = []
+
+    if (filtro.id_tarefa !== undefined && filtro.id_tarefa !== null && filtro.id_tarefa !== '') {
+        sql += ` AND td.id_tarefa = ?`
+        params.push(filtro.id_tarefa)
+    }
+
+    if (filtro.nome_paciente) {
+        sql += ` AND p.nome LIKE ?`
+        params.push(`%${filtro.nome_paciente}%`)
+    }
+
+    if (filtro.status) {
+        sql += ` AND td.status = ?`
+        params.push(filtro.status)
+    }
+
+    if (filtro.data_inicial && filtro.data_final) {
+        sql += ` AND td.prazo BETWEEN ? AND ?`
+        params.push(filtro.data_inicial, filtro.data_final)
+    } else if (filtro.periodo) {
+        const periodo = String(filtro.periodo).toUpperCase()
+
+        if (periodo === 'HOJE') {
+            sql += ` AND DATE(td.prazo) = CURDATE()`
+        } else if (periodo === 'SEMANA') {
+            sql += ` AND YEARWEEK(td.prazo, 1) = YEARWEEK(CURDATE(), 1)`
+        } else if (periodo === 'MES') {
+            sql += ` AND DATE_FORMAT(td.prazo, '%Y-%m') = DATE_FORMAT(CURDATE(), '%Y-%m')`
+        }
+    }
+
+    sql += ` ORDER BY td.id DESC`
+
+    try {
+        const response = await knexConex.raw(sql, params)
+
+        if (response) return response[0]
+    } catch (error) {
+        console.log(error)
+    }
+
+    return false
+}
+
 module.exports = {
     insertTarefaDestinatario,
     updateTarefaDestinatario,
     selectAllTarefaDestinatario,
     selectByIdTarefaDestinatario,
-    deleteTarefaDestinatario
+    deleteTarefaDestinatario,
+    filtrarTarefasDestinatario
 }

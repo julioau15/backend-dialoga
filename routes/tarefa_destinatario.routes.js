@@ -16,8 +16,13 @@ const {
     atualizarTarefaDestinatario,
     listarTarefaDestinatario,
     buscarTarefaDestinatario,
-    excluirTarefaDestinatario
+    excluirTarefaDestinatario,
+    filtrarTarefasDestinatarios
 } = require('../controller/tarefa_destinatario/controller_tarefa_destinatario.js')
+
+const {
+    listarRespostaByIdTarefaDestinatario
+} = require('../controller/resposta/controller_resposta.js')
 
 // ---------------- tarefaDestinatario -----------------
 
@@ -32,8 +37,9 @@ router.post('/',bodyParserJSON, async (req,res) => {
 })
 
 // endpoint para retornar todas tarefaDestinatarios
-router.get('/', async (req,res) => {
-    let result = await listarTarefaDestinatario()
+router.get('/', bodyParserJSON, async (req,res) => {
+    let dados = req.body
+    let result = await filtrarTarefasDestinatarios(dados)
     res.status(result.status_code).json(result)
 })
 
@@ -58,6 +64,21 @@ router.put('/:id', bodyParserJSON, async (req,res) => {
 router.delete('/:id', async (req,res) => {
     let id = req.params.id
     let result = await excluirTarefaDestinatario(id)
+    res.status(result.status_code).json(result)
+})
+
+// endpoint para listar respostas pelo id da tarefaDestinatario
+router.get('/:id/respostas', async (req,res) => {
+    let id = req.params.id
+    let result = await listarRespostaByIdTarefaDestinatario(id)
+    res.status(result.status_code).json(result)
+})
+
+// endpoint para salvar rascunho ou enviar resposta da tarefa
+router.post('/:id/respostas',bodyParserJSON, async (req,res) => {
+    let id = req.params.id
+    let dados = req.body
+    let result = await e
     res.status(result.status_code).json(result)
 })
 
