@@ -2569,8 +2569,8 @@ paths:
           $ref: '#/components/responses/InternalServerError'
   /notificacoes:
     get:
-      x-status: pendente
-      summary: "Listar notificações do usuário autenticado"
+      x-status: concluido
+      summary: "✅ Listar notificações do usuário autenticado"
       description: 'Requisitos relacionados: RF120-121, RF128-129'
       tags:
       - Notificações
@@ -2615,8 +2615,8 @@ paths:
           $ref: '#/components/responses/InternalServerError'
   /notificacoes/{id}/marcar-lida:
     put:
-      x-status: pendente
-      summary: "Marcar notificação individual como lida"
+      x-status: concluido
+      summary: "✅ Marcar notificação individual como lida"
       description: 'Requisitos relacionados: RF124, RF131'
       tags:
       - Notificações
@@ -2662,8 +2662,8 @@ paths:
           $ref: '#/components/responses/InternalServerError'
   /notificacoes/marcar-todas-lidas:
     put:
-      x-status: pendente
-      summary: "Marcar todas as notificações como lidas"
+      x-status: concluido
+      summary: "✅ Marcar todas as notificações como lidas"
       description: 'Requisitos relacionados: RF124, RF131'
       tags:
       - Notificações
@@ -2701,8 +2701,8 @@ paths:
           $ref: '#/components/responses/InternalServerError'
   /preferencias-notificacao:
     get:
-      x-status: pendente
-      summary: "Listar preferências de notificação por categoria"
+      x-status: concluido
+      summary: "✅ Listar preferências de notificação por categoria"
       description: 'Requisitos relacionados: RF125, RF132'
       tags:
       - Preferências de Notificação
@@ -2737,8 +2737,8 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
     put:
-      x-status: pendente
-      summary: "Salvar preferências de notificação (inclui 'Desligar todas')"
+      x-status: concluido
+      summary: "✅ Salvar preferências de notificação (inclui 'Desligar todas')"
       description: 'Requisitos relacionados: RF125-127, RF132-134'
       tags:
       - Preferências de Notificação

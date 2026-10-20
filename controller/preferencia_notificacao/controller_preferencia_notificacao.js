@@ -7,6 +7,7 @@
 
 const config_message = require('../module/configMessages.js')
 const preferenciaNotificacaoDAO = require('../../model/DAO/preferencia_notificacao/preferencia_notificacao.js')
+const { decodeJWT } = require('../../middleware/middlewareJWT.js')
 
 // inserir nova preferenciaNotificacao
 const inserirNovaPreferenciaNotificacao = async (preferenciaNotificacao, contentType) => {
@@ -109,6 +110,76 @@ const excluirPreferenciaNotificacao = async (id) => {
     return message.ERROR_INTERNAL_SERVER_CONTROLLER // 500
 }
 
+// listar as preferências de notificações pelo token JWT
+const listarPreferenciasNotificacaoByToken = async (token) => {
+    let message = JSON.parse(JSON.stringify(config_message))
+
+    try {
+        let decodedToken = await decodeJWT(token)
+        if(!decodedToken.status) return message.ERROR_INVALID_TOKEN
+
+        let id = decodedToken.decode.id
+        let nivel = decodedToken.decode.nivel
+
+        let result = null
+
+        if(nivel == 1) result = await preferenciaNotificacaoDAO.selectPreferenciasProfissional(id)
+
+        else if(nivel == 2) result = await preferenciaNotificacaoDAO.selectPreferenciasPaciente(id)
+
+        else return message.ERROR_INVALID_TOKEN
+
+        if(!result) return message.ERROR_INTERNAL_SERVER_MODEL // 500
+
+        // verfica se o array é vazio
+        if(result.length <= 0) return message.ERROR_NOT_FOUND // status_code 404
+
+        let listarPreferenciaNotificacaoMessage = await montarMensagem(message, message.SUCESS_RESPONSE, result)
+        message.DEFAULT_MESSAGE.response.count = result.length
+
+        return listarPreferenciaNotificacaoMessage // status_code 200
+
+    } catch (error) {console.log(error)}
+    return message.ERROR_INTERNAL_SERVER_CONTROLLER // 500
+}
+
+// inserir preferências de notificações pelo token JWT
+const inserirPreferenciasNotificacaoByToken = async (preferenciaNotificacao, token, contentType) => {
+    let message = JSON.parse(JSON.stringify(config_message))
+
+    try {
+        let validar = await validarDados(preferenciaNotificacao, contentType)
+        if(validar) return validar // 400 ou 415
+
+        let decodedToken = await decodeJWT(token)
+        if(!decodedToken.status) return message.ERROR_INVALID_TOKEN
+
+        let id = decodedToken.decode.id
+        let nivel = decodedToken.decode.nivel
+
+        let result = null
+
+        if(nivel == 1) {
+            preferenciaNotificacao.id_profissional = id
+            result = await preferenciaNotificacaoDAO.insertPreferenciaNotificacaoProfissional(preferenciaNotificacao)
+        }
+
+        else if(nivel == 2) {
+            preferenciaNotificacao.id_paciente = id
+            result = await preferenciaNotificacaoDAO.insertPreferenciaNotificacaoPaciente(preferenciaNotificacao)
+        }
+
+        else return message.ERROR_INVALID_TOKEN
+
+        if(!result) return message.ERROR_INTERNAL_SERVER_MODEL // 500
+
+        preferenciaNotificacao.id = result
+        return await montarMensagem(message, message.SUCESS_CREATED_ITEM, preferenciaNotificacao)
+
+    } catch (error) {console.log(error)}
+    return message.ERROR_INTERNAL_SERVER_CONTROLLER // 500
+}
+
 const validarDados = async (preferenciaNotificacao, contentType) => {
     let message = JSON.parse(JSON.stringify(config_message))
 
@@ -186,11 +257,12 @@ const montarMensagem = async (base,status,response = null) => {
     return base.DEFAULT_MESSAGE // 200 ou 201
 }
 
-
 module.exports = {
     inserirNovaPreferenciaNotificacao,
     atualizarPreferenciaNotificacao,
     listarPreferenciaNotificacao,
     buscarPreferenciaNotificacao,
-    excluirPreferenciaNotificacao
+    excluirPreferenciaNotificacao,
+    listarPreferenciasNotificacaoByToken,
+    inserirPreferenciasNotificacaoByToken
 }
