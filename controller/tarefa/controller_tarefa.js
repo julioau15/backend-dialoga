@@ -7,6 +7,9 @@
 
 const config_message = require('../module/configMessages.js')
 const tarefaDAO = require('../../model/DAO/tarefa/tarefa.js')
+const perguntasController = require('../pergunta/controller_pergunta.js')
+const respostaController = require('../resposta/controller_resposta.js')
+const tarefaDestinatarioController = require('../tarefa_destinatario/controller_tarefa_destinatario.js')
 const { decodeJWT } = require('../../middleware/middlewareJWT.js')
 
 // inserir nova tarefa
@@ -85,6 +88,15 @@ const buscarTarefa = async (id) => {
 
         if(result.length < 1) return config_message.ERROR_NOT_FOUND
 
+        for(let tarefa of result){
+            // busca as perguntas relacionadas a tarefa
+            let resultBuscarPerguntas = await perguntasController.listarPerguntaByIdTarefa(tarefa.id)
+
+            if(resultBuscarPerguntas){
+                tarefa.perguntas = resultBuscarPerguntas.response.pergunta
+            }
+        }
+
         return await montarMensagem(message, message.SUCESS_RESPONSE, result)
 
     } catch (error) {console.log(error)}
@@ -99,6 +111,24 @@ const excluirTarefa = async (id) => {
 
         let resultBuscarId = await buscarTarefa(id)
         if(!resultBuscarId.status) return resultBuscarId // 400 e 404
+
+        // busca tarefaDestinatario
+        let tarefaDestinatario = await tarefaDestinatarioController.filtrarTarefasDestinatarios({"id_tarefa": id})
+
+        if(tarefaDestinatario.status){
+            // verifica se tem resposta
+            for(let tarefa of tarefaDestinatario.response.tarefaDestinatario){
+                let id_tarefa_destinatario = tarefa.id
+                let respostas = await respostaController.listarRespostaByIdTarefaDestinatario(id_tarefa_destinatario)
+
+                if (respostas.status) {
+                    message.ERROR_BAD_REQUEST.field =
+                        'Não é possível excluir esta tarefa, pois ela já contém respostas.'
+                
+                    return message.ERROR_BAD_REQUEST
+                }
+            }
+        }
 
         let result = await tarefaDAO.deleteTarefa(id)
 
@@ -135,6 +165,15 @@ const listarTarefasByToken = async (token) => {
         // verfica se o array é vazio
         if(result.length <= 0) return message.ERROR_NOT_FOUND // status_code 404
 
+        for(let tarefa of result){
+            // busca as perguntas relacionadas a tarefa
+            let resultBuscarPerguntas = await perguntasController.listarPerguntaByIdTarefa(tarefa.id)
+
+            if(resultBuscarPerguntas){
+                tarefa.perguntas = resultBuscarPerguntas.response.pergunta
+            }
+        }
+
         let listarTarefaMessage = await montarMensagem(message, message.SUCESS_RESPONSE, result)
         message.DEFAULT_MESSAGE.response.count = result.length
 
@@ -149,6 +188,7 @@ const inserirTarefaByToken = async (tarefa, token, contentType) => {
     let message = JSON.parse(JSON.stringify(config_message))
 
     try {
+        console.log(contentType)
         let validar = await validarDados(tarefa, contentType)
         if(validar) return validar // 400 ou 415
 
@@ -159,10 +199,39 @@ const inserirTarefaByToken = async (tarefa, token, contentType) => {
         let nivel = decodedToken.decode.nivel
 
         let result = null
+        let ids = []
 
         if(nivel == 1) result = await tarefaDAO.insertTarefaByIdProfissional(tarefa, id)
 
-        else if(nivel == 2) result = await tarefaDAO.insertTarefaByIdPaciente(tarefa, id)
+        else if(nivel == 2) {
+            result = await tarefaDAO.insertTarefaByIdPaciente(tarefa, id)
+
+            if(tarefa.prazos_por_paciente){
+
+                for(let paciente of tarefa.prazos_por_paciente){
+                    let tarefaDestinatario = {
+                        prazo: paciente.prazo,
+                        id_paciente: paciente.paciente_id,
+                        id_tarefa: result
+                    }
+    
+                    let resultInsert = await tarefaDestinatarioController.inserirNovaTarefaDestinatario(tarefaDestinatario, contentType)
+                    if(resultInsert) ids.push(resultInsert)
+    
+                    if(ids.length > 0){
+                        for(let id of ids){
+                            // busca as perguntas relacionadas a tarefa
+                            let resultBuscarPerguntas = await perguntasController.listarPerguntaByIdTarefa(id)
+                
+                            if(resultBuscarPerguntas){
+                                tarefa.perguntas = resultBuscarPerguntas.response.pergunta
+                            }
+                        }
+                    }
+                }
+
+            }
+        } 
 
         else return message.ERROR_INVALID_TOKEN
 
@@ -245,25 +314,6 @@ const validarDados = async (tarefa, contentType) => {
     // Valida o indicador de rascunho
     if(![0, 1, true, false].includes(tarefa.is_rascunho)){
         message.ERROR_BAD_REQUEST.field = '[IS_RASCUNHO] INVÁLIDO'
-        return message.ERROR_BAD_REQUEST // 400
-    }
-
-    // Valida a data de criação
-    if(tarefa.data_criacao == undefined || tarefa.data_criacao == null || String(tarefa.data_criacao).trim() == ''){
-        message.ERROR_BAD_REQUEST.field = '[DATA_CRIACAO] INVÁLIDO'
-        return message.ERROR_BAD_REQUEST // 400
-    }
-
-    // Valida a data de envio opcional
-    if(tarefa.data_envio != undefined && tarefa.data_envio != null && String(tarefa.data_envio).trim() == ''){
-        message.ERROR_BAD_REQUEST.field = '[DATA_ENVIO] INVÁLIDO'
-        return message.ERROR_BAD_REQUEST // 400
-    }
-
-    // Exige exatamente um criador
-    if((tarefa.id_profissional_criador == undefined || tarefa.id_profissional_criador == null) ==
-       (tarefa.id_paciente_criador == undefined || tarefa.id_paciente_criador == null)){
-        message.ERROR_BAD_REQUEST.field = '[CRIADOR] INVÁLIDO'
         return message.ERROR_BAD_REQUEST // 400
     }
 

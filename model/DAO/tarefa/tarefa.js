@@ -13,7 +13,7 @@ const knexConex = knex(knexConfig.development)
 // insert de tarefa
 const insertTarefa = async (tarefa) => {
     let sql = `INSERT INTO tbl_tarefa (titulo, tipo, instrucoes, anexo_arquivo, is_rascunho, data_criacao, data_envio, id_profissional_criador, id_paciente_criador)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+               VALUES (?, ?, ?, ?, ?, now(), null, ?, ?)`
 
     try {
         let response = await knexConex.raw(sql, [
@@ -22,8 +22,6 @@ const insertTarefa = async (tarefa) => {
             tarefa.instrucoes,
             tarefa.anexo_arquivo,
             tarefa.is_rascunho,
-            tarefa.data_criacao,
-            tarefa.data_envio,
             tarefa.id_profissional_criador,
             tarefa.id_paciente_criador
         ])
@@ -43,8 +41,6 @@ const updateTarefa = async (tarefa) => {
                    instrucoes = ?,
                    anexo_arquivo = ?,
                    is_rascunho = ?,
-                   data_criacao = ?,
-                   data_envio = ?,
                    id_profissional_criador = ?,
                    id_paciente_criador = ?
                WHERE id = ?`
@@ -53,12 +49,10 @@ const updateTarefa = async (tarefa) => {
             tarefa.titulo,
             tarefa.tipo,
             tarefa.instrucoes,
-            tarefa.anexo_arquivo,
+            tarefa.anexo_arquivo ? tarefa.anexo_arquivo : null,
             tarefa.is_rascunho,
-            tarefa.data_criacao,
-            tarefa.data_envio,
-            tarefa.id_profissional_criador,
-            tarefa.id_paciente_criador,
+            tarefa.id_profissional_criador ? tarefa.id_profissional_criador : null,
+            tarefa.id_paciente_criador ? tarefa.id_paciente_criador : null,
             tarefa.id
         ])
 
@@ -186,8 +180,8 @@ const selectTarefasByIdPaciente = async (idPaciente) => {
 
 // insert de tarefa por id do profissional
 const insertTarefaByIdProfissional = async (tarefa, idProfissional) => {
-    let sql = `INSERT INTO tbl_tarefa (titulo, tipo, instrucoes, anexo_arquivo, is_rascunho, data_criacao, data_envio, id_profissional_criador)
-               VALUES (?, ?, ?, null, ?, now(), ?, ?)`
+    let sql = `INSERT INTO tbl_tarefa (titulo, tipo, instrucoes, is_rascunho, data_criacao, data_envio, id_profissional_criador)
+               VALUES (?, ?, ?, ?, now(), null, ?)`
 
     try {
         let response = await knexConex.raw(sql, [
@@ -195,8 +189,6 @@ const insertTarefaByIdProfissional = async (tarefa, idProfissional) => {
             tarefa.tipo,
             tarefa.instrucoes,
             tarefa.is_rascunho,
-            tarefa.data_criacao,
-            tarefa.data_envio,
             idProfissional
         ])
 

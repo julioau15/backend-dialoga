@@ -109,6 +109,27 @@ const excluirOpcaoPergunta = async (id) => {
     return message.ERROR_INTERNAL_SERVER_CONTROLLER // 500
 }
 
+// lista as opcoes de uma pergunta
+const listarOpcaoPerguntaByIdPergunta = async (idPergunta) => {
+    let message = JSON.parse(JSON.stringify(config_message))
+
+    try {
+        let result = await opcaoPerguntaDAO.selectByIdPergunta(idPergunta)
+
+        if(!result) return message.ERROR_INTERNAL_SERVER_MODEL // 500
+
+        // verfica se o array é vazio
+        if(result.length <= 0) return message.ERROR_NOT_FOUND // status_code 404
+
+        let listarOpcaoPerguntaMessage = await montarMensagem(message, message.SUCESS_RESPONSE, result)
+        message.DEFAULT_MESSAGE.response.count = result.length
+
+        return listarOpcaoPerguntaMessage // status_code 200
+
+    } catch (error) {console.log(error)}
+    return message.ERROR_INTERNAL_SERVER_CONTROLLER // 500
+}
+
 const validarDados = async (opcaoPergunta, contentType) => {
     let message = JSON.parse(JSON.stringify(config_message))
 
@@ -170,5 +191,6 @@ module.exports = {
     atualizarOpcaoPergunta,
     listarOpcaoPergunta,
     buscarOpcaoPergunta,
-    excluirOpcaoPergunta
+    excluirOpcaoPergunta,
+    listarOpcaoPerguntaByIdPergunta
 }

@@ -45,7 +45,7 @@ router.post('/',bodyParserJSON, async (req,res) => {
     let dados = req.body
     let contentType = req.headers['content-type']
 
-    let result = await inserirTarefaByToken(dados, contentType, token)
+    let result = await inserirTarefaByToken(dados, token, contentType)
     res.status(result.status_code).json(result)
 })
 

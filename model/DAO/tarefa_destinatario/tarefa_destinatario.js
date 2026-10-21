@@ -18,8 +18,8 @@ const insertTarefaDestinatario = async (tarefaDestinatario) => {
     try {
         let response = await knexConex.raw(sql, [
             tarefaDestinatario.prazo,
-            tarefaDestinatario.status,
-            tarefaDestinatario.data_conclusao,
+            0, // status
+            null, // data de conclusao
             tarefaDestinatario.id_tarefa,
             tarefaDestinatario.id_paciente
         ])
@@ -126,8 +126,8 @@ const filtrarTarefasDestinatario = async (filtro = {}) => {
             tbl_tarefa_destinatario.data_conclusao,
             tbl_tarefa_destinatario.id_tarefa,
             tbl_tarefa_destinatario.id_paciente,
-            tbl_paciente.nome AS nome_paciente,
-            tbl_tarefa.nome AS nome_tarefa
+            tbl_paciente.nome_completo AS nome_paciente,
+            tbl_tarefa.titulo AS nome_tarefa
         FROM tbl_tarefa_destinatario
         INNER JOIN tbl_paciente
             ON tbl_paciente.id = tbl_tarefa_destinatario.id_paciente
@@ -138,36 +138,36 @@ const filtrarTarefasDestinatario = async (filtro = {}) => {
     const params = []
 
     if (filtro.id_tarefa !== undefined && filtro.id_tarefa !== null && filtro.id_tarefa !== '') {
-        sql += ` AND td.id_tarefa = ?`
+        sql += ` AND tbl_tarefa_destinatario.id_tarefa = ?`
         params.push(filtro.id_tarefa)
     }
 
     if (filtro.nome_paciente) {
-        sql += ` AND p.nome LIKE ?`
+        sql += ` AND tbl_paciente.nome LIKE ?`
         params.push(`%${filtro.nome_paciente}%`)
     }
 
     if (filtro.status) {
-        sql += ` AND td.status = ?`
+        sql += ` AND tbl_tarefa_destinatario.status = ?`
         params.push(filtro.status)
     }
 
     if (filtro.data_inicial && filtro.data_final) {
-        sql += ` AND td.prazo BETWEEN ? AND ?`
+        sql += ` AND tbl_tarefa_destinatario.prazo BETWEEN ? AND ?`
         params.push(filtro.data_inicial, filtro.data_final)
     } else if (filtro.periodo) {
         const periodo = String(filtro.periodo).toUpperCase()
 
         if (periodo === 'HOJE') {
-            sql += ` AND DATE(td.prazo) = CURDATE()`
+            sql += ` AND DATE(tbl_tarefa_destinatario.prazo) = CURDATE()`
         } else if (periodo === 'SEMANA') {
-            sql += ` AND YEARWEEK(td.prazo, 1) = YEARWEEK(CURDATE(), 1)`
+            sql += ` AND YEARWEEK(tbl_tarefa_destinatario.prazo, 1) = YEARWEEK(CURDATE(), 1)`
         } else if (periodo === 'MES') {
-            sql += ` AND DATE_FORMAT(td.prazo, '%Y-%m') = DATE_FORMAT(CURDATE(), '%Y-%m')`
+            sql += ` AND DATE_FORMAT(tbl_tarefa_destinatario.prazo, '%Y-%m') = DATE_FORMAT(CURDATE(), '%Y-%m')`
         }
     }
 
-    sql += ` ORDER BY td.id DESC`
+    sql += ` ORDER BY tbl_tarefa_destinatario.id DESC`
 
     try {
         const response = await knexConex.raw(sql, params)

@@ -7,6 +7,7 @@
 
 const config_message = require('../module/configMessages.js')
 const perguntaDAO = require('../../model/DAO/pergunta/pergunta.js')
+const opcaoPerguntaController = require('../opcao_pergunta/controller_opcao_pergunta.js')
 
 // inserir nova pergunta
 const inserirNovaPergunta = async (pergunta, contentType) => {
@@ -120,6 +121,15 @@ const listarPerguntaByIdTarefa = async (idTarefa) => {
 
         // verfica se o array é vazio
         if(result.length <= 0) return message.ERROR_NOT_FOUND // status_code 404
+
+        for(let pergunta of result){
+            // busca as opcoes relacionadas a tarefa
+            let resultBuscarOpcoes = await opcaoPerguntaController.listarOpcaoPerguntaByIdPergunta(pergunta.id)
+
+            if(resultBuscarOpcoes.length <= 0){
+                pergunta.opcoes = resultBuscarOpcoes.response.opcaoPergunta
+            }
+        }
 
         let listarPerguntaMessage = await montarMensagem(message, message.SUCESS_RESPONSE, result)
         message.DEFAULT_MESSAGE.response.count = result.length
