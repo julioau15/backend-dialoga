@@ -7,6 +7,7 @@
 
 const config_message = require('../module/configMessages.js')
 const tarefaDestinatarioDAO = require('../../model/DAO/tarefa_destinatario/tarefa_destinatario.js')
+const perguntaController = require('../pergunta/controller_pergunta.js')
 
 // inserir nova tarefaDestinatario
 const inserirNovaTarefaDestinatario = async (tarefaDestinatario, contentType) => {
@@ -83,6 +84,11 @@ const buscarTarefaDestinatario = async (id) => {
         if(!result) return message.ERROR_INTERNAL_SERVER_MODEL // 500
 
         if(result.length < 1) return config_message.ERROR_NOT_FOUND
+        
+        for(tarefa of result){
+            resultBuscarPerguntas = await perguntaController.listarPerguntaByIdTarefa(tarefa.id)
+            if(resultBuscarPerguntas.status) tarefa.perguntas = resultBuscarPerguntas.response.pergunta
+        }
 
         return await montarMensagem(message, message.SUCESS_RESPONSE, result)
 
@@ -115,11 +121,16 @@ const filtrarTarefasDestinatarios = async (filtro) => {
 
     try {
         let result = await tarefaDestinatarioDAO.filtrarTarefasDestinatario(filtro)
-
+    
         if(!result) return message.ERROR_INTERNAL_SERVER_MODEL // 500
 
         // verfica se o array é vazio
         if(result.length <= 0) return message.ERROR_NOT_FOUND // status_code 404
+
+        for(tarefa of result){
+            resultBuscarPerguntas = await perguntaController.listarPerguntaByIdTarefa(tarefa.id)
+            if(resultBuscarPerguntas.status) tarefa.perguntas = resultBuscarPerguntas.response.pergunta
+        }
 
         let filtrarTarefaDestinatarioMessage = await montarMensagem(message, message.SUCESS_RESPONSE, result)
         message.DEFAULT_MESSAGE.response.count = result.length
