@@ -10,15 +10,30 @@ const perguntaDAO = require('../../model/DAO/pergunta/pergunta.js')
 const opcaoPerguntaController = require('../opcao_pergunta/controller_opcao_pergunta.js')
 
 // inserir nova pergunta
-const inserirNovaPergunta = async (pergunta, contentType) => {
+const inserirNovaPergunta = async (pergunta, idTarefa, contentType) => {
     let message = JSON.parse(JSON.stringify(config_message))
     try {
         let validar = await validarDados(pergunta, contentType)
         if(validar) return validar // 400 ou 415
 
-        let result = await perguntaDAO.insertPergunta(pergunta)
+        let validarID = await validarId(idTarefa)   
+        if(validarID) return validarID // 400
+
+        // insere a pergunta
+        let result = await perguntaDAO.insertPergunta(pergunta, idTarefa)
 
         if(!result) return message.ERROR_INTERNAL_SERVER_MODEL
+
+        let idsOpcoes = []
+
+        // insere as opçoes da pergunta
+        for(let opcaoPergunta of pergunta.opcoes){
+            let resultInsertOpcoes = await opcaoPerguntaController.inserirNovaOpcaoPergunta(opcaoPergunta)
+            
+            if(resultInsertOpcoes) idsOpcoes.push(resultInsertOpcoes)
+        }
+
+        if(idsOpcoes.length > 0) pergunta.ids_opcao
 
         pergunta.id = result
         return await montarMensagem(message, message.SUCESS_CREATED_ITEM, pergunta)
@@ -41,6 +56,21 @@ const atualizarPergunta = async (pergunta, id, contentType) => {
         pergunta.id = Number(id)
         let result = await perguntaDAO.updatePergunta(pergunta)
 
+        let idsOpcoes = []
+
+        // deleta opcoes
+        let resultDeleteOpcoes = await opcaoPerguntaController.excluirOpcaoPerguntaByIdPergunta(id)
+
+        // insere as opçoes da pergunta
+        for(let opcaoPergunta of pergunta.opcoes){
+            opcaoPergunta.id_pergunta = id
+            let resultInsertOpcoes = await opcaoPerguntaController.inserirNovaOpcaoPergunta(opcaoPergunta, contentType)
+            
+            if(resultInsertOpcoes) idsOpcoes.push(resultInsertOpcoes)
+        }
+
+        if(idsOpcoes.length > 0) pergunta.ids_opcao
+
         if(!result) return message.ERROR_INTERNAL_SERVER_MODEL // 500
 
         return await montarMensagem(message, message.SUCESS_UPDATE_ITEM, pergunta)
@@ -60,6 +90,15 @@ const listarPergunta = async () => {
 
         // verfica se o array é vazio
         if(result.length <= 0) return message.ERROR_NOT_FOUND // status_code 404
+
+        for(let pergunta of result){
+            // busca as opcoes relacionadas a tarefa
+            let resultBuscarOpcoes = await opcaoPerguntaController.listarOpcaoPerguntaByIdPergunta(pergunta.id)
+
+            if(resultBuscarOpcoes.length <= 0){
+                pergunta.opcoes = resultBuscarOpcoes.response.opcaoPergunta
+            }
+        }
 
         let listarPerguntaMessage = await montarMensagem(message, message.SUCESS_RESPONSE, result)
         message.DEFAULT_MESSAGE.response.count = result.length
@@ -100,6 +139,10 @@ const excluirPergunta = async (id) => {
         let resultBuscarId = await buscarPergunta(id)
         if(!resultBuscarId.status) return resultBuscarId // 400 e 404
 
+         // deleta opcoes
+        let resultDeleteOpcoes = await opcaoPerguntaController.excluirOpcaoPerguntaByIdPergunta(id)
+        if(!resultDeleteOpcoes) return message.ERROR_INTERNAL_SERVER_MODEL // 500
+
         let result = await perguntaDAO.deletePergunta(id)
 
         if(!result) return message.ERROR_INTERNAL_SERVER_MODEL // 500
@@ -126,7 +169,7 @@ const listarPerguntaByIdTarefa = async (idTarefa) => {
             // busca as opcoes relacionadas a tarefa
             let resultBuscarOpcoes = await opcaoPerguntaController.listarOpcaoPerguntaByIdPergunta(pergunta.id)
 
-            if(resultBuscarOpcoes.length <= 0){
+            if(resultBuscarOpcoes.status){
                 pergunta.opcoes = resultBuscarOpcoes.response.opcaoPergunta
             }
         }
@@ -181,12 +224,6 @@ const validarDados = async (pergunta, contentType) => {
     // Valida a ordem da pergunta
     if(pergunta.ordem == undefined || pergunta.ordem == null || !Number.isInteger(Number(pergunta.ordem)) || Number(pergunta.ordem) < 0){
         message.ERROR_BAD_REQUEST.field = '[ORDEM] INVÁLIDO'
-        return message.ERROR_BAD_REQUEST // 400
-    }
-
-    // Valida a tarefa relacionada
-    if(pergunta.id_tarefa == undefined || pergunta.id_tarefa == null || !Number.isInteger(Number(pergunta.id_tarefa)) || Number(pergunta.id_tarefa) <= 0){
-        message.ERROR_BAD_REQUEST.field = '[ID_TAREFA] INVÁLIDO'
         return message.ERROR_BAD_REQUEST // 400
     }
 

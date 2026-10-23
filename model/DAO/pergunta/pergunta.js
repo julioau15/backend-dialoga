@@ -11,7 +11,7 @@ const knexConfig = require('../../database_config_knex/knexFile.js')
 const knexConex = knex(knexConfig.development)
 
 // insert de pergunta
-const insertPergunta = async (pergunta) => {
+const insertPergunta = async (pergunta, idTarefa) => {
     let sql = `INSERT INTO tbl_pergunta (tipo, texto, imagem, obrigatoria, ordem, id_tarefa)
                VALUES (?, ?, ?, ?, ?, ?)`
 
@@ -22,7 +22,7 @@ const insertPergunta = async (pergunta) => {
             pergunta.imagem,
             pergunta.obrigatoria,
             pergunta.ordem,
-            pergunta.id_tarefa
+            idTarefa
         ])
 
         if(response) return response[0].insertId 

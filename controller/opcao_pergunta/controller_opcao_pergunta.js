@@ -130,6 +130,21 @@ const listarOpcaoPerguntaByIdPergunta = async (idPergunta) => {
     return message.ERROR_INTERNAL_SERVER_CONTROLLER // 500
 }
 
+// excluir opcaoPergunta pelo id da pergunta
+const excluirOpcaoPerguntaByIdPergunta = async (idPergunta) => {
+    let message = JSON.parse(JSON.stringify(config_message))
+
+    try {
+        let result = await opcaoPerguntaDAO.deleteOpcaoPerguntaByIdPergunta(idPergunta)
+
+        if(!result) return message.ERROR_INTERNAL_SERVER_MODEL // 500
+
+        return await montarMensagem(message, message.SUCESS_DELETE_ITEM)
+
+    } catch (error) {console.log(error)}
+    return message.ERROR_INTERNAL_SERVER_CONTROLLER // 500
+}
+
 const validarDados = async (opcaoPergunta, contentType) => {
     let message = JSON.parse(JSON.stringify(config_message))
 
@@ -185,12 +200,12 @@ const montarMensagem = async (base,status,response = null) => {
     return base.DEFAULT_MESSAGE // 200 ou 201
 }
 
-
 module.exports = {
     inserirNovaOpcaoPergunta,
     atualizarOpcaoPergunta,
     listarOpcaoPergunta,
     buscarOpcaoPergunta,
     excluirOpcaoPergunta,
-    listarOpcaoPerguntaByIdPergunta
+    listarOpcaoPerguntaByIdPergunta,
+    excluirOpcaoPerguntaByIdPergunta
 }

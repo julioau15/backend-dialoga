@@ -3268,52 +3268,6 @@ paths:
           $ref: '#/components/responses/UnsupportedMediaType'
         '500':
           $ref: '#/components/responses/InternalServerError'
-  /perguntas/{id}/duplicar:
-    post:
-      x-status: pendente
-      summary: "Duplicar pergunta"
-      description: 'Requisitos relacionados: RF284'
-      tags:
-      - Perguntas
-      parameters:
-      - name: id
-        in: path
-        required: true
-        description: Identificador do recurso
-        schema:
-          type: integer
-          format: int64
-      responses:
-        '201':
-          description: Pergunta duplicada
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  status:
-                    type: boolean
-                    example: true
-                  status_code:
-                    type: integer
-                    example: 201
-                  message:
-                    type: string
-                    example: Registro inserido com sucesso!
-                  response:
-                    $ref: '#/components/schemas/Pergunta'
-                required:
-                - status
-                - status_code
-                - response
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
   /tarefas-destinatarios:
     get:
       x-status: pendente

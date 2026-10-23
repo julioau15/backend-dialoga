@@ -36,9 +36,9 @@ router.post('/',bodyParserJSON, async (req,res) => {
     res.status(result.status_code).json(result)
 })
 
-// endpoint para retornar todas tarefaDestinatarios
-router.get('/', bodyParserJSON, async (req,res) => {
-    let dados = req.body
+// endpoint para retornar todos os tarefaDestinatarios com filtros dinâmicos
+router.get('/', async (req, res) => {
+    let dados = req.query
     let result = await filtrarTarefasDestinatarios(dados)
     res.status(result.status_code).json(result)
 })

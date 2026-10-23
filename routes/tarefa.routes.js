@@ -31,11 +31,11 @@ const {
 
 // endpoint para inserir pergunta
 router.post('/:id/perguntas',bodyParserJSON, async (req,res) => {
-    // recebe o conteudo dentro do body da requisição
+    let id = req.params.id
     let dados = req.body
     let contentType = req.headers['content-type']
 
-    let result = await inserirNovaPergunta(dados,contentType)
+    let result = await inserirNovaPergunta(dados,id,contentType)
     res.status(result.status_code).json(result)
 })
 

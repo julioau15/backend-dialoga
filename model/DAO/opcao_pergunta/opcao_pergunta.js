@@ -118,11 +118,27 @@ const selectByIdPergunta = async (id) => {
     return false
 }
 
+// delete de opcaoPergunta pelo id da pergunta
+const deleteOpcaoPerguntaByIdPergunta = async (idPergunta) => {
+    let sql = `DELETE FROM tbl_opcao_pergunta
+               WHERE id_pergunta = ?`
+    try {
+        let response = await knexConex.raw(sql, [idPergunta])
+
+
+        if(response) return response
+ 
+    } catch (error) { console.log(error) }
+
+    return false
+}
+
 module.exports = {
     insertOpcaoPergunta,
     updateOpcaoPergunta,
     selectAllOpcaoPergunta,
     selectByIdOpcaoPergunta,
     deleteOpcaoPergunta,
-    selectByIdPergunta
+    selectByIdPergunta,
+    deleteOpcaoPerguntaByIdPergunta
 }

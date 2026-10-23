@@ -21,16 +21,6 @@ const {
 
 // ---------------- pergunta -----------------
 
-// endpoint para inserir pergunta
-router.post('/',bodyParserJSON, async (req,res) => {
-    // recebe o conteudo dentro do body da requisição
-    let dados = req.body
-    let contentType = req.headers['content-type']
-
-    let result = await inserirNovaPergunta(dados,contentType)
-    res.status(result.status_code).json(result)
-})
-
 // endpoint para retornar todas perguntas
 router.get('/', async (req,res) => {
     let result = await listarPergunta()

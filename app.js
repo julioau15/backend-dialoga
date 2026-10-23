@@ -50,6 +50,13 @@ const verifyJWT = async (req, res, next) => {
         return res.status(mensagem.status_code).json(mensagem).end()
 }
 
+// Libera apenas o CADASTRO (POST na raiz) de paciente e profissional, que acontece antes de existir token.
+// Todas as outras rotas dessas duas áreas continuam protegidas pelo verifyJWT.
+const verifyJWTExcetoCadastro = (req, res, next) => {
+    if (req.method === 'POST' && req.path === '/') return next()
+    return verifyJWT(req, res, next)
+}
+
 // ******** ROTAS ***********
 // Import das rotas
 const administradorProfissionalRouter = require('./routes/administrador_profissional.routes.js')
@@ -91,10 +98,10 @@ app.use('/v1/dialoga/especialidades', cors(), verifyJWT, especialidadeRouter)
 app.use('/v1/dialoga/horarios-tratamento', cors(), verifyJWT, horarioTratamentoRouter)
 app.use('/v1/dialoga/notificacoes', cors(), verifyJWT, notificacaoRouter)
 app.use('/v1/dialoga/opcoes-pergunta', cors(), verifyJWT, opcaoPerguntaRouter)
-app.use('/v1/dialoga/pacientes', cors(), verifyJWT, pacienteRouter)
+app.use('/v1/dialoga/pacientes', cors(), verifyJWTExcetoCadastro, pacienteRouter)
 app.use('/v1/dialoga/perguntas', cors(), verifyJWT, perguntaRouter)
 app.use('/v1/dialoga/preferencias-notificacao', cors(), verifyJWT, preferenciaNotificacaoRouter)
-app.use('/v1/dialoga/profissionais', cors(), verifyJWT, profissionalRouter)
+app.use('/v1/dialoga/profissionais', cors(), verifyJWTExcetoCadastro, profissionalRouter)
 app.use('/v1/dialoga/profissionais-especialidade', cors(), verifyJWT, profissionalEspecialidadeRouter)
 app.use('/v1/dialoga/registros-dose', cors(), verifyJWT, registroDoseRouter)
 app.use('/v1/dialoga/registros-humor', cors(), verifyJWT, registroHumorRouter)
