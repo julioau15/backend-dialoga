@@ -43,13 +43,13 @@ tags:
 - name: Preferências de Notificação
   description: '✅ Tabela `preferencia_notificacao`: preferências de notificação por categoria, incluindo ''Desligar todas'' (RF120-134).'
 - name: Tarefas
-  description: 'Tabela `tarefa`: criação, edição e envio de tarefas/questionários (RF257-298).'
+  description: '✅ Tabela `tarefa`: criação, edição e envio de tarefas/questionários (RF257-298).'
 - name: Perguntas
-  description: 'Tabela `pergunta`: perguntas que compõem uma tarefa (RF257-298).'
+  description: '✅ Tabela `pergunta`: perguntas que compõem uma tarefa (RF257-298).'
 - name: Destinatários de Tarefas
-  description: 'Tabela `tarefa_destinatario`: acompanhamento de tarefas por destinatário, visão do profissional (RF257-298).'
+  description: '✅ Tabela `tarefa_destinatario`: acompanhamento de tarefas por destinatário, visão do profissional (RF257-298).'
 - name: Respostas
-  description: 'Tabela `resposta`: respostas enviadas pelos pacientes às tarefas (RF257-298).'
+  description: '✅ Tabela `resposta`: respostas enviadas pelos pacientes às tarefas (RF257-298).'
 - name: Tratamentos
   description: 'Tabela `tratamento`: medicamentos em tratamento (RF332-361).'
 - name: Horários de Tratamento
@@ -2785,8 +2785,8 @@ paths:
           $ref: '#/components/responses/InternalServerError'
   /tarefas:
     get:
-      x-status: pendente
-      summary: "Listar tarefas (abas Todas/Pendentes/Em andamento/Concluídas/Em atraso, ou Enviadas/Rascunhos)"
+      x-status: concluido
+      summary: "✅ Listar tarefas (abas Todas/Pendentes/Em andamento/Concluídas/Em atraso, ou Enviadas/Rascunhos)"
       description: 'Requisitos relacionados: RF257-261, RF274'
       tags:
       - Tarefas
@@ -2835,8 +2835,8 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
     post:
-      x-status: pendente
-      summary: "Criar tarefa (formulário, arquivo ou auto-tarefa)"
+      x-status: concluido
+      summary: "✅ Criar tarefa (formulário, arquivo ou auto-tarefa)"
       description: 'Requisitos relacionados: RF262, RF275-277, RF289'
       tags:
       - Tarefas
@@ -2881,8 +2881,8 @@ paths:
           $ref: '#/components/responses/InternalServerError'
   /tarefas/{id}:
     get:
-      x-status: pendente
-      summary: "Detalhar tarefa"
+      x-status: concluido
+      summary: "✅ Detalhar tarefa"
       description: 'Requisitos relacionados: RF264-265, RF285'
       tags:
       - Tarefas
@@ -2923,8 +2923,8 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
     delete:
-      x-status: pendente
-      summary: "Excluir tarefa (bloqueado se já houver respostas)"
+      x-status: concluido
+      summary: "✅ Excluir tarefa (bloqueado se já houver respostas)"
       description: 'Requisitos relacionados: RF291-292'
       tags:
       - Tarefas
@@ -2975,8 +2975,8 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
     put:
-      x-status: pendente
-      summary: "Editar tarefa existente"
+      x-status: concluido
+      summary: "✅ Editar tarefa existente"
       description: 'Requisitos relacionados: RF284, RF290'
       tags:
       - Tarefas
@@ -3029,8 +3029,8 @@ paths:
           $ref: '#/components/responses/InternalServerError'
   /tarefas/{id}/enviar:
     post:
-      x-status: pendente
-      summary: "Enviar tarefa aos pacientes selecionados"
+      x-status: concluido
+      summary: "✅ Enviar tarefa aos pacientes selecionados"
       description: 'Requisitos relacionados: RF287-288'
       tags:
       - Tarefas
@@ -3072,8 +3072,8 @@ paths:
           $ref: '#/components/responses/InternalServerError'
   /tarefas/{id}/perguntas:
     get:
-      x-status: pendente
-      summary: "Listar perguntas da tarefa"
+      x-status: concluido
+      summary: "✅ Listar perguntas da tarefa"
       description: 'Requisitos relacionados: RF265-266'
       tags:
       - Perguntas
@@ -3116,8 +3116,8 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
     post:
-      x-status: pendente
-      summary: "Adicionar pergunta à tarefa"
+      x-status: concluido
+      summary: "✅ Adicionar pergunta à tarefa"
       description: 'Requisitos relacionados: RF280-283'
       tags:
       - Perguntas
@@ -3170,8 +3170,8 @@ paths:
           $ref: '#/components/responses/InternalServerError'
   /perguntas/{id}:
     delete:
-      x-status: pendente
-      summary: "Excluir pergunta"
+      x-status: concluido
+      summary: "✅ Excluir pergunta"
       description: 'Requisitos relacionados: RF284'
       tags:
       - Perguntas
@@ -3216,8 +3216,8 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
     put:
-      x-status: pendente
-      summary: "Editar pergunta (texto, tipo, ordem, obrigatoriedade)"
+      x-status: concluido
+      summary: "✅ Editar pergunta (texto, tipo, ordem, obrigatoriedade)"
       description: 'Requisitos relacionados: RF284'
       tags:
       - Perguntas
@@ -3270,8 +3270,8 @@ paths:
           $ref: '#/components/responses/InternalServerError'
   /tarefas-destinatarios:
     get:
-      x-status: pendente
-      summary: "Acompanhar respostas dos pacientes (visão do profissional)"
+      x-status: concluido
+      summary: "✅ Acompanhar respostas dos pacientes (visão do profissional)"
       description: 'Requisitos relacionados: RF293-296'
       tags:
       - Destinatários de Tarefas
@@ -3341,8 +3341,8 @@ paths:
           $ref: '#/components/responses/InternalServerError'
   /tarefas-destinatarios/{id}:
     get:
-      x-status: pendente
-      summary: "Detalhar resposta de um destinatário (dados do paciente, perguntas e respostas)"
+      x-status: concluido
+      summary: "✅ Detalhar resposta de um destinatário (dados do paciente, perguntas e respostas)"
       description: 'Requisitos relacionados: RF272, RF297-298'
       tags:
       - Destinatários de Tarefas
@@ -3384,8 +3384,8 @@ paths:
           $ref: '#/components/responses/InternalServerError'
   /tarefas-destinatarios/{id}/respostas:
     get:
-      x-status: pendente
-      summary: "Listar respostas já enviadas (somente leitura)"
+      x-status: concluido
+      summary: "✅ Listar respostas já enviadas (somente leitura)"
       description: 'Requisitos relacionados: RF272'
       tags:
       - Respostas
@@ -3428,8 +3428,8 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
     post:
-      x-status: pendente
-      summary: "Salvar rascunho ou enviar respostas da tarefa"
+      x-status: concluido
+      summary: "✅ Salvar rascunho ou enviar respostas da tarefa"
       description: 'Requisitos relacionados: RF266-271, RF273'
       tags:
       - Respostas
