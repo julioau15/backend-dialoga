@@ -9,13 +9,16 @@ const config_message = require('../module/configMessages.js')
 const respostaDAO = require('../../model/DAO/resposta/resposta.js')
 
 // inserir nova resposta
-const inserirNovaResposta = async (respostas, idTarefa, contentType) => {
+const inserirNovaResposta = async (resposta, idTarefa, contentType) => {
     let message = JSON.parse(JSON.stringify(config_message))
     try {
 
         let ids = []
 
-        for(let res in respostas){
+        if(resposta.enviar_definitivamente == true) resposta.enviar_definitivamente = 1
+        else if(resposta.enviar_definitivamente == false) resposta.enviar_definitivamente = 0
+
+        for(let res of resposta.respostas){
             res.id_tarefa_destinatario = idTarefa
             let resultInserirResposta = await respostaDAO.insertResposta(res)
 

@@ -84,8 +84,8 @@ const buscarTarefaDestinatario = async (id) => {
         if(!result) return message.ERROR_INTERNAL_SERVER_MODEL // 500
 
         if(result.length < 1) return config_message.ERROR_NOT_FOUND
-        
-        for(tarefa of result){
+
+        for(let tarefa of result){
             resultBuscarPerguntas = await perguntaController.listarPerguntaByIdTarefa(tarefa.id)
             if(resultBuscarPerguntas.status) tarefa.perguntas = resultBuscarPerguntas.response.pergunta
         }
@@ -127,7 +127,7 @@ const filtrarTarefasDestinatarios = async (filtro) => {
         // verfica se o array é vazio
         if(result.length <= 0) return message.ERROR_NOT_FOUND // status_code 404
 
-        for(tarefa of result){
+        for(let tarefa of result){
             resultBuscarPerguntas = await perguntaController.listarPerguntaByIdTarefa(tarefa.id)
             if(resultBuscarPerguntas.status) tarefa.perguntas = resultBuscarPerguntas.response.pergunta
         }

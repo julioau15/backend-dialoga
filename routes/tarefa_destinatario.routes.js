@@ -21,7 +21,8 @@ const {
 } = require('../controller/tarefa_destinatario/controller_tarefa_destinatario.js')
 
 const {
-    listarRespostaByIdTarefaDestinatario
+    listarRespostaByIdTarefaDestinatario,
+    inserirNovaResposta
 } = require('../controller/resposta/controller_resposta.js')
 
 // ---------------- tarefaDestinatario -----------------
@@ -78,7 +79,9 @@ router.get('/:id/respostas', async (req,res) => {
 router.post('/:id/respostas',bodyParserJSON, async (req,res) => {
     let id = req.params.id
     let dados = req.body
-    let result = await e
+    let contentType = req.headers['content-type'] 
+
+    let result = await inserirNovaResposta(dados, id, contentType)
     res.status(result.status_code).json(result)
 })
 
