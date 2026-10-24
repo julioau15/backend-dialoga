@@ -17,7 +17,7 @@ servers:
   description: Produção (placeholder — ajustar quando o backend for publicado)
 tags:
 - name: Autenticação
-  description: '✅ Login, login social e recuperação de senha (RF085-097).''
+  description: '✅ Login, login social e recuperação de senha (RF085-097).'
 - name: Administradores
   description: '✅ Tabela `administrador`: cadastro, listagem e perfil do administrador, incluindo troca de senha (RF01-20, RF135-167).'
 - name: Administrador × Profissional
@@ -51,15 +51,15 @@ tags:
 - name: Respostas
   description: '✅ Tabela `resposta`: respostas enviadas pelos pacientes às tarefas (RF257-298).'
 - name: Tratamentos
-  description: 'Tabela `tratamento`: medicamentos em tratamento (RF332-361).'
+  description: '✅ Tabela `tratamento`: medicamentos em tratamento (RF332-361).'
 - name: Horários de Tratamento
-  description: 'Tabela `horario_tratamento`: horários configurados para um tratamento (RF332-361).'
+  description: '✅ Tabela `horario_tratamento`: horários configurados para um tratamento (RF332-361).'
 - name: Registros de Dose
-  description: 'Tabela `registro_dose`: confirmação de doses tomadas/perdidas (RF332-361).'
+  description: '✅ Tabela `registro_dose`: confirmação de doses tomadas/perdidas (RF332-361).'
 - name: Especialidades
-  description: 'Tabela `especialidade`: domínio de apoio usado pelo cadastro de Profissional.'
+  description: '✅ Tabela `especialidade`: domínio de apoio usado pelo cadastro de Profissional.'
 - name: Categorias
-  description: 'Tabela `categoria`: domínio de apoio usado por Notificação e Solicitações de Acesso.'
+  description: '✅ Tabela `categoria`: domínio de apoio usado por Notificação e Solicitações de Acesso.'
 paths:
   /auth/login:
     post:
@@ -3569,8 +3569,8 @@ paths:
           $ref: '#/components/responses/InternalServerError'
   /tratamentos/{id}:
     delete:
-      x-status: pendente
-      summary: "Excluir tratamento"
+      x-status: concluido
+      summary: "✅ Excluir tratamento"
       description: 'Requisitos relacionados: RF357-361'
       tags:
       - Tratamentos
@@ -3615,8 +3615,8 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
     put:
-      x-status: pendente
-      summary: "Editar tratamento"
+      x-status: concluido
+      summary: "✅ Editar tratamento"
       description: 'Requisitos relacionados: RF349-355'
       tags:
       - Tratamentos
@@ -3669,8 +3669,8 @@ paths:
           $ref: '#/components/responses/InternalServerError'
   /tratamentos/{id}/horarios:
     post:
-      x-status: pendente
-      summary: "Adicionar horário ao tratamento"
+      x-status: concluido
+      summary: "✅ Adicionar horário ao tratamento"
       description: 'Requisitos relacionados: RF334, RF343'
       tags:
       - Horários de Tratamento
@@ -3727,8 +3727,8 @@ paths:
           $ref: '#/components/responses/InternalServerError'
   /horarios-tratamento/{id}:
     delete:
-      x-status: pendente
-      summary: "Remover horário do tratamento"
+      x-status: concluido
+      summary: "✅ Remover horário do tratamento"
       description: 'Requisitos relacionados: RF334'
       tags:
       - Horários de Tratamento
@@ -3774,8 +3774,8 @@ paths:
           $ref: '#/components/responses/InternalServerError'
   /horarios-tratamento/{id}/registros-dose:
     get:
-      x-status: pendente
-      summary: "Listar histórico de doses de um horário (base para aderência, RF237)"
+      x-status: concluido
+      summary: "✅ Listar histórico de doses de um horário (base para aderência, RF237)"
       description: 'Requisitos relacionados: RF237'
       tags:
       - Registros de Dose
@@ -3818,8 +3818,8 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
     post:
-      x-status: pendente
-      summary: "Confirmar ou registrar dose não tomada"
+      x-status: concluido
+      summary: "✅ Confirmar ou registrar dose não tomada"
       description: 'Requisitos relacionados: RF130 (lembrete origina este registro)'
       tags:
       - Registros de Dose
@@ -3872,8 +3872,8 @@ paths:
           $ref: '#/components/responses/InternalServerError'
   /especialidades:
     get:
-      x-status: pendente
-      summary: "Listar especialidades cadastradas"
+      x-status: concluido
+      summary: "✅ Listar especialidades cadastradas"
       description: 'Requisitos relacionados: RF160, RF321'
       tags:
       - Especialidades
@@ -3908,8 +3908,8 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
     post:
-      x-status: pendente
-      summary: "Cadastrar nova especialidade (Admin)"
+      x-status: concluido
+      summary: "✅ Cadastrar nova especialidade (Admin)"
       description: 'Requisitos relacionados: -'
       tags:
       - Especialidades
@@ -3957,8 +3957,8 @@ paths:
           $ref: '#/components/responses/InternalServerError'
   /categorias:
     get:
-      x-status: pendente
-      summary: "Listar categorias de notificação"
+      x-status: concluido
+      summary: "✅ Listar categorias de notificação"
       description: 'Requisitos relacionados: RF121, RF129, RF125, RF132'
       tags:
       - Categorias

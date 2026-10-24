@@ -19,7 +19,22 @@ const {
     excluirHorarioTratamento
 } = require('../controller/horario_tratamento/controller_horario_tratamento.js')
 
+const {
+    listarRegistroDoseByIdHorario,
+    inserirNovaRegistroDose
+} = require('../controller/registro_dose/controller_registro_dose.js')
+
 // ---------------- horarioTratamento -----------------
+// endpoint para inserir um registro de dose
+router.post('/:id/registros-dose',bodyParserJSON, async (req,res) => {
+    // recebe o conteudo dentro do body da requisição
+    let id = req.params.id
+    let dados = req.body
+    let contentType = req.headers['content-type']
+
+    let result = await inserirNovaRegistroDose(dados, id, contentType)
+    res.status(result.status_code).json(result)
+})
 
 // endpoint para inserir horarioTratamento
 router.post('/',bodyParserJSON, async (req,res) => {
@@ -28,6 +43,13 @@ router.post('/',bodyParserJSON, async (req,res) => {
     let contentType = req.headers['content-type']
 
     let result = await inserirNovaHorarioTratamento(dados,contentType)
+    res.status(result.status_code).json(result)
+})
+
+// endpoint para retornar os registros de dose do horario
+router.get('/:id/registros-dose', async (req,res) => {
+    let id = req.params.id
+    let result = await listarRegistroDoseByIdHorario(id)
     res.status(result.status_code).json(result)
 })
 

@@ -16,7 +16,8 @@ const {
     atualizarRegistroDose,
     listarRegistroDose,
     buscarRegistroDose,
-    excluirRegistroDose
+    excluirRegistroDose,
+    marcarDoseComoTomada
 } = require('../controller/registro_dose/controller_registro_dose.js')
 
 // ---------------- registroDose -----------------
@@ -41,6 +42,13 @@ router.get('/', async (req,res) => {
 router.get('/:id', async (req,res) => {
     let id = req.params.id
     let result = await buscarRegistroDose(id)
+    res.status(result.status_code).json(result)
+})
+
+// endpoint para marcar uma dose como tomada
+router.put('/:id/marcar-como-tomada', bodyParserJSON, async (req,res) => {
+    let id          = req.params.id                 // Recebe o id por parametro
+    let result      = await marcarDoseComoTomada(id)
     res.status(result.status_code).json(result)
 })
 

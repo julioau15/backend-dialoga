@@ -9,13 +9,13 @@ const config_message = require('../module/configMessages.js')
 const registroDoseDAO = require('../../model/DAO/registro_dose/registro_dose.js')
 
 // inserir nova registroDose
-const inserirNovaRegistroDose = async (registroDose, contentType) => {
+const inserirNovaRegistroDose = async (registroDose, idHorario, contentType) => {
     let message = JSON.parse(JSON.stringify(config_message))
     try {
         let validar = await validarDados(registroDose, contentType)
         if(validar) return validar // 400 ou 415
 
-        let result = await registroDoseDAO.insertRegistroDose(registroDose)
+        let result = await registroDoseDAO.insertRegistroDose(registroDose, idHorario)
 
         if(!result) return message.ERROR_INTERNAL_SERVER_MODEL
 
@@ -109,6 +109,45 @@ const excluirRegistroDose = async (id) => {
     return message.ERROR_INTERNAL_SERVER_CONTROLLER // 500
 }
 
+// listar todas registroDoses pelo id do horario
+const listarRegistroDoseByIdHorario = async (idHorario) => {
+    let message = JSON.parse(JSON.stringify(config_message))
+
+    try {
+        let result = await registroDoseDAO.selectByIdHorario(idHorario)
+
+        if(!result) return message.ERROR_INTERNAL_SERVER_MODEL // 500
+
+        // verfica se o array é vazio
+        if(result.length <= 0) return message.ERROR_NOT_FOUND // status_code 404
+
+        let listarRegistroDoseMessage = await montarMensagem(message, message.SUCESS_RESPONSE, result)
+        message.DEFAULT_MESSAGE.response.count = result.length
+
+        return listarRegistroDoseMessage // status_code 200
+
+    } catch (error) {console.log(error)}
+    return message.ERROR_INTERNAL_SERVER_CONTROLLER // 500
+}
+
+// marcar dose como tomada
+const marcarDoseComoTomada = async (id) => {
+    let message = JSON.parse(JSON.stringify(config_message))
+
+    try {
+        let resultBuscarId = await buscarRegistroDose(id)
+        if(!resultBuscarId.status) return resultBuscarId // 400 e 404
+
+        let result = await registroDoseDAO.marcarDoseComoTomada(id)
+
+        if(!result) return message.ERROR_INTERNAL_SERVER_MODEL // 500
+
+        return await montarMensagem(message, message.SUCESS_UPDATE_ITEM, registroDose)
+
+    } catch (error) {console.log(error)}
+    return message.ERROR_INTERNAL_SERVER_CONTROLLER // 500
+}
+
 const validarDados = async (registroDose, contentType) => {
     let message = JSON.parse(JSON.stringify(config_message))
 
@@ -139,13 +178,7 @@ const validarDados = async (registroDose, contentType) => {
         message.ERROR_BAD_REQUEST.field = '[DATA_HORA_CONFIRMACAO] INVÁLIDO'
         return message.ERROR_BAD_REQUEST // 400
     }
-
-    // Valida o horário relacionado
-    if(registroDose.id_horario_tratamento == undefined || registroDose.id_horario_tratamento == null || !Number.isInteger(Number(registroDose.id_horario_tratamento)) || Number(registroDose.id_horario_tratamento) <= 0){
-        message.ERROR_BAD_REQUEST.field = '[ID_HORARIO_TRATAMENTO] INVÁLIDO'
-        return message.ERROR_BAD_REQUEST // 400
-    }
-
+    
     return false
 }
 
@@ -170,11 +203,12 @@ const montarMensagem = async (base,status,response = null) => {
     return base.DEFAULT_MESSAGE // 200 ou 201
 }
 
-
 module.exports = {
     inserirNovaRegistroDose,
     atualizarRegistroDose,
     listarRegistroDose,
     buscarRegistroDose,
-    excluirRegistroDose
+    excluirRegistroDose,
+    listarRegistroDoseByIdHorario,
+    marcarDoseComoTomada
 }
