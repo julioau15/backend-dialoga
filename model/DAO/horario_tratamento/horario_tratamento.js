@@ -11,12 +11,12 @@ const knexConfig = require('../../database_config_knex/knexFile.js')
 const knexConex = knex(knexConfig.development)
 
 // insert de horarioTratamento
-const insertHorarioTratamento = async (horarioTratamento) => {
+const insertHorarioTratamento = async (horarioTratamento, idTratamento) => {
     let sql = `INSERT INTO tbl_horario_tratamento (horario, id_tratamento)
                VALUES (?, ?)`
 
     try {
-        let response = await knexConex.raw(sql, [horarioTratamento.horario, horarioTratamento.id_tratamento])
+        let response = await knexConex.raw(sql, [horarioTratamento.horario, idTratamento])
 
         if(response) return response[0].insertId 
 
@@ -28,11 +28,10 @@ const insertHorarioTratamento = async (horarioTratamento) => {
 // update de horarioTratamento
 const updateHorarioTratamento = async (horarioTratamento) => {
     let sql = `UPDATE tbl_horario_tratamento
-               SET horario = ?,
-                   id_tratamento = ?
+               SET horario = ?
                WHERE id = ?`
     try {
-        let response = await knexConex.raw(sql, [horarioTratamento.horario, horarioTratamento.id_tratamento, horarioTratamento.id])
+        let response = await knexConex.raw(sql, [horarioTratamento.horario, horarioTratamento.id])
 
         if(response) return response
 
@@ -94,10 +93,47 @@ const deleteHorarioTratamento = async (id) => {
     return false
 }
 
+// delete de horarioTratamento pelo id do tratamento
+const deleteHorarioTratamentoByIdTratamento = async (idTratamento) => {
+    let sql = `DELETE FROM tbl_horario_tratamento
+               WHERE id_tratamento = ?`
+    try {
+        let response = await knexConex.raw(sql, [idTratamento])
+
+
+        if(response) return response
+ 
+    } catch (error) { console.log(error) }
+
+    return false
+}
+
+// select de todas horarioTratamentos pelo id da tratamento
+const selectAllHorarioTratamentoByIdTratamento = async (idTratamento) => {
+    let sql = `SELECT
+                   id,
+                   horario,
+                   id_tratamento
+               FROM tbl_horario_tratamento
+               WHERE id_tratamento = ?
+               ORDER BY id DESC`
+    try {
+        let response = await knexConex.raw(sql, [idTratamento])
+
+
+        if(response) return response[0]
+ 
+    } catch (error) { console.log(error) }
+
+    return false
+}
+
 module.exports = {
     insertHorarioTratamento,
     updateHorarioTratamento,
     selectAllHorarioTratamento,
     selectByIdHorarioTratamento,
-    deleteHorarioTratamento
+    deleteHorarioTratamento,
+    selectAllHorarioTratamentoByIdTratamento,
+    deleteHorarioTratamentoByIdTratamento
 }

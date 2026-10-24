@@ -7,6 +7,8 @@
 
 const config_message = require('../module/configMessages.js')
 const tratamentoDAO = require('../../model/DAO/tratamento/tratamento.js')
+const horarioTratamentoController = require('../horario_tratamento/controller_horario_tratamento.js')
+const { decodeJWT } = require('../../middleware/middlewareJWT.js')
 
 // inserir nova tratamento
 const inserirNovaTratamento = async (tratamento, contentType) => {
@@ -37,10 +39,21 @@ const atualizarTratamento = async (tratamento, id, contentType) => {
         let resultBuscarId = await buscarTratamento(id)
         if(!resultBuscarId.status) return resultBuscarId // 400 e 404
 
+        let resultDeleteHorarios = await horarioTratamentoController.excluirHorarioTratamentoByIdTratamento(id)
+
         tratamento.id = Number(id)
         let result = await tratamentoDAO.updateTratamento(tratamento)
 
         if(!result) return message.ERROR_INTERNAL_SERVER_MODEL // 500
+
+        for(let horario of tratamento.horarios){
+            let resultInsertHorario = await horarioTratamentoController.inserirNovaHorarioTratamento(horario, id, contentType)
+           
+            if (resultInsertHorario.status) {
+                let idHorario = resultInsertHorario.response.horarioTratamento.id
+                horario.id = idHorario
+            }
+        }
 
         return await montarMensagem(message, message.SUCESS_UPDATE_ITEM, tratamento)
 
@@ -109,6 +122,73 @@ const excluirTratamento = async (id) => {
     return message.ERROR_INTERNAL_SERVER_CONTROLLER // 500
 }
 
+// inserir nova tratamento pelo token
+const inserirNovaTratamentoByToken = async (tratamento, token, contentType) => {
+    let message = JSON.parse(JSON.stringify(config_message))
+    try {
+        let validar = await validarDados(tratamento, contentType)
+        if(validar) return validar // 400 ou 415
+
+        let decodedToken = await decodeJWT(token)
+        if(!decodedToken.status) return message.ERROR_INVALID_TOKEN
+
+        let idPaciente = decodedToken.decode.id
+
+        let result = await tratamentoDAO.insertTratamento(tratamento, idPaciente)
+
+        if(!result) return message.ERROR_INTERNAL_SERVER_MODEL
+
+        for(let horario of tratamento.horarios){
+           
+            let resultInsertHorario = await horarioTratamentoController.inserirNovaHorarioTratamento(horario, result, contentType)
+
+            if (resultInsertHorario.status) {
+                let idHorario = resultInsertHorario.response.horarioTratamento.id
+                horario.id = idHorario
+            }
+        }
+
+        tratamento.id = result
+        return await montarMensagem(message, message.SUCESS_CREATED_ITEM, tratamento)
+
+    } catch (error) {console.log(error)}
+    return message.ERROR_INTERNAL_SERVER_CONTROLLER
+}
+
+// listar todas tratamentos pelo token
+const listarTratamentosByToken = async (token) => {
+    let message = JSON.parse(JSON.stringify(config_message))
+
+    try {
+        let decodedToken = await decodeJWT(token)
+        if(!decodedToken.status) return message.ERROR_INVALID_TOKEN
+
+        let idPaciente = decodedToken.decode.id
+
+        let result = await tratamentoDAO.selectAllTratamentosByIdPaciente(idPaciente)
+
+        if(!result) return message.ERROR_INTERNAL_SERVER_MODEL // 500
+
+        // verfica se o array é vazio
+        if(result.length <= 0) return message.ERROR_NOT_FOUND // status_code 404
+
+        for(let tratamento of result){
+            let resultBuscarHorarios = await horarioTratamentoController.listarHorarioTratamentoByIdTratamento(tratamento.id)
+       
+            if(resultBuscarHorarios.status){
+                tratamento.horarios = resultBuscarHorarios.response.horarioTratamento
+            }
+        }
+
+        let listarTratamentoMessage = await montarMensagem(message, message.SUCESS_RESPONSE, result)
+        message.DEFAULT_MESSAGE.response.count = result.length
+
+        return listarTratamentoMessage // status_code 200
+
+    } catch (error) {console.log(error)}
+    return message.ERROR_INTERNAL_SERVER_CONTROLLER // 500
+}
+
 const validarDados = async (tratamento, contentType) => {
     let message = JSON.parse(JSON.stringify(config_message))
 
@@ -146,13 +226,7 @@ const validarDados = async (tratamento, contentType) => {
        ![0, 1, true, false].includes(tratamento.lembrete_ativo)){
         message.ERROR_BAD_REQUEST.field = '[LEMBRETE_ATIVO] INVÁLIDO'
         return message.ERROR_BAD_REQUEST // 400
-    }
-
-    // Valida o paciente relacionado
-    if(tratamento.id_paciente == undefined || tratamento.id_paciente == null || !Number.isInteger(Number(tratamento.id_paciente)) || Number(tratamento.id_paciente) <= 0){
-        message.ERROR_BAD_REQUEST.field = '[ID_PACIENTE] INVÁLIDO'
-        return message.ERROR_BAD_REQUEST // 400
-    }
+    }   
 
     return false
 }
@@ -178,11 +252,12 @@ const montarMensagem = async (base,status,response = null) => {
     return base.DEFAULT_MESSAGE // 200 ou 201
 }
 
-
 module.exports = {
     inserirNovaTratamento,
     atualizarTratamento,
     listarTratamento,
     buscarTratamento,
-    excluirTratamento
+    excluirTratamento,
+    inserirNovaTratamentoByToken,
+    listarTratamentosByToken
 }

@@ -11,7 +11,7 @@ const knexConfig = require('../../database_config_knex/knexFile.js')
 const knexConex = knex(knexConfig.development)
 
 // insert de tratamento
-const insertTratamento = async (tratamento) => {
+const insertTratamento = async (tratamento, idPaciente) => {
     let sql = `INSERT INTO tbl_tratamento (nome_medicamento, dosagem, frequencia, lembrete_ativo, id_paciente)
                VALUES (?, ?, ?, ?, ?)`
 
@@ -21,7 +21,7 @@ const insertTratamento = async (tratamento) => {
             tratamento.dosagem,
             tratamento.frequencia,
             tratamento.lembrete_ativo,
-            tratamento.id_paciente
+            idPaciente
         ])
 
         if(response) return response[0].insertId 
@@ -37,8 +37,7 @@ const updateTratamento = async (tratamento) => {
                SET nome_medicamento = ?,
                    dosagem = ?,
                    frequencia = ?,
-                   lembrete_ativo = ?,
-                   id_paciente = ?
+                   lembrete_ativo = ?
                WHERE id = ?`
     try {
         let response = await knexConex.raw(sql, [
@@ -46,7 +45,6 @@ const updateTratamento = async (tratamento) => {
             tratamento.dosagem,
             tratamento.frequencia,
             tratamento.lembrete_ativo,
-            tratamento.id_paciente,
             tratamento.id
         ])
 
@@ -116,10 +114,33 @@ const deleteTratamento = async (id) => {
     return false
 }
 
+// select de todas tratamentos
+const selectAllTratamentosByIdPaciente = async (idPaciente) => {
+    let sql = `SELECT
+                   id,
+                   nome_medicamento,
+                   dosagem,
+                   frequencia,
+                   lembrete_ativo,
+                   id_paciente
+               FROM tbl_tratamento
+               WHERE id_paciente = ?
+               ORDER BY id DESC`
+    try {
+        let response = await knexConex.raw(sql, [idPaciente])
+
+        if(response) return response[0]
+ 
+    } catch (error) { console.log(error) }
+
+    return false
+}
+
 module.exports = {
     insertTratamento,
     updateTratamento,
     selectAllTratamento,
     selectByIdTratamento,
-    deleteTratamento
+    deleteTratamento,
+    selectAllTratamentosByIdPaciente
 }

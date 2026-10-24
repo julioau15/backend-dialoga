@@ -19,7 +19,22 @@ const {
     excluirTratamento
 } = require('../controller/tratamento/controller_tratamento.js')
 
+const {
+    inserirNovaHorarioTratamento
+} = require('../controller/horario_tratamento/controller_horario_tratamento.js')
+
 // ---------------- tratamento -----------------
+
+// endpoint para inserir horario no tratamento
+router.post('/:id/horarios',bodyParserJSON, async (req,res) => {
+    // recebe o conteudo dentro do body da requisição
+    let dados = req.body
+    let id = req.params.id
+    let contentType = req.headers['content-type']
+
+    let result = await inserirNovaHorarioTratamento(dados, id, contentType)
+    res.status(result.status_code).json(result)
+})
 
 // endpoint para inserir tratamento
 router.post('/',bodyParserJSON, async (req,res) => {

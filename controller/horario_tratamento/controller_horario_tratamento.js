@@ -9,13 +9,13 @@ const config_message = require('../module/configMessages.js')
 const horarioTratamentoDAO = require('../../model/DAO/horario_tratamento/horario_tratamento.js')
 
 // inserir nova horarioTratamento
-const inserirNovaHorarioTratamento = async (horarioTratamento, contentType) => {
+const inserirNovaHorarioTratamento = async (horarioTratamento, idTratamento, contentType) => {
     let message = JSON.parse(JSON.stringify(config_message))
     try {
         let validar = await validarDados(horarioTratamento, contentType)
         if(validar) return validar // 400 ou 415
 
-        let result = await horarioTratamentoDAO.insertHorarioTratamento(horarioTratamento)
+        let result = await horarioTratamentoDAO.insertHorarioTratamento(horarioTratamento, idTratamento)
 
         if(!result) return message.ERROR_INTERNAL_SERVER_MODEL
 
@@ -109,6 +109,42 @@ const excluirHorarioTratamento = async (id) => {
     return message.ERROR_INTERNAL_SERVER_CONTROLLER // 500
 }
 
+// listar todas horarioTratamentos pelo id do tratamento
+const listarHorarioTratamentoByIdTratamento = async (idTratamento) => {
+    let message = JSON.parse(JSON.stringify(config_message))
+
+    try {
+        let result = await horarioTratamentoDAO.selectAllHorarioTratamentoByIdTratamento(idTratamento)
+
+        if(!result) return message.ERROR_INTERNAL_SERVER_MODEL // 500
+
+        // verfica se o array é vazio
+        if(result.length <= 0) return message.ERROR_NOT_FOUND // status_code 404
+
+        let listarHorarioTratamentoMessage = await montarMensagem(message, message.SUCESS_RESPONSE, result)
+        message.DEFAULT_MESSAGE.response.count = result.length
+
+        return listarHorarioTratamentoMessage // status_code 200
+
+    } catch (error) {console.log(error)}
+    return message.ERROR_INTERNAL_SERVER_CONTROLLER // 500
+}
+
+// excluir horarioTratamento pelo id do tratamento
+const excluirHorarioTratamentoByIdTratamento = async (idTratamento) => {
+    let message = JSON.parse(JSON.stringify(config_message))
+
+    try {
+        let result = await horarioTratamentoDAO.deleteHorarioTratamentoByIdTratamento(idTratamento)
+
+        if(!result) return message.ERROR_INTERNAL_SERVER_MODEL // 500
+
+        return await montarMensagem(message, message.SUCESS_DELETE_ITEM)
+
+    } catch (error) {console.log(error)}
+    return message.ERROR_INTERNAL_SERVER_CONTROLLER // 500
+}
+
 const validarDados = async (horarioTratamento, contentType) => {
     let message = JSON.parse(JSON.stringify(config_message))
 
@@ -125,12 +161,6 @@ const validarDados = async (horarioTratamento, contentType) => {
     // Valida o horário
     if(horarioTratamento.horario == undefined || horarioTratamento.horario == null || String(horarioTratamento.horario).trim() == ''){
         message.ERROR_BAD_REQUEST.field = '[HORARIO] INVÁLIDO'
-        return message.ERROR_BAD_REQUEST // 400
-    }
-
-    // Valida o tratamento relacionado
-    if(horarioTratamento.id_tratamento == undefined || horarioTratamento.id_tratamento == null || !Number.isInteger(Number(horarioTratamento.id_tratamento)) || Number(horarioTratamento.id_tratamento) <= 0){
-        message.ERROR_BAD_REQUEST.field = '[ID_TRATAMENTO] INVÁLIDO'
         return message.ERROR_BAD_REQUEST // 400
     }
 
@@ -158,11 +188,12 @@ const montarMensagem = async (base,status,response = null) => {
     return base.DEFAULT_MESSAGE // 200 ou 201
 }
 
-
 module.exports = {
     inserirNovaHorarioTratamento,
     atualizarHorarioTratamento,
     listarHorarioTratamento,
     buscarHorarioTratamento,
-    excluirHorarioTratamento
+    excluirHorarioTratamento,
+    listarHorarioTratamentoByIdTratamento,
+    excluirHorarioTratamentoByIdTratamento
 }
