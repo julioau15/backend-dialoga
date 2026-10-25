@@ -196,6 +196,36 @@ const insertPreferenciaNotificacaoPaciente = async (preferenciaNotificacao) => {
     return false
 }
 
+// delete de preferenciaNotificacao
+const deletePreferenciaNotificacaoProfissional = async (id) => {
+    let sql = `DELETE FROM tbl_preferencia_notificacao
+               WHERE id_profissional = ?`
+    try {
+        let response = await knexConex.raw(sql, [id])
+
+
+        if(response) return response
+ 
+    } catch (error) { console.log(error) }
+
+    return false
+}
+
+// delete de preferenciaNotificacao
+const deletePreferenciaNotificacaoPaciente = async (id) => {
+    let sql = `DELETE FROM tbl_preferencia_notificacao
+               WHERE id_paciente = ?`
+    try {
+        let response = await knexConex.raw(sql, [id])
+
+
+        if(response) return response
+ 
+    } catch (error) { console.log(error) }
+
+    return false
+}
+
 module.exports = {
     insertPreferenciaNotificacao,
     updatePreferenciaNotificacao,
@@ -205,5 +235,7 @@ module.exports = {
     selectPreferenciasProfissional,
     selectPreferenciasPaciente,
     insertPreferenciaNotificacaoProfissional,
-    insertPreferenciaNotificacaoPaciente
+    insertPreferenciaNotificacaoPaciente,
+    deletePreferenciaNotificacaoPaciente,
+    deletePreferenciaNotificacaoProfissional
 }

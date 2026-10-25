@@ -20,7 +20,7 @@ const insertResposta = async (resposta) => {
             resposta.valor,
             resposta.id_pergunta, 
             resposta.id_opcao_pergunta, 
-            resposta.id_tarefa_destinatario
+            Number(resposta.id_tarefa_destinatario)
         ])
 
         if(response) return response[0].insertId 

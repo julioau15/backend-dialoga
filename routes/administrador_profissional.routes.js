@@ -49,19 +49,17 @@ router.get('/:id', async (req,res) => {
 router.put('/:id/aprovar', bodyParserJSON, async (req,res) => {
     let token = req.headers['x-access-token']
     let id          = req.params.id                 // Recebe o id por parametro
-    let contentType = req.headers['content-type']   // Recebe o ContentType do header da requisição
-    
-    let result      = await aprovarAdministradorProfissional(id, token, contentType)
+
+    let result      = await aprovarAdministradorProfissional(id, token)
     res.status(result.status_code).json(result)
 })
 
 // endpoint para reprovar um Profissional pelo id
-router.put('/:id/reprovar', bodyParserJSON, async (req,res) => {
+router.put('/:id/recusar', bodyParserJSON, async (req,res) => {
     let token = req.headers['x-access-token']
     let id          = req.params.id                 // Recebe o id por parametro
-    let contentType = req.headers['content-type']   // Recebe o ContentType do header da requisição
     
-    let result      = await reprovarAdministradorProfissional(id, token, contentType)
+    let result      = await reprovarAdministradorProfissional(id, token)
     res.status(result.status_code).json(result)
 })
 

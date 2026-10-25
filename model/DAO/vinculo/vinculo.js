@@ -13,16 +13,11 @@ const knexConex = knex(knexConfig.development)
 // insert de vinculo
 const insertVinculo = async (vinculo) => {
     let sql = `INSERT INTO tbl_vinculo (status, origem_cadastro, data_solicitacao, data_aceite, data_inicio_acompanhamento, data_fim, id_profissional, id_paciente)
-               VALUES (0, ?, ?, ?, ?, ?, ?, ?)`
+               VALUES ("pendente", ?, now(), null, null, null, ?, ?)`
 
     try {
         let response = await knexConex.raw(sql, [
-            vinculo.status,
             vinculo.origem_cadastro,
-            vinculo.data_solicitacao,
-            vinculo.data_aceite,
-            vinculo.data_inicio_acompanhamento,
-            vinculo.data_fim,
             vinculo.id_profissional,
             vinculo.id_paciente
         ])
@@ -152,42 +147,93 @@ const selectByIdPacienteProfissional = async (idPaciente, idProfissonal) => {
     return false
 }
 
-// listar pacientes pelo id do profissional
-const selectByIdProfissional = async (id) => {
-    let sql = `SELECT
-                   tbl_paciente.id,
-                   tbl_paciente.nome,
-                   tbl_paciente.email,
-                   tbl_paciente.telefone,
-                   tbl_paciente.cpf,
-                   tbl_paciente.data_nascimento,
-                   tbl_paciente.status
-               FROM tbl_vinculo
-               INNER JOIN tbl_paciente ON tbl_vinculo.id_paciente = tbl_paciente.id
-               WHERE tbl_vinculo.id_profissional = ?`
+// listar pacientes vinculados ao profissional, filtrando por nome e status
+const selectByIdProfissional = async (idProfissional, filtro = {}) => {
+    let sql = `
+        SELECT
+            tbl_paciente.id,
+            tbl_paciente.nome_completo,
+            tbl_paciente.apelido,
+            tbl_paciente.status_atividade
+        FROM tbl_vinculo
+        INNER JOIN tbl_paciente
+            ON tbl_paciente.id = tbl_vinculo.id_paciente
+        WHERE tbl_vinculo.id_profissional = ?
+    `
+
+    const params = [idProfissional]
+
+    if (filtro.busca) {
+        sql += `
+            AND (
+                tbl_paciente.nome_completo LIKE ?
+                OR tbl_paciente.apelido LIKE ?
+            )
+        `
+        params.push(`%${filtro.busca}%`, `%${filtro.busca}%`)
+    }
+
+    if (filtro.status && filtro.status.toLowerCase() !== 'todos') {
+        sql += ` AND tbl_paciente.status_atividade = ?`
+        params.push(filtro.status.toLowerCase())
+    }
+
+    sql += ` ORDER BY tbl_paciente.nome_completo ASC`
+
     try {
-        let response = await knexConex.raw(sql, [id])
-    } catch (error) { console.log(error) }
+        const response = await knexConex.raw(sql, params)
+
+        if (response) return response[0]
+    } catch (error) {
+        console.log(error)
+    }
 
     return false
 }
 
-// listar profissionais pelo id do paciente
-const selectByIdPaciente = async (id) => {
+// listar profissionais pelo id do paciente, nome e status
+const selectByIdPaciente = async (id, filtro = {}) => {
     let sql = `SELECT
                    tbl_profissional.id,
-                   tbl_profissional.nome,
-                   tbl_profissional.email,
-                   tbl_profissional.telefone,
+                   tbl_profissional.nome_completo,
                    tbl_profissional.cpf,
-                   tbl_profissional.data_nascimento,
-                   tbl_profissional.status
+                   tbl_profissional.crp,
+                   tbl_profissional.celular,
+                   tbl_profissional.instituicao_clinica,
+                   tbl_profissional.foto_avatar,
+                   tbl_profissional.id_usuario,
+                   tbl_vinculo.status
                FROM tbl_vinculo
-               INNER JOIN tbl_profissional ON tbl_vinculo.id_profissional = tbl_profissional.id
+               INNER JOIN tbl_profissional
+                   ON tbl_vinculo.id_profissional = tbl_profissional.id
                WHERE tbl_vinculo.id_paciente = ?`
+
+    const params = [id]
+
+    if (filtro.busca) {
+        sql += ` AND tbl_profissional.nome_completo LIKE ?`
+        params.push(`%${filtro.nome}%`)
+    }
+
+    if (filtro.status && filtro.status.toLowerCase() !== 'todos') {
+        sql += ` AND tbl_vinculo.status = ?`
+        params.push(filtro.status.toLowerCase())
+    }
+
+    if (filtro.cpf) {
+        sql += ` AND tbl_profissional.cpf = ?`
+        params.push(filtro.cpf.toLowerCase())
+    }
+
+    sql += ` ORDER BY tbl_profissional.nome_completo ASC`
+
     try {
-        let response = await knexConex.raw(sql, [id])
-    } catch (error) { console.log(error) }
+        let response = await knexConex.raw(sql, params)
+
+        if (response) return response[0]
+    } catch (error) {
+        console.log(error)
+    }
 
     return false
 }
@@ -228,17 +274,23 @@ const insertVinculoPaciente = async (vinculo) => {
     return false
 }
 
-// remover paciente/ profissional da lista de acompanhamento
-const deleteVinculoPacienteProfissional = async (idPaciente, idProfissonal) => {
-    let sql = ` DELETE FROM tbl_vinculo
-                    INNER JOIN tbl_paciente ON tbl_vinculo.id_paciente = tbl_paciente.id
-                WHERE tbl_vinculo.id_profissional = ? AND tbl_vinculo.id_paciente = ?`
-    try {
-        let response = await knexConex.raw(sql, [idProfissonal, idPaciente])
-        if(response) return response
-    } catch (error) { console.log(error) }
+// remover paciente/profissional da lista de acompanhamento
+const deleteVinculoPacienteProfissional = async (idPaciente, idProfissional) => {
+    let sql = `DELETE FROM tbl_vinculo
+               WHERE id_profissional = ?
+               AND id_paciente = ?;`
 
-    return false
+    try {
+        let [response] = await knexConex.raw(sql, [
+            idProfissional,
+            idPaciente
+        ])
+
+        return response.affectedRows > 0
+    } catch (error) {
+        console.log(error)
+        return false
+    }
 }
 
 // aceitar um vinculo

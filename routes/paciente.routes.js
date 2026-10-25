@@ -74,7 +74,8 @@ const formatarJson = async (dados, acao) => {
 // endpoint para listar os regitros de humor de um paciente pelo token
 router.get('/me/registros-humor', async (req,res) => {
     let token = req.headers['x-access-token']
-    let result = await listarRegistroHumorByToken(token)
+    let filtro = req.query
+    let result = await listarRegistroHumorByToken(token, filtro)
     res.status(result.status_code).json(result)
 })
 
@@ -96,7 +97,8 @@ router.get('/:id/anotacoes', async (req,res) => {
 // endpoint para retornar profissionais vinculados a um paciente
 router.get('/me/profissionais', async (req,res) => {
     let token = req.headers['x-access-token']
-    let result = await listarProfissionaisVinculados(token)
+    let filtro = req.query
+    let result = await listarProfissionaisVinculados(token, filtro)
     res.status(result.status_code).json(result)
 })
 
@@ -114,7 +116,7 @@ router.get('/', async (req,res) => {
 })
 
 // endpoint para buscar um paciente pelo id
-router.get('/:id', async (req,res) => {
+router.get('/:id/perfil-profissional', async (req,res) => {
     let id = req.params.id
     let result = await buscarPaciente(id)
     res.status(result.status_code).json(result)
@@ -160,7 +162,7 @@ router.post('/me/profissionais/:id', async (req,res) => {
 })
 
 // endpoint para inserir um registro de humor de um paciente pelo token
-router.post('/me/registros-humor', async (req,res) => {
+router.post('/me/registros-humor',bodyParserJSON, async (req,res) => {
     // recebe o conteudo dentro do body da requisição
     let dados = req.body
     let token = req.headers['x-access-token']
@@ -171,12 +173,12 @@ router.post('/me/registros-humor', async (req,res) => {
 })
 
 // endpoint para realizar o form de primeiro acesso do paciente
-router.post('/primeiro-acesso', async (req,res) => {
+router.post('/me/primeiro-acesso',bodyParserJSON, async (req,res) => {
     // recebe o conteudo dentro do body da requisição
     let dados = req.body
-    let contentType = req.headers['content-type']
+    let token = req.headers['x-access-token']
 
-    let result = await primeiroAcessoPaciente(dados,contentType)
+    let result = await primeiroAcessoPaciente(dados, token)
     res.status(result.status_code).json(result)
 })
 

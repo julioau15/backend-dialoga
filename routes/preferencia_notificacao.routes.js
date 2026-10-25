@@ -18,7 +18,8 @@ const {
     buscarPreferenciaNotificacao,
     excluirPreferenciaNotificacao,
     listarPreferenciasNotificacaoByToken,
-    inserirPreferenciasNotificacaoByToken
+    inserirPreferenciasNotificacaoByToken,
+    atualizarTodasPreferenciaNotificacao
 } = require('../controller/preferencia_notificacao/controller_preferencia_notificacao.js')
 
 // ---------------- preferenciaNotificacao -----------------
@@ -53,6 +54,16 @@ router.put('/:id', bodyParserJSON, async (req,res) => {
     let contentType = req.headers['content-type']   // Recebe o ContentType do header da requisição
     
     let result      = await atualizarPreferenciaNotificacao(dados, id, contentType)
+    res.status(result.status_code).json(result)
+})
+
+// endpoint para atualizar todas as preferencias
+router.put('/', bodyParserJSON, async (req,res) => {
+    let token = req.headers['x-access-token']
+    let dados       = req.body                      // Recebe os dados do body da requisição
+    let contentType = req.headers['content-type']   // Recebe o ContentType do header da requisição
+    
+    let result      = await atualizarTodasPreferenciaNotificacao(dados,token, contentType)
     res.status(result.status_code).json(result)
 })
 

@@ -13,14 +13,12 @@ const knexConex = knex(knexConfig.development)
 // insert de anotacao
 const insertAnotacao = async (anotacao) => {
     let sql = `INSERT INTO tbl_anotacao (titulo, conteudo, data_criacao, data_edicao, id_profissional, id_paciente)
-               VALUES (?, ?, ?, ?, ?, ?)`
+               VALUES (?, ?, now(), null, ?, ?)`
 
     try {
         let response = await knexConex.raw(sql, [
             anotacao.titulo,
             anotacao.conteudo,
-            anotacao.data_criacao,
-            anotacao.data_edicao,
             anotacao.id_profissional,
             anotacao.id_paciente
         ])
@@ -37,13 +35,12 @@ const updateAnotacao = async (anotacao) => {
     let sql = `UPDATE tbl_anotacao
                SET titulo = ?,
                    conteudo = ?,
-                   data_edicao = ?,
+                   data_edicao = now()
                WHERE id = ?`
     try {
         let response = await knexConex.raw(sql, [
             anotacao.titulo,
             anotacao.conteudo,
-            anotacao.data_edicao,
             anotacao.id
         ])
 

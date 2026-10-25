@@ -7,11 +7,27 @@
 
 const config_message = require('../module/configMessages.js')
 const consultaDAO = require('../../model/DAO/consulta/consulta.js')
+const { decodeJWT } = require('../../middleware/middlewareJWT.js')
 
 // inserir nova consulta
-const inserirNovaConsulta = async (consulta, contentType) => {
+const inserirNovaConsulta = async (consulta, token, contentType) => {
     let message = JSON.parse(JSON.stringify(config_message))
     try {
+        let decodedToken = await decodeJWT(token)
+        if(!decodedToken.status) return message.ERROR_INVALID_TOKEN
+
+        let id = decodedToken.decode.id
+        let nivel = 
+        decodedToken.decode.nivel == 0 
+        ? "administrador"
+        : decodedToken.decode.nivel == 1
+        ? "profissional"
+        : decodedToken.decode.nivel == 2
+        ? "paciente"
+        : false
+
+        consulta.criado_por = nivel
+
         let validar = await validarDados(consulta, contentType)
         if(validar) return validar // 400 ou 415
 
@@ -27,10 +43,24 @@ const inserirNovaConsulta = async (consulta, contentType) => {
 }
 
 // atualizar consulta
-const atualizarConsulta = async (consulta, id, contentType) => {
+const atualizarConsulta = async (consulta, token, id, contentType) => {
     let message = JSON.parse(JSON.stringify(config_message))
 
     try {
+        let decodedToken = await decodeJWT(token)
+        if(!decodedToken.status) return message.ERROR_INVALID_TOKEN
+
+        let nivel = 
+        decodedToken.decode.nivel == 0 
+        ? "administrador"
+        : decodedToken.decode.nivel == 1
+        ? "profissional"
+        : decodedToken.decode.nivel == 2
+        ? "paciente"
+        : false
+
+        consulta.criado_por = nivel
+
         let validar = await validarDados(consulta, contentType)
         if(validar) return validar // 400 ou 415
 
@@ -49,11 +79,11 @@ const atualizarConsulta = async (consulta, id, contentType) => {
 }
 
 // listar todas consultas
-const listarConsulta = async () => {
+const listarConsulta = async (filtro = {}) => {
     let message = JSON.parse(JSON.stringify(config_message))
 
     try {
-        let result = await consultaDAO.selectAllConsulta()
+        let result = await consultaDAO.selectAllConsulta(filtro)
 
         if(!result) return message.ERROR_INTERNAL_SERVER_MODEL // 500
 
@@ -122,14 +152,8 @@ const validarDados = async (consulta, contentType) => {
         return message.ERROR_BAD_REQUEST // 400
     }
 
-    // Valida o responsável pela consulta
-    if(typeof consulta.criado_por != 'string' || consulta.criado_por.trim() == '' || consulta.criado_por.length > 20){
-        message.ERROR_BAD_REQUEST.field = '[CRIADO_POR] INVÁLIDO'
-        return message.ERROR_BAD_REQUEST // 400
-    }
-
     // Valida o nome da consulta
-    if(typeof consulta.nome_da_conculta != 'string' || consulta.nome_da_conculta.trim() == '' || consulta.nome_da_conculta.length > 150){
+    if(typeof consulta.nome_da_consulta != 'string' || consulta.nome_da_consulta.trim() == '' || consulta.nome_da_consulta.length > 150){
         message.ERROR_BAD_REQUEST.field = '[NOME_DA_CONSULTA] INVÁLIDO'
         return message.ERROR_BAD_REQUEST // 400
     }
@@ -150,12 +174,6 @@ const validarDados = async (consulta, contentType) => {
     // Valida o horário da consulta
     if(consulta.hora == undefined || consulta.hora == null || String(consulta.hora).trim() == ''){
         message.ERROR_BAD_REQUEST.field = '[HORA] INVÁLIDO'
-        return message.ERROR_BAD_REQUEST // 400
-    }
-
-    // Valida o status da consulta
-    if(typeof consulta.status != 'string' || consulta.status.trim() == '' || consulta.status.length > 20){
-        message.ERROR_BAD_REQUEST.field = '[STATUS] INVÁLIDO'
         return message.ERROR_BAD_REQUEST // 400
     }
 
@@ -188,7 +206,6 @@ const montarMensagem = async (base,status,response = null) => {
 
     return base.DEFAULT_MESSAGE // 200 ou 201
 }
-
 
 module.exports = {
     inserirNovaConsulta,

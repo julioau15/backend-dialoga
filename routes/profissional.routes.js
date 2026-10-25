@@ -61,7 +61,9 @@ const formatarJson = async (dados, acao) => {
 // endpoint para retornar paciente vinculados a um paciente
 router.get('/me/pacientes', async (req,res) => {
     let token = req.headers['x-access-token']
-    let result = await listarPacientesVinculados(token)
+    const filtro = req.query
+    
+    let result = await listarPacientesVinculados(token, filtro)
     res.status(result.status_code).json(result)
 })
 
@@ -92,6 +94,18 @@ router.get('/:id', async (req,res) => {
     res.status(result.status_code).json(result)
 })
 
+// endpoint para inserir uma nova disponibilidade para um profissional
+router.post('/me/disponibilidades',bodyParserJSON, async (req,res) => {
+    // recebe o conteudo dentro do body da requisição
+    let dados = req.body
+    let token = req.headers['x-access-token']
+    let contentType = req.headers['content-type']
+
+    let result = await inserirNovaDisponibilidadeByToken(dados, token, contentType)
+    res.status(result.status_code).json(result)
+})
+
+
 // endpoint para inserir um vinculo entre paciente e profissional
 router.post('/me/pacientes/:id', async (req,res) => {
     let token = req.headers['x-access-token']
@@ -101,20 +115,6 @@ router.post('/me/pacientes/:id', async (req,res) => {
     let result = await inserirNovoVinculo(token, idPaciente)
     res.status(result.status_code).json(result)
 })
-
-// endpoint para inserir uma nova disponibilidade para um profissional
-router.post('/me/disponibilidades',bodyParserJSON, async (req,res) => {
-    // recebe o conteudo dentro do body da requisição
-    let dados = req.body
-    let token = req.headers['x-access-token']
-    let contentType = req.headers['content-type']
-
-    const disponibilidade = await formatarJson(dados, 'inserir')
-
-    let result = await inserirNovaDisponibilidadeByToken(disponibilidade, token, contentType)
-    res.status(result.status_code).json(result)
-})
-
 
 // endpoint para inserir profissional
 router.post('/',upload.single('foto_avatar'), async (req,res) => {

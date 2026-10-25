@@ -10,6 +10,7 @@ const profissionalDAO = require('../../model/DAO/profissional/profissional.js')
 const vinculoDAO = require('../../model/DAO/vinculo/vinculo.js')
 const usuarioController = require('../usuario/controller_usuario.js')
 const vinculoController = require('../vinculo/controller_vinculo.js')
+const especialidadeController = require('../especialidade/controller_especialidade.js')
 const profissionalEspecialidadeController = require('../profissional_especialidade/controller_profissional_especialidade.js')
 const bcrypt = require('../../services/bcrypt.js')
 const { decodeJWT } = require('../../middleware/middlewareJWT.js')
@@ -34,21 +35,29 @@ const inserirNovaProfissional = async (profissional, foto_avatar, contentType) =
         if(!result) return message.ERROR_INTERNAL_SERVER_MODEL
 
         let resultBuscarUsuario = await usuarioController.buscarUsuario(profissional.id_usuario)
-
-        delete resultBuscarUsuario.response.usuario[0].senha
-        delete resultBuscarUsuario.response.usuario[0].senha_hash
+        if(resultBuscarUsuario.status){
+            delete resultBuscarUsuario.response.usuario[0].senha
+            delete resultBuscarUsuario.response.usuario[0].senha_hash
+            delete resultBuscarUsuario.response.usuario[0].id
+            Object.assign(profissional, resultBuscarUsuario.response.usuario[0])
+        }
 
         delete profissional.senha
         delete profissional.senha_hash
-        delete profissional.id_usuario
 
         profissional.id = result
-        profissional.usuario = resultBuscarUsuario.response.usuario
 
         for (const especialidade of profissional.id_especialidade || []) {
             let profissionalEspecialidade = { id_especialidade: especialidade, id_profissional: profissional.id }
             let resultInsertEspecialidade = await profissionalEspecialidadeController.inserirNovaProfissionalEspecialidade(profissionalEspecialidade, 'application/json')
+            
             if(!resultInsertEspecialidade.status) return message.SUCESS_CREATED_ITEM_WARNING
+        }
+
+        let resultBuscarEspecialidades = await profissionalEspecialidadeController.buscarEspecialidadesIdProfissional(profissional.id)
+        if(resultBuscarEspecialidades.status){
+            profissional.especialidade = resultBuscarEspecialidades.response.profissionalEspecialidade
+            delete profissional.id_especialidade
         }
 
         return await montarMensagem(message, message.SUCESS_CREATED_ITEM, profissional)
@@ -76,6 +85,25 @@ const atualizarProfissional = async (profissional, id, foto_avatar, contentType)
         delete profissional.senha
         delete profissional.senha_hash
 
+        let resultDeleteEspecialidades = await profissionalEspecialidadeController.excluirProfissionalEspecialidadeByIdProfissional(id)
+        console.log(resultDeleteEspecialidades)
+
+        if(resultDeleteEspecialidades.status){
+            for (const especialidade of profissional.id_especialidade || []) {
+                let profissionalEspecialidade = { id_especialidade: especialidade, id_profissional: profissional.id }
+                let resultInsertEspecialidade = await profissionalEspecialidadeController.inserirNovaProfissionalEspecialidade(profissionalEspecialidade, 'application/json')
+                
+                if(!resultInsertEspecialidade.status) return message.SUCESS_CREATED_ITEM_WARNING
+            }
+
+            let resultBuscarEspecialidades = await profissionalEspecialidadeController.buscarEspecialidadesIdProfissional(profissional.id)
+            if(resultBuscarEspecialidades.status){
+                profissional.especialidade = resultBuscarEspecialidades.response.profissionalEspecialidade
+                delete profissional.id_especialidade
+            }
+            
+        }
+
         return await montarMensagem(message, message.SUCESS_UPDATE_ITEM, profissional)
 
     } catch (error) {console.log(error)}
@@ -100,13 +128,16 @@ const listarProfissional = async () => {
             delete usuario.response.usuario[0].senha
             delete usuario.response.usuario[0].senha_hash
 
-            if(usuario.status) {
-                profissional.usuario = usuario.response.usuario[0]
+            if (usuario.status) {
+                delete usuario.response.usuario[0].id
+                Object.assign(profissional, usuario.response.usuario[0])
             }
 
-            let especialidades = profissionalEspecialidadeController.buscarEspecialidadesIdProfissional(profissional.id)
+            let especialidades = await profissionalEspecialidadeController.buscarEspecialidadesIdProfissional(profissional.id)
+
             if(especialidades.status) {
                 profissional.especialidade = especialidades.response.profissionalEspecialidade
+                delete profissional.id_especialidade
             }
         }
 
@@ -140,13 +171,15 @@ const buscarProfissional = async (id) => {
             delete usuario.response.usuario[0].senha
             delete usuario.response.usuario[0].senha_hash
 
-            if(usuario.status) {
-                profissional.usuario = usuario.response.usuario[0]
-            } 
+            if (usuario.status) {
+                delete usuario.response.usuario[0].id
+                Object.assign(profissional, usuario.response.usuario[0])
+            }
 
             let especialidades = await profissionalEspecialidadeController.buscarEspecialidadesIdProfissional(profissional.id)
             if(especialidades.status) {
                 profissional.especialidade = especialidades.response.profissionalEspecialidade
+                delete profissional.id_especialidade
             }
         }
 
@@ -210,17 +243,36 @@ const editarProfissionalByToken = async (profissional, token, foto_avatar, conte
 
         if(!result) return message.ERROR_INTERNAL_SERVER_MODEL // 500
 
-        let resultBuscarId = await buscarProfissional(idProfissional)
-        if(!resultBuscarId.status) return resultBuscarId // 400 e 404
+        delete profissional.senha
+        delete profissional.senha_hash
 
-        return resultBuscarId // 200 ou 400 ou 404
+        let resultDeleteEspecialidades = await profissionalEspecialidadeController.excluirProfissionalEspecialidadeByIdProfissional(profissional.id)
+
+        if(resultDeleteEspecialidades.status){
+            for (const especialidade of profissional.id_especialidade || []) {
+                let profissionalEspecialidade = { id_especialidade: especialidade, id_profissional: profissional.id }
+                let resultInsertEspecialidade = await profissionalEspecialidadeController.inserirNovaProfissionalEspecialidade(profissionalEspecialidade, 'application/json')
+                
+                if(!resultInsertEspecialidade.status) return message.SUCESS_CREATED_ITEM_WARNING
+            }
+
+            let resultBuscarEspecialidades = await profissionalEspecialidadeController.buscarEspecialidadesIdProfissional(profissional.id)
+            if(resultBuscarEspecialidades.status){
+                profissional.especialidade = resultBuscarEspecialidades.response.profissionalEspecialidade
+                delete profissional.id_especialidade
+            }
+            
+        }
+
+        return await montarMensagem(message, message.SUCESS_UPDATE_ITEM, profissional)
 
     } catch (error) {console.log(error)}
     return message.ERROR_INTERNAL_SERVER_CONTROLLER // 500
 }
 
 // listar pacientes vinculados ao profissional
-const listarPacientesVinculados = async (token) => {
+const listarPacientesVinculados = async (token, filtro) => {
+    const pacienteController = require('../paciente/controller_paciente.js')
     let message = JSON.parse(JSON.stringify(config_message))
 
     try {
@@ -232,28 +284,38 @@ const listarPacientesVinculados = async (token) => {
         let resultBuscarId = await buscarProfissional(idProfissional)
         if(!resultBuscarId.status) return resultBuscarId // 400 e 404
 
-        let result = await vinculoController.listarPacientesByIdProfissional(idProfissional)
+        let result = await vinculoController.listarPacientesByIdProfissional(idProfissional, filtro);
 
-        if(!result) return message.ERROR_INTERNAL_SERVER_MODEL // 500
+        if (!result) return message.ERROR_INTERNAL_SERVER_MODEL
 
-        // verfica se o array é vazio
-        if(result.length <= 0) return message.ERROR_NOT_FOUND // status_code 404
+        if (!result.status) return result
 
-        for (let paciente of result) {
-            let usuario = await usuarioController.buscarUsuario(paciente.id_usuario)
+        let pacientes = result.response.vinculo
 
-            delete usuario.response.usuario[0].senha
-            delete usuario.response.usuario[0].senha_hash
+        if (!Array.isArray(pacientes) || pacientes.length <= 0) {
+            return message.ERROR_NOT_FOUND
+        }
 
-            if(usuario.status) {
-                paciente.usuario = usuario.response.usuario[0]
+        for (let paciente of pacientes) {
+            let resultBuscarPaciente = await pacienteController.buscarPaciente(paciente.id)
+
+            if (resultBuscarPaciente.status && resultBuscarPaciente.response?.usuario?.length > 0) {
+                paciente = resultBuscarPaciente.response.paciente
             }
         }
 
-        let listarPacientesMessage = await montarMensagem(message, message.SUCESS_RESPONSE, result)
-        message.DEFAULT_MESSAGE.response.count = result.length
+        let listarPacientesMessage = await montarMensagem(
+            message,
+            message.SUCESS_RESPONSE,
+            pacientes
+        );
 
-        return listarPacientesMessage // status_code 200
+        message.DEFAULT_MESSAGE.response.count = pacientes.length
+
+        listarPacientesMessage.response.paciente = listarPacientesMessage.response.profissional
+        delete listarPacientesMessage.response.profissional
+
+        return listarPacientesMessage
 
     } catch (error) {console.log(error)}
     return message.ERROR_INTERNAL_SERVER_CONTROLLER // 500
@@ -300,15 +362,9 @@ const excluirVinculo = async (token, idPaciente) => {
         if(!decodedToken.status) return message.ERROR_INVALID_TOKEN // 401
         let idProfissional = decodedToken.decode.id
 
-        let resultBuscarIdProfissional = await buscarProfissional(idProfissional)
-        if(!resultBuscarIdProfissional.status) return resultBuscarIdProfissional // 400 e 404
+        let result = await vinculoController.excluirVinculoPacienteProfissional(idPaciente, idProfissional)
 
-        let resultBuscarIdPaciente = await usuarioController.buscarUsuario(idPaciente)
-        if(!resultBuscarIdPaciente.status) return resultBuscarIdPaciente // 400 e 404
-
-        let result = await vinculoController.excluirVinculoPacienteProfissional(idProfissional, idPaciente)
-
-        if(!result) return message.ERROR_INTERNAL_SERVER_MODEL // 500
+        if(!result.status) return result // 400, 404 e 500
         
         return await montarMensagem(message, message.SUCESS_DELETE_ITEM)
 

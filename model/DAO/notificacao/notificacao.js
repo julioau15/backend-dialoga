@@ -110,7 +110,7 @@ const deleteNotificacao = async (id) => {
 }
 
 // seleciona notificacoes por id de paciente
-const selectNotificacaoByIdPaciente = async (idPaciente) => {
+const selectNotificacaoByIdPaciente = async (idPaciente, filtro = {}) => {
     let sql = `SELECT
                    id,
                    titulo_mensagem,
@@ -121,18 +121,37 @@ const selectNotificacaoByIdPaciente = async (idPaciente) => {
                    id_paciente
                FROM tbl_notificacao
                WHERE id_paciente = ?`
-    try {
-        let response = await knexConex.raw(sql, [idPaciente])
 
-        if(response) return response[0]
-        
-    } catch (error) { console.log(error) }
+    const params = [idPaciente]
+
+    if (filtro.aba) {
+        const aba = String(filtro.aba).toLowerCase()
+
+        if (aba === 'lida' || aba === 'lidas') {
+            sql += ` AND lida = ?`
+            params.push(1)
+        } else if (aba === 'nao_lida' || aba === 'nao_lidas') {
+            sql += ` AND lida = ?`
+            params.push(0)
+        }
+    }
+
+    sql += ` ORDER BY data_criacao DESC`
+
+    try {
+        let response = await knexConex.raw(sql, params)
+
+        if (response) return response[0]
+
+    } catch (error) {
+        console.log(error)
+    }
 
     return false
 }
 
 // seleciona notificacoes por id de profissional
-const selectNotificacaoByIdProfissional = async (idProfissional) => {
+const selectNotificacaoByIdProfissional = async (idProfissional, filtro = {}) => {
     let sql = `SELECT
                    id,
                    titulo_mensagem,
@@ -143,12 +162,31 @@ const selectNotificacaoByIdProfissional = async (idProfissional) => {
                    id_profissional
                FROM tbl_notificacao
                WHERE id_profissional = ?`
-    try {
-        let response = await knexConex.raw(sql, [idProfissional])
 
-        if(response) return response[0]
-        
-    } catch (error) { console.log(error) }
+    const params = [idProfissional]
+
+    if (filtro.aba) {
+        const aba = String(filtro.aba).toLowerCase()
+
+        if (aba === 'lida' || aba === 'lidas') {
+            sql += ` AND lida = ?`
+            params.push(1)
+        } else if (aba === 'nao_lida' || aba === 'nao_lidas') {
+            sql += ` AND lida = ?`
+            params.push(0)
+        }
+    }
+
+    sql += ` ORDER BY data_criacao DESC`
+
+    try {
+        let response = await knexConex.raw(sql, params)
+
+        if (response) return response[0]
+
+    } catch (error) {
+        console.log(error)
+    }
 
     return false
 }

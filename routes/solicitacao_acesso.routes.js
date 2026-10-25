@@ -24,7 +24,7 @@ const {
 
 // endpoint para retornar todas solicitacaoAcessos
 router.get('/', async (req,res) => {
-    let token = req.headers['authorization']
+    let token = req.headers['x-access-token']
     let result = await listarSolicitacaoAcesso(token)
     res.status(result.status_code).json(result)
 })
@@ -54,14 +54,14 @@ router.delete('/:id', async (req,res) => {
 })
 
 // endpoint para aprovar uma solicitacaoAcesso pelo id
-router.put('/:id', async (req,res) => {
+router.put('/:id/aprovar', async (req,res) => {
     let id          = req.params.id
     let result      = await aprovarSolicitacaoAcesso(id)
     res.status(result.status_code).json(result)
 })
 
 // endpoint para reprovar uma solicitacaoAcesso pelo id
-router.put('/:id', async (req,res) => {
+router.put('/:id/recusar', async (req,res) => {
     let id          = req.params.id
     let result      = await reprovarSolicitacaoAcesso(id)
     res.status(result.status_code).json(result)

@@ -28,8 +28,8 @@ const inserirNovaPergunta = async (pergunta, idTarefa, contentType) => {
 
         // insere as opçoes da pergunta
         for(let opcaoPergunta of pergunta.opcoes){
-            let resultInsertOpcoes = await opcaoPerguntaController.inserirNovaOpcaoPergunta(opcaoPergunta)
-            
+            opcaoPergunta.id_pergunta = result
+            let resultInsertOpcoes = await opcaoPerguntaController.inserirNovaOpcaoPergunta(opcaoPergunta, contentType)
             if(resultInsertOpcoes) idsOpcoes.push(resultInsertOpcoes)
         }
 
@@ -95,7 +95,7 @@ const listarPergunta = async () => {
             // busca as opcoes relacionadas a tarefa
             let resultBuscarOpcoes = await opcaoPerguntaController.listarOpcaoPerguntaByIdPergunta(pergunta.id)
 
-            if(resultBuscarOpcoes.length <= 0){
+            if(resultBuscarOpcoes.status){
                 pergunta.opcoes = resultBuscarOpcoes.response.opcaoPergunta
             }
         }
@@ -163,7 +163,7 @@ const listarPerguntaByIdTarefa = async (idTarefa) => {
         if(!result) return message.ERROR_INTERNAL_SERVER_MODEL // 500
 
         // verfica se o array é vazio
-        if(result.length <= 0) return message.ERROR_NOT_FOUND // status_code 404
+        if(result.length < 1    ) return message.ERROR_NOT_FOUND // status_code 404
 
         for(let pergunta of result){
             // busca as opcoes relacionadas a tarefa

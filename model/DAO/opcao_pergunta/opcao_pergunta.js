@@ -16,7 +16,11 @@ const insertOpcaoPergunta = async (opcaoPergunta) => {
                VALUES (?, ?, ?)`
 
     try {
-        let response = await knexConex.raw(sql, [opcaoPergunta.texto, opcaoPergunta.ordem, opcaoPergunta.id_pergunta])
+        let response = await knexConex.raw(sql, [
+            opcaoPergunta.texto, 
+            opcaoPergunta.ordem, 
+            opcaoPergunta.id_pergunta
+        ])
 
         if(response) return response[0].insertId 
 

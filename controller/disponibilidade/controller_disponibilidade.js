@@ -7,6 +7,7 @@
 
 const config_message = require('../module/configMessages.js')
 const disponibilidadeDAO = require('../../model/DAO/disponibilidade/disponibilidade.js')
+const { decodeJWT } = require('../../middleware/middlewareJWT.js')
 
 // inserir nova disponibilidade
 const inserirNovaDisponibilidade = async (disponibilidade, contentType) => {
@@ -160,6 +161,36 @@ const inserirNovaDisponibilidadeByToken = async (disponibilidade, token, content
     return message.ERROR_INTERNAL_SERVER_CONTROLLER
 }
 
+// atualizar disponibilidade eplo token
+const atualizarDisponibilidadeByToken = async (disponibilidade, token, id, contentType) => {
+    let message = JSON.parse(JSON.stringify(config_message))
+
+    try {
+
+        let decodedToken = await decodeJWT(token)
+        if(!decodedToken.status) return message.ERROR_INVALID_TOKEN
+
+        let idProfissional = decodedToken.decode.id
+
+        disponibilidade.id_profissional = idProfissional
+
+        let validar = await validarDados(disponibilidade, contentType)
+        if(validar) return validar // 400 ou 415
+
+        let resultBuscarId = await buscarDisponibilidade(id)
+        if(!resultBuscarId.status) return resultBuscarId // 400 e 404
+
+        disponibilidade.id = Number(id)
+        let result = await disponibilidadeDAO.updateDisponibilidade(disponibilidade)
+
+        if(!result) return message.ERROR_INTERNAL_SERVER_MODEL // 500
+
+        return await montarMensagem(message, message.SUCESS_UPDATE_ITEM, disponibilidade)
+
+    } catch (error) {console.log(error)}
+    return message.ERROR_INTERNAL_SERVER_CONTROLLER // 500
+}
+
 const validarDados = async (disponibilidade, contentType) => {
     let message = JSON.parse(JSON.stringify(config_message))
 
@@ -241,5 +272,6 @@ module.exports = {
     buscarDisponibilidade,
     excluirDisponibilidade,
     listarDisponibilidadeByToken,
-    inserirNovaDisponibilidadeByToken
+    inserirNovaDisponibilidadeByToken,
+    atualizarDisponibilidadeByToken
 }

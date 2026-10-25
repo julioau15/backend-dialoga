@@ -13,14 +13,15 @@ const { decodeJWT } = require('../../middleware/middlewareJWT.js')
 const inserirNovaPreferenciaNotificacao = async (preferenciaNotificacao, contentType) => {
     let message = JSON.parse(JSON.stringify(config_message))
     try {
-        let validar = await validarDados(preferenciaNotificacao, contentType)
-        if(validar) return validar // 400 ou 415
+        let ids = []
 
-        let result = await preferenciaNotificacaoDAO.insertPreferenciaNotificacao(preferenciaNotificacao)
+        for(let preferencia of preferenciaNotificacao.preferencias){
+            let result = await preferenciaNotificacaoDAO.insertPreferenciaNotificacao(preferencia)
+            if(!result) return message.ERROR_INTERNAL_SERVER_MODEL
+            ids.push(result)
+        }
 
-        if(!result) return message.ERROR_INTERNAL_SERVER_MODEL
-
-        preferenciaNotificacao.id = result
+        preferenciaNotificacao.ids = ids
         return await montarMensagem(message, message.SUCESS_CREATED_ITEM, preferenciaNotificacao)
 
     } catch (error) {console.log(error)}
@@ -180,6 +181,57 @@ const inserirPreferenciasNotificacaoByToken = async (preferenciaNotificacao, tok
     return message.ERROR_INTERNAL_SERVER_CONTROLLER // 500
 }
 
+// atualizar preferenciaNotificacao
+const atualizarTodasPreferenciaNotificacao = async (preferenciaNotificacao, token, contentType) => {
+    let message = JSON.parse(JSON.stringify(config_message))
+
+    try {
+
+        let decodedToken = await decodeJWT(token)
+        if(!decodedToken.status) return message.ERROR_INVALID_TOKEN
+
+        let id = decodedToken.decode.id
+        let nivel = decodedToken.decode.nivel
+
+        let result = null
+        let ids = []
+
+        
+
+        if(nivel == 1) {
+
+            await preferenciaNotificacaoDAO.deletePreferenciaNotificacaoProfissional(id)
+
+            for(let preferencia of preferenciaNotificacao.preferencias){
+                preferencia.id_profissional = id
+                result = await preferenciaNotificacaoDAO.insertPreferenciaNotificacaoProfissional(preferencia)
+                if(!result) return message.ERROR_INTERNAL_SERVER_MODEL
+                ids.push(result)
+            }
+        }
+
+        else if(nivel == 2) {
+            await preferenciaNotificacaoDAO.deletePreferenciaNotificacaoPaciente(id)
+
+            for(let preferencia of preferenciaNotificacao.preferencias){
+                preferencia.id_paciente = id
+                result = await preferenciaNotificacaoDAO.insertPreferenciaNotificacaoPaciente(preferencia)
+                if(!result) return message.ERROR_INTERNAL_SERVER_MODEL
+                ids.push(result)
+            }
+        }
+
+        else return message.ERROR_INVALID_TOKEN
+
+        if(!result) return message.ERROR_INTERNAL_SERVER_MODEL // 500
+
+        preferenciaNotificacao.id = result
+        return await montarMensagem(message, message.SUCESS_CREATED_ITEM, preferenciaNotificacao)
+
+    } catch (error) {console.log(error)}
+    return message.ERROR_INTERNAL_SERVER_CONTROLLER // 500
+}
+
 const validarDados = async (preferenciaNotificacao, contentType) => {
     let message = JSON.parse(JSON.stringify(config_message))
 
@@ -264,5 +316,6 @@ module.exports = {
     buscarPreferenciaNotificacao,
     excluirPreferenciaNotificacao,
     listarPreferenciasNotificacaoByToken,
-    inserirPreferenciasNotificacaoByToken
+    inserirPreferenciasNotificacaoByToken,
+    atualizarTodasPreferenciaNotificacao
 }

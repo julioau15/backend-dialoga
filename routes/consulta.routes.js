@@ -24,16 +24,18 @@ const {
 // endpoint para inserir consulta
 router.post('/',bodyParserJSON, async (req,res) => {
     // recebe o conteudo dentro do body da requisição
+    let token = req.headers['x-access-token']
     let dados = req.body
     let contentType = req.headers['content-type']
 
-    let result = await inserirNovaConsulta(dados,contentType)
+    let result = await inserirNovaConsulta(dados,token,contentType)
     res.status(result.status_code).json(result)
 })
 
 // endpoint para retornar todas consultas
 router.get('/', async (req,res) => {
-    let result = await listarConsulta()
+    let filtro = req.query
+    let result = await listarConsulta(filtro)
     res.status(result.status_code).json(result)
 })
 
@@ -46,11 +48,12 @@ router.get('/:id', async (req,res) => {
 
 // endpoint para atualizar um consulta pelo id
 router.put('/:id', bodyParserJSON, async (req,res) => {
+    let token = req.headers['x-access-token']
     let id          = req.params.id                 // Recebe o id por parametro
     let dados       = req.body                      // Recebe os dados do body da requisição
     let contentType = req.headers['content-type']   // Recebe o ContentType do header da requisição
     
-    let result      = await atualizarConsulta(dados, id, contentType)
+    let result      = await atualizarConsulta(dados, token, id, contentType)
     res.status(result.status_code).json(result)
 })
 

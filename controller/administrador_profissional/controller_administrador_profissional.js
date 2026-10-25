@@ -7,6 +7,7 @@
 
 const config_message = require('../module/configMessages.js')
 const administradorProfissionalDAO = require('../../model/DAO/administrador_profissional/administrador_profissional.js')
+const profissionalController = require('../profissional/controller_profissional.js')
 const JWT = require('../../middleware/middlewareJWT.js')
 
 // inserir nova administradorProfissional
@@ -61,6 +62,14 @@ const listarAdministradorProfissional = async () => {
         // verfica se o array é vazio
         if(result.length <= 0) return message.ERROR_NOT_FOUND // status_code 404
 
+        for(let administradorProfissional of result){
+            let resultBuscarProfissional = await profissionalController.buscarProfissional(administradorProfissional.id_profissional)
+            if(resultBuscarProfissional.status){
+                administradorProfissional.profissional = resultBuscarProfissional.response.profissional
+                delete administradorProfissional.id_profissional
+            }
+        }
+
         let listarAdministradorProfissionalMessage = await montarMensagem(message, message.SUCESS_RESPONSE, result)
         message.DEFAULT_MESSAGE.response.count = result.length
 
@@ -84,6 +93,14 @@ const buscarAdministradorProfissional = async (id) => {
         if(!result) return message.ERROR_INTERNAL_SERVER_MODEL // 500
 
         if(result.length < 1) return config_message.ERROR_NOT_FOUND
+
+        for(let administradorProfissional of result){
+            let resultBuscarProfissional = await profissionalController.buscarProfissional(administradorProfissional.id_profissional)
+            if(resultBuscarProfissional.status){
+                administradorProfissional.profissional = resultBuscarProfissional.response.profissional
+                delete administradorProfissional.id_profissional
+            }
+        }
 
         return await montarMensagem(message, message.SUCESS_RESPONSE, result)
 
@@ -111,21 +128,20 @@ const excluirAdministradorProfissional = async (id) => {
 }
 
 // aprova um profissional pelo id
-const aprovarAdministradorProfissional = async (id, token, contentType) => {
+const aprovarAdministradorProfissional = async (id, token) => {
     let message = JSON.parse(JSON.stringify(config_message))
 
     try {
 
-        let idAdministrador = JWT.decodeJWT(token)
+        let idAdministrador = await JWT.decodeJWT(token)
         if(!idAdministrador) return message.ERROR_UNAUTHORIZED
 
         let administradorProfissional = {
-            status_aprovacao: 1,
             id_profissional: Number(id),
-            id_administrador: Number(idAdministrador)
+            id_administrador: Number(idAdministrador.decode.id)
         }
 
-        let result = await administradorProfissionalDAO.updateAdministradorProfissional(administradorProfissional)
+        let result = await administradorProfissionalDAO.aprovarAdministradorProfissional(administradorProfissional)
 
         if(!result) return message.ERROR_INTERNAL_SERVER_MODEL // 500
 
@@ -136,21 +152,20 @@ const aprovarAdministradorProfissional = async (id, token, contentType) => {
 }
 
 // reprova um profissional pelo id
-const reprovarAdministradorProfissional = async (id, token, contentType) => {
+const reprovarAdministradorProfissional = async (id, token) => {
     let message = JSON.parse(JSON.stringify(config_message))
 
     try {
 
-        let idAdministrador = JWT.decodeJWT(token)
+        let idAdministrador = await JWT.decodeJWT(token)
         if(!idAdministrador) return message.ERROR_UNAUTHORIZED
 
         let administradorProfissional = {
-            status_aprovacao: 0,
             id_profissional: Number(id),
-            id_administrador: Number(idAdministrador)
+            id_administrador: Number(idAdministrador.decode.id)
         }
 
-        let result = await administradorProfissionalDAO.updateAdministradorProfissional(administradorProfissional)
+        let result = await administradorProfissionalDAO.reprovarAdministradorProfissional(administradorProfissional)
 
         if(!result) return message.ERROR_INTERNAL_SERVER_MODEL // 500
 

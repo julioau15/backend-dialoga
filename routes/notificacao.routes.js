@@ -37,7 +37,8 @@ router.post('/',bodyParserJSON, async (req,res) => {
 // endpoint para listar notificações por token
 router.get('/', async (req,res) => {
     let token = req.headers['x-access-token']
-    let result = await listarNotificacaoByToken(token)
+    let filtro = req.query
+    let result = await listarNotificacaoByToken(token, filtro)
     res.status(result.status_code).json(result)
 })
 
@@ -56,7 +57,7 @@ router.put('/:id/marcar-lida', bodyParserJSON, async (req,res) => {
 })
 
 // endpoint para marcar todas as notificações como lidas por token
-router.put('/marcar-todas-lida', bodyParserJSON, async (req,res) => {
+router.put('/marcar-todas-lidas', bodyParserJSON, async (req,res) => {
     let token = req.headers['x-access-token']
     let result = await marcarTodasNotificacoesComoLidasByToken(token)
     res.status(result.status_code).json(result)

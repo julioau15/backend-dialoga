@@ -47,6 +47,7 @@ const atualizarAnotacao = async (anotacao, id, contentType) => {
         if(!resultBuscarId.status) return resultBuscarId // 400 e 404
 
         anotacao.id = Number(id)
+
         let result = await anotacaoDAO.updateAnotacao(anotacao)
 
         if(!result) return message.ERROR_INTERNAL_SERVER_MODEL // 500
@@ -166,30 +167,6 @@ const validarDados = async (anotacao, contentType) => {
     // Valida o conteúdo obrigatório
     if(typeof anotacao.conteudo != 'string' || anotacao.conteudo.trim() == '' || anotacao.conteudo.length > 1000){
         message.ERROR_BAD_REQUEST.field = '[CONTEUDO] INVÁLIDO'
-        return message.ERROR_BAD_REQUEST // 400
-    }
-
-    // Valida a data de criação
-    if(anotacao.data_criacao == undefined || anotacao.data_criacao == null || String(anotacao.data_criacao).trim() == ''){
-        message.ERROR_BAD_REQUEST.field = '[DATA_CRIACAO] INVÁLIDO'
-        return message.ERROR_BAD_REQUEST // 400
-    }
-
-    // Valida a data de edição opcional
-    if(anotacao.data_edicao != undefined && anotacao.data_edicao != null && String(anotacao.data_edicao).trim() == ''){
-        message.ERROR_BAD_REQUEST.field = '[DATA_EDICAO] INVÁLIDO'
-        return message.ERROR_BAD_REQUEST // 400
-    }
-
-    // Valida o profissional relacionado
-    if(anotacao.id_profissional == undefined || anotacao.id_profissional == null || !Number.isInteger(Number(anotacao.id_profissional)) || Number(anotacao.id_profissional) <= 0){
-        message.ERROR_BAD_REQUEST.field = '[ID_PROFISSIONAL] INVÁLIDO'
-        return message.ERROR_BAD_REQUEST // 400
-    }
-
-    // Valida o paciente relacionado
-    if(anotacao.id_paciente == undefined || anotacao.id_paciente == null || !Number.isInteger(Number(anotacao.id_paciente)) || Number(anotacao.id_paciente) <= 0){
-        message.ERROR_BAD_REQUEST.field = '[ID_PACIENTE] INVÁLIDO'
         return message.ERROR_BAD_REQUEST // 400
     }
 

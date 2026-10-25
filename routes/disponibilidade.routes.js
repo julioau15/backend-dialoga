@@ -16,7 +16,8 @@ const {
     atualizarDisponibilidade,
     listarDisponibilidade,
     buscarDisponibilidade,
-    excluirDisponibilidade
+    excluirDisponibilidade,
+    atualizarDisponibilidadeByToken
 } = require('../controller/disponibilidade/controller_disponibilidade.js')
 
 // ---------------- disponibilidade -----------------
@@ -46,11 +47,12 @@ router.get('/:id', async (req,res) => {
 
 // endpoint para atualizar um disponibilidade pelo id
 router.put('/:id', bodyParserJSON, async (req,res) => {
+    let token = req.headers['x-access-token']
     let id          = req.params.id                 // Recebe o id por parametro
     let dados       = req.body                      // Recebe os dados do body da requisição
     let contentType = req.headers['content-type']   // Recebe o ContentType do header da requisição
     
-    let result      = await atualizarDisponibilidade(dados, id, contentType)
+    let result      = await atualizarDisponibilidadeByToken(dados, token, id, contentType)
     res.status(result.status_code).json(result)
 })
 

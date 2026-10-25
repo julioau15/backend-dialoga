@@ -90,9 +90,10 @@ const listarAdministrador = async () => {
             delete usuario.response.usuario[0].senha
             delete usuario.response.usuario[0].senha_hash
 
-            if(usuario.status) {
-                administrador.usuario = usuario.response.usuario[0]
-            } 
+            if (usuario.status) {
+                delete usuario.response.usuario[0].id
+                Object.assign(administrador, usuario.response.usuario[0])
+            }
         }
 
         let listarAdministradorMessage = await montarMensagem(message, message.SUCESS_RESPONSE, result)
@@ -125,9 +126,10 @@ const buscarAdministrador = async (id) => {
             delete usuario.response.usuario[0].senha
             delete usuario.response.usuario[0].senha_hash
 
-            if(usuario.status) {
-                administrador.usuario = usuario.response.usuario[0]
-            } 
+            if (usuario.status) {
+                delete usuario.response.usuario[0].id
+                Object.assign(administrador, usuario.response.usuario[0])
+            }
         }
 
         return await montarMensagem(message, message.SUCESS_RESPONSE, result)
@@ -211,10 +213,8 @@ const editarAdministradorByToken = async (administrador, token, foto_avatar, con
             return await montarMensagem(
                 message, 
                 message.SUCESS_UPDATE_ITEM,
-                {
-                    administrador: resultBuscarId.response.administrador[0], 
-                    usuario: resultEditarSenha.response.usuario
-                })
+                resultBuscarId.response.administrador[0]
+            )
         }
 
         return resultBuscarId

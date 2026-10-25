@@ -123,7 +123,7 @@ const deletePaciente = async (id) => {
 }
 
 // update de paciente
-const updatePrimeiroAcessoPaciente = async (paciente) => {
+const updatePrimeiroAcessoPaciente = async (paciente, id) => {
     let sql = `UPDATE tbl_paciente
                SET 
                    apelido = ?,
@@ -134,7 +134,7 @@ const updatePrimeiroAcessoPaciente = async (paciente) => {
         let response = await knexConex.raw(sql, [
             paciente.apelido || null,
             paciente.data_nascimento || null,
-            paciente.id
+            id
         ])
 
         if(response) return response
@@ -149,5 +149,6 @@ module.exports = {
     updatePaciente,
     selectAllPaciente,
     selectByIdPaciente,
-    deletePaciente
+    deletePaciente,
+    updatePrimeiroAcessoPaciente
 }

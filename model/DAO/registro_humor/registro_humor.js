@@ -43,11 +43,20 @@ const updateRegistroHumor = async (registroHumor) => {
                    padrao_pensamentos = ?,
                    horas_sono = ?,
                    relato = ?,
-                   data_criacao = ?,
-                   id_paciente = ?
+                   data_criacao = ?
                WHERE id = ?`
     try {
-        let response = await knexConex.raw(sql, [registroHumor.data, registroHumor.sentimento, registroHumor.energia, registroHumor.humor, registroHumor.padrao_pensamentos, registroHumor.horas_sono, registroHumor.relato, registroHumor.data_criacao, registroHumor.id_paciente, registroHumor.id])
+        let response = await knexConex.raw(sql, [
+            registroHumor.data, 
+            registroHumor.sentimento, 
+            registroHumor.energia, 
+            registroHumor.humor, 
+            registroHumor.padrao_pensamentos, 
+            registroHumor.horas_sono, 
+            registroHumor.relato, 
+            registroHumor.data_criacao, 
+            registroHumor.id
+        ])
 
         if(response) return response
 
@@ -123,8 +132,8 @@ const deleteRegistroHumor = async (id) => {
     return false
 }
 
-// select dos registros de humor do paciente pelo id do paciente
-const selectByIdPacienteRegistroHumor = async (idPaciente) => {
+// select dos registros de humor do paciente pelo id do paciente e período
+const selectByIdPacienteRegistroHumor = async (idPaciente, filtro = {}) => {
     let sql = `SELECT
                    id,
                    data,
@@ -138,12 +147,31 @@ const selectByIdPacienteRegistroHumor = async (idPaciente) => {
                    id_paciente
                FROM tbl_registro_humor
                WHERE id_paciente = ?`
+
+    const params = [idPaciente]
+
+    if (filtro.inicio && filtro.fim) {
+        sql += ` AND DATE(data) BETWEEN ? AND ?`
+        params.push(filtro.inicio, filtro.fim)
+    } else if (filtro.inicio) {
+        sql += ` AND DATE(data) >= ?`
+        params.push(filtro.inicio)
+    } else if (filtro.fim) {
+        sql += ` AND DATE(data) <= ?`
+        params.push(filtro.fim)
+    }
+
+    sql += ` ORDER BY data DESC`
+
     try {
-        let response = await knexConex.raw(sql, [idPaciente])
+        let response = await knexConex.raw(sql, params)
 
-        if(response) return response[0]
+        if (response) return response[0]
+    } catch (error) {
+        console.log(error)
+    }
 
-    } catch (error) { console.log(error) }
+    return false
 }
 
 module.exports = {

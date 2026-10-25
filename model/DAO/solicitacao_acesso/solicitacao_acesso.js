@@ -13,7 +13,7 @@ const knexConex = knex(knexConfig.development)
 // insert de solicitacaoAcesso
 const insertSolicitacaoAcesso = async (solicitacaoAcesso) => {
     let sql = `INSERT INTO tbl_solicitacao_acesso (status, data_solicitacao, data_resposta, id_profissional, id_paciente)
-               VALUES (0, now(), null, ?, ?)`
+               VALUES ("pendente", now(), null, ?, ?)`
 
     try {
         let response = await knexConex.raw(sql, [
@@ -116,7 +116,7 @@ const deleteSolicitacaoAcesso = async (id) => {
 // aprova uma solicitação de acesso
 const aprovarSolicitacaoAcesso = async (id) => {
     let sql = `UPDATE tbl_solicitacao_acesso
-               SET status = 1,
+               SET status = "aprovada",
                    data_resposta = now()
                WHERE id = ?`
     try {
@@ -132,7 +132,7 @@ const aprovarSolicitacaoAcesso = async (id) => {
 // reprovar uma solicitação de acesso
 const reprovarSolicitacaoAcesso = async (id) => {
     let sql = `UPDATE tbl_solicitacao_acesso
-               SET status = 2,
+               SET status = "reprovada",
                    data_resposta = now()
                WHERE id = ?`
     try {

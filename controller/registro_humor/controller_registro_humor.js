@@ -119,7 +119,7 @@ const inserirNovaRegistroHumorByToken = async (registroHumor, token, contentType
 
         let idPaciente = decodedToken.decode.id
 
-        registroHumor.id_paciente = Number(idPaciente)
+        registroHumor.id_paciente = idPaciente
 
         let validar = await validarDados(registroHumor, contentType)
         if(validar) return validar // 400 ou 415
@@ -136,7 +136,7 @@ const inserirNovaRegistroHumorByToken = async (registroHumor, token, contentType
 }
 
 // listar registroHumors do paciente pelo token
-const listarRegistroHumorByToken = async (token) => {
+const listarRegistroHumorByToken = async (token, filtro = {}) => {
     let message = JSON.parse(JSON.stringify(config_message))
 
     try {
@@ -145,7 +145,7 @@ const listarRegistroHumorByToken = async (token) => {
 
         let idPaciente = decodedToken.decode.id
 
-        let result = await registroHumorDAO.selectByIdPacienteRegistroHumor(idPaciente)
+        let result = await registroHumorDAO.selectByIdPacienteRegistroHumor(idPaciente, filtro)
 
         if(!result) return message.ERROR_INTERNAL_SERVER_MODEL // 500
 
@@ -171,12 +171,6 @@ const validarDados = async (registroHumor, contentType) => {
     // Garante que o objeto foi informado
     if(registroHumor == undefined || registroHumor == null || typeof registroHumor != 'object'){
         message.ERROR_BAD_REQUEST.field = '[REGISTRO_HUMOR] INVÁLIDO'
-        return message.ERROR_BAD_REQUEST // 400
-    }
-
-    // Valida a data do registro
-    if(registroHumor.data == undefined || registroHumor.data == null || String(registroHumor.data).trim() == ''){
-        message.ERROR_BAD_REQUEST.field = '[DATA] INVÁLIDO'
         return message.ERROR_BAD_REQUEST // 400
     }
 
@@ -213,12 +207,6 @@ const validarDados = async (registroHumor, contentType) => {
     // Valida o relato opcional
     if(registroHumor.relato != undefined && registroHumor.relato != null && typeof registroHumor.relato != 'string'){
         message.ERROR_BAD_REQUEST.field = '[RELATO] INVÁLIDO'
-        return message.ERROR_BAD_REQUEST // 400
-    }
-
-    // Valida a data de criação
-    if(registroHumor.data_criacao == undefined || registroHumor.data_criacao == null || String(registroHumor.data_criacao).trim() == ''){
-        message.ERROR_BAD_REQUEST.field = '[DATA_CRIACAO] INVÁLIDO'
         return message.ERROR_BAD_REQUEST // 400
     }
 

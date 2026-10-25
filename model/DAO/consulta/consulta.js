@@ -22,7 +22,7 @@ const insertConsulta = async (consulta) => {
             consulta.especialidade,
             consulta.data,
             consulta.hora,
-            consulta.status,
+            "agendada", // status
             consulta.id_vinculo
         ])
 
@@ -41,7 +41,6 @@ const updateConsulta = async (consulta) => {
                    especialidade = ?,
                    data = ?,
                    hora = ?,
-                   status = ?,
                    id_vinculo = ?
                WHERE id = ?`
     try {
@@ -51,7 +50,6 @@ const updateConsulta = async (consulta) => {
             consulta.especialidade,
             consulta.data,
             consulta.hora,
-            consulta.status,
             consulta.id_vinculo,
             consulta.id
         ])
@@ -63,26 +61,60 @@ const updateConsulta = async (consulta) => {
     return false
 }
 
-// select de todas consultas
-const selectAllConsulta = async () => {
-    let sql = `SELECT
-                   id,
-                   criado_por,
-                   nome_da_conculta,
-                   especialidade,
-                   data,
-                   hora,
-                   status,
-                   id_vinculo
-               FROM tbl_consulta
-               ORDER BY id DESC`
+// select de todas consultas com filtros
+const selectAllConsulta = async (filtro = {}) => {
+    let sql = `
+        SELECT
+            tbl_consulta.id,
+            tbl_consulta.criado_por,
+            tbl_consulta.nome_da_conculta,
+            tbl_consulta.especialidade,
+            tbl_consulta.data,
+            tbl_consulta.hora,
+            tbl_consulta.status,
+            tbl_consulta.id_vinculo
+        FROM tbl_consulta
+        INNER JOIN tbl_vinculo
+            ON tbl_consulta.id_vinculo = tbl_vinculo.id
+        INNER JOIN tbl_paciente
+            ON tbl_vinculo.id_paciente = tbl_paciente.id
+        WHERE 1 = 1
+    `
+
+    const params = []
+
+    if (filtro.busca_paciente) {
+        sql += ` AND tbl_paciente.nome_completo LIKE ?`
+        params.push(`%${filtro.busca_paciente}%`)
+    }
+
+    if (filtro.data) {
+        sql += ` AND DATE(tbl_consulta.data) = ?`
+        params.push(filtro.data)
+    }
+
+    if (filtro.periodo) {
+        const periodo = String(filtro.periodo).toLowerCase()
+
+        if (periodo === 'dia') {
+            sql += ` AND DATE(tbl_consulta.data) = CURDATE()`
+        } else if (periodo === 'semana') {
+            sql += ` AND YEARWEEK(tbl_consulta.data, 1) = YEARWEEK(CURDATE(), 1)`
+        } else if (periodo === 'mes') {
+            sql += ` AND YEAR(tbl_consulta.data) = YEAR(CURDATE())
+                     AND MONTH(tbl_consulta.data) = MONTH(CURDATE())`
+        }
+    }
+
+    console.log(sql)
+
     try {
-        let response = await knexConex.raw(sql)
+        let response = await knexConex.raw(sql, params)
 
-
-        if(response) return response[0]
- 
-    } catch (error) { console.log(error) }
+        if (response) return response[0]
+    } catch (error) {
+        console.log(error)
+    }
 
     return false
 }

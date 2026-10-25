@@ -156,7 +156,7 @@ const marcarTodasNotificacoesComoLidasByToken = async (token) => {
 }
 
 //listar notificacoes por token
-const listarNotificacaoByToken = async (token) => {
+const listarNotificacaoByToken = async (token, filtro = {}) => {
     let message = JSON.parse(JSON.stringify(config_message))
 
     try {
@@ -166,11 +166,11 @@ const listarNotificacaoByToken = async (token) => {
         let result = null
 
         if(decodedToken.decode.nivel == 1){
-            result = await notificacaoDAO.selectNotificacaoByIdProfissional(decodedToken.decode.id)
+            result = await notificacaoDAO.selectNotificacaoByIdProfissional(decodedToken.decode.id, filtro)
         }
 
         if(decodedToken.decode.nivel == 2){
-            result = await notificacaoDAO.selectNotificacaoByIdPaciente(decodedToken.decode.id)
+            result = await notificacaoDAO.selectNotificacaoByIdPaciente(decodedToken.decode.id, filtro)
         }
 
         if(!result) return message.ERROR_INTERNAL_SERVER_MODEL // 500

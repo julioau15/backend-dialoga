@@ -92,7 +92,7 @@ const buscarTarefa = async (id) => {
             // busca as perguntas relacionadas a tarefa
             let resultBuscarPerguntas = await perguntasController.listarPerguntaByIdTarefa(tarefa.id)
 
-            if(resultBuscarPerguntas){
+            if(resultBuscarPerguntas.status){
                 tarefa.perguntas = resultBuscarPerguntas.response.pergunta
             }
         }
@@ -169,7 +169,7 @@ const listarTarefasByToken = async (token) => {
             // busca as perguntas relacionadas a tarefa
             let resultBuscarPerguntas = await perguntasController.listarPerguntaByIdTarefa(tarefa.id)
 
-            if(resultBuscarPerguntas){
+            if(resultBuscarPerguntas.status){
                 tarefa.perguntas = resultBuscarPerguntas.response.pergunta
             }
         }

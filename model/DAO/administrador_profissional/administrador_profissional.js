@@ -33,7 +33,7 @@ const insertAdministradorProfissional = async (administradorProfissional) => {
 const updateAdministradorProfissional = async (administradorProfissional) => {
     let sql = `UPDATE tbl_administrador_profissional
                SET status_aprovacao = ?,
-                   data_decisao = now(),
+                   data_decisao = now()
                WHERE id = ?`
     try {
         let response = await knexConex.raw(sql, [
@@ -107,10 +107,53 @@ const deleteAdministradorProfissional = async (id) => {
     return false
 }
 
+// aprovar administradorProfissional
+const aprovarAdministradorProfissional = async (administradorProfissional) => {
+    let sql = `UPDATE tbl_administrador_profissional
+               SET status_aprovacao = 1,
+                   data_decisao = now(),
+                   id_administrador = ?
+               WHERE id_profissional = ?`
+    try {
+        let response = await knexConex.raw(sql, [
+            administradorProfissional.id_administrador,
+            administradorProfissional.id_profissional
+        ])
+
+        if(response) return response
+
+    } catch (error) { console.log(error) }
+
+    return false
+}
+
+// reprovar administradorProfissional
+const reprovarAdministradorProfissional = async (administradorProfissional) => {
+    let sql = `UPDATE tbl_administrador_profissional
+               SET status_aprovacao = 0,
+                   data_decisao = now(),
+                   id_administrador = ?
+               WHERE id_profissional = ?`
+    try {
+        let response = await knexConex.raw(sql, [
+            administradorProfissional.id_administrador,
+            administradorProfissional.id_profissional
+        ])
+
+        if(response) return response
+
+    } catch (error) { console.log(error) }
+
+    return false
+}
+
+
 module.exports = {
     insertAdministradorProfissional,
     updateAdministradorProfissional,
     selectAllAdministradorProfissional,
     selectByIdAdministradorProfissional,
-    deleteAdministradorProfissional
+    deleteAdministradorProfissional,
+    aprovarAdministradorProfissional,
+    reprovarAdministradorProfissional
 }
