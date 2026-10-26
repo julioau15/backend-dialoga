@@ -11,13 +11,23 @@ const perguntasController = require('../pergunta/controller_pergunta.js')
 const respostaController = require('../resposta/controller_resposta.js')
 const tarefaDestinatarioController = require('../tarefa_destinatario/controller_tarefa_destinatario.js')
 const { decodeJWT } = require('../../middleware/middlewareJWT.js')
+const {uploadFiles} = require('../upload/controller_upload_azure.js')
 
 // inserir nova tarefa
-const inserirNovaTarefa = async (tarefa, contentType) => {
+const inserirNovaTarefa = async (tarefa, anexo_arquivo, contentType) => {
     let message = JSON.parse(JSON.stringify(config_message))
     try {
         let validar = await validarDados(tarefa, contentType)
         if(validar) return validar // 400 ou 415
+
+        // Realiza o upload da imagem da tarefa
+        if (anexo_arquivo) {
+            let urlArquivo = await uploadFiles(anexo_arquivo)
+            
+            if(urlArquivo){
+                tarefa.anexo_arquivo = urlArquivo
+            }
+        }
 
         let result = await tarefaDAO.insertTarefa(tarefa)
 
@@ -31,7 +41,7 @@ const inserirNovaTarefa = async (tarefa, contentType) => {
 }
 
 // atualizar tarefa
-const atualizarTarefa = async (tarefa, id, contentType) => {
+const atualizarTarefa = async (tarefa, id, anexo_arquivo, contentType) => {
     let message = JSON.parse(JSON.stringify(config_message))
 
     try {
@@ -40,6 +50,15 @@ const atualizarTarefa = async (tarefa, id, contentType) => {
 
         let resultBuscarId = await buscarTarefa(id)
         if(!resultBuscarId.status) return resultBuscarId // 400 e 404
+
+        // Realiza o upload da imagem da tarefa
+        if (anexo_arquivo) {
+            let urlArquivo = await uploadFiles(anexo_arquivo)
+            
+            if(urlArquivo){
+                tarefa.anexo_arquivo = urlArquivo
+            }
+        }
 
         tarefa.id = Number(id)
         let result = await tarefaDAO.updateTarefa(tarefa)
@@ -184,11 +203,10 @@ const listarTarefasByToken = async (token) => {
 }
 
 // inserir tarefa por token
-const inserirTarefaByToken = async (tarefa, token, contentType) => {
+const inserirTarefaByToken = async (tarefa, anexo_arquivo, token, contentType) => {
     let message = JSON.parse(JSON.stringify(config_message))
 
     try {
-        console.log(contentType)
         let validar = await validarDados(tarefa, contentType)
         if(validar) return validar // 400 ou 415
 
@@ -201,10 +219,19 @@ const inserirTarefaByToken = async (tarefa, token, contentType) => {
         let result = null
         let ids = []
 
-        if(nivel == 1) result = await tarefaDAO.insertTarefaByIdProfissional(tarefa, id)
+        // Realiza o upload da imagem da tarefa
+        if (anexo_arquivo) {
+            let urlArquivo = await uploadFiles(anexo_arquivo)
+            
+            if(urlArquivo){
+                tarefa.anexo_arquivo = urlArquivo
+            }
+        }
 
-        else if(nivel == 2) {
-            result = await tarefaDAO.insertTarefaByIdPaciente(tarefa, id)
+        if(nivel == 2) result = await tarefaDAO.insertTarefaByIdPaciente(tarefa, id)
+
+        else if(nivel == 1) {
+            result = await tarefaDAO.insertTarefaByIdProfissional(tarefa, id)
 
             if(tarefa.prazos_por_paciente){
 
@@ -215,7 +242,7 @@ const inserirTarefaByToken = async (tarefa, token, contentType) => {
                         id_tarefa: result
                     }
     
-                    let resultInsert = await tarefaDestinatarioController.inserirNovaTarefaDestinatario(tarefaDestinatario, contentType)
+                    let resultInsert = await tarefaDestinatarioController.inserirNovaTarefaDestinatario(tarefaDestinatario, 'application/json')
                     if(resultInsert) ids.push(resultInsert)
     
                     if(ids.length > 0){
@@ -223,7 +250,7 @@ const inserirTarefaByToken = async (tarefa, token, contentType) => {
                             // busca as perguntas relacionadas a tarefa
                             let resultBuscarPerguntas = await perguntasController.listarPerguntaByIdTarefa(id)
                 
-                            if(resultBuscarPerguntas){
+                            if(resultBuscarPerguntas.status){
                                 tarefa.perguntas = resultBuscarPerguntas.response.pergunta
                             }
                         }
@@ -278,7 +305,7 @@ const validarDados = async (tarefa, contentType) => {
 
     // Valida se o formato de dados é JSON
     // Valida o formato da requisição
-    if(String(contentType).toLowerCase() != 'application/json') return message.ERROR_CONTENT_TYPE // Status code 415
+    if(String(contentType).toLowerCase() != 'application/json' && !String(contentType).toLowerCase().includes('multipart/form-data')) return message.ERROR_CONTENT_TYPE // Status code 415
 
     // Garante que o objeto foi informado
     if(tarefa == undefined || tarefa == null || typeof tarefa != 'object'){

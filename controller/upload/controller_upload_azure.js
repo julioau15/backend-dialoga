@@ -7,47 +7,64 @@
 
 // Import da dependencia para realizar um requisição http pelo node
 const fetch = require('node-fetch').default
+const AZURE = require('../module/config_upload_azure')
 
-const uploadFiles = async (file) => {
-    let fileName;
-    let fileBuffer;
-    // concatena no nome do arquivo a data e a hora
-    if (file.file) {
-        fileName = Date.now() + file.file.originalname
-        fileBuffer = file.file.buffer; 
-    } else {     
-        fileName = file.body.img.split('/').pop();
-        
-        const imageResponse = await fetch(file.body.img);
-        
+const EXT_IMAGEM = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg']
+
+const isImagem = (nome, mimetype) => {
+    if (mimetype && mimetype.startsWith('image/')) return true
+    const ext = nome.split('.').pop().toLowerCase()
+    return EXT_IMAGEM.includes(ext)
+}
+
+const uploadFiles = async (input) => {
+    const file   = input?.file ?? (input?.buffer ? input : null)
+    const imgUrl = input?.body?.img
+
+    let fileName
+    let fileBuffer
+    let mimetype
+
+    if (file) {
+        fileName   = Date.now() + '-' + file.originalname.replace(/\s+/g, '_')
+        fileBuffer = file.buffer
+        mimetype   = file.mimetype
+    } else if (imgUrl) {
+        fileName = imgUrl.split('?')[0].split('/').pop()
+
+        const imageResponse = await fetch(imgUrl)
         if (!imageResponse.ok) {
-            console.error("Erro ao baixar a imagem da URL fornecida");
-            return false;
+            console.error('Erro ao baixar a imagem da URL fornecida')
+            return false
         }
-
-        // 2. Converte o arquivo baixado em um Buffer
-        fileBuffer = await imageResponse.buffer();
+        fileBuffer = await imageResponse.buffer()
+        mimetype   = imageResponse.headers.get('content-type')
+    } else {
+        console.error('Nenhum arquivo ou URL de imagem foi enviado')
+        return false
     }
 
-    // URL para enviar para o banco de dados
-    let urlFile = `https://${AZURE.ACCOUNT}.blob.core.windows.net/${AZURE.CONTAINER}/${fileName}`
+    // Escolhe o container e o token conforme o tipo do arquivo
+    const imagem    = isImagem(fileName, mimetype)
+    const container = imagem ? AZURE.CONTAINER_IMAGEM : AZURE.CONTAINER_ARQUIVO
+    const token     = imagem ? AZURE.TOKEN_IMAGEM     : AZURE.TOKEN_ARQUIVO
 
-    // URL para enviar o arquivo para o container da Azure
-    let urlFileToken = `${urlFile}?${AZURE.TOKEN}`
+    const urlFile      = `https://${AZURE.ACCOUNT}.blob.core.windows.net/${container}/${encodeURIComponent(fileName)}`
+    const urlFileToken = `${urlFile}?${token}`
 
-    // faz a requisição
-    let response = await fetch(urlFileToken, {
+    const response = await fetch(urlFileToken, {
         method: 'PUT',
         headers: {
             'x-ms-blob-type': 'BlockBlob',
-            'Content-Type'  : 'application/octet-stream'
+            'Content-Type': mimetype || 'application/octet-stream'
         },
         body: fileBuffer
     })
 
-    if(response.status == 201) return urlFile
+    if (response.status === 201) return urlFile
 
+    console.error('Falha no upload para a Azure:', response.status)
     return false
 }
 
-module.exports = {uploadFiles}
+module.exports = { uploadFiles }

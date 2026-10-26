@@ -20,10 +20,10 @@ const insertTarefa = async (tarefa) => {
             tarefa.titulo,
             tarefa.tipo,
             tarefa.instrucoes,
-            tarefa.anexo_arquivo,
+            tarefa.anexo_arquivo || null,
             tarefa.is_rascunho,
-            tarefa.id_profissional_criador,
-            tarefa.id_paciente_criador
+            tarefa.id_profissional_criador || null,
+            tarefa.id_paciente_criador || null
         ])
 
         if(response) return response[0].insertId 
@@ -208,7 +208,7 @@ const insertTarefaByIdPaciente = async (tarefa, idPaciente) => {
         let response = await knexConex.raw(sql, [
             tarefa.titulo,
             tarefa.tipo,
-            tarefa.anexo_arquivo,
+            tarefa.anexo_arquivo || null,
             tarefa.is_rascunho,
             idPaciente
         ])

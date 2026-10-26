@@ -7,13 +7,12 @@
 
 const config_message = require('../module/configMessages.js')
 const profissionalDAO = require('../../model/DAO/profissional/profissional.js')
-const vinculoDAO = require('../../model/DAO/vinculo/vinculo.js')
 const usuarioController = require('../usuario/controller_usuario.js')
 const vinculoController = require('../vinculo/controller_vinculo.js')
-const especialidadeController = require('../especialidade/controller_especialidade.js')
 const profissionalEspecialidadeController = require('../profissional_especialidade/controller_profissional_especialidade.js')
 const bcrypt = require('../../services/bcrypt.js')
 const { decodeJWT } = require('../../middleware/middlewareJWT.js')
+const {uploadFiles} = require('../upload/controller_upload_azure.js')
 
 // inserir nova profissional
 const inserirNovaProfissional = async (profissional, foto_avatar, contentType) => {
@@ -28,8 +27,18 @@ const inserirNovaProfissional = async (profissional, foto_avatar, contentType) =
         let resultUsuario = await usuarioController.inserirNovaUsuario(profissional, contentType)
         if(!resultUsuario.status) return resultUsuario
 
-        profissional.id_usuario = resultUsuario.response.usuario.id
+        // Realiza o upload da imagem do profissional
+        if (foto_avatar) {
+            let urlImagem = await uploadFiles(foto_avatar)
 
+            if (!urlImagem) {
+                return message.ERROR_INTERNAL_SERVER_CONTROLLER
+            }
+
+            profissional.foto_avatar = urlImagem
+        }
+
+        profissional.id_usuario = resultUsuario.response.usuario.id
         let result = await profissionalDAO.insertProfissional(profissional)
 
         if(!result) return message.ERROR_INTERNAL_SERVER_MODEL
@@ -76,6 +85,17 @@ const atualizarProfissional = async (profissional, id, foto_avatar, contentType)
 
         let resultBuscarId = await buscarProfissional(id)
         if(!resultBuscarId.status) return resultBuscarId // 400 e 404
+
+        // Realiza o upload da imagem do profissional
+        if (foto_avatar) {
+            let urlImagem = await uploadFiles(foto_avatar)
+
+            if (!urlImagem) {
+                return message.ERROR_INTERNAL_SERVER_CONTROLLER
+            }
+
+            profissional.foto_avatar = urlImagem
+        }
 
         profissional.id = Number(id)
         let result = await profissionalDAO.updateProfissional(profissional)
@@ -237,6 +257,17 @@ const editarProfissionalByToken = async (profissional, token, foto_avatar, conte
 
         let validar = await validarDadosAtualizacao(profissional, contentType)
         if(validar) return validar // 400 ou 415
+
+        // Realiza o upload da imagem do profissional
+        if (foto_avatar) {
+            let urlImagem = await uploadFiles(foto_avatar)
+
+            if (!urlImagem) {
+                return message.ERROR_INTERNAL_SERVER_CONTROLLER
+            }
+
+            profissional.foto_avatar = urlImagem
+        }
 
         profissional.id = Number(idProfissional)
         let result = await profissionalDAO.updateProfissional(profissional)

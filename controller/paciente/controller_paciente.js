@@ -11,6 +11,7 @@ const usuarioController = require('../usuario/controller_usuario.js')
 const vinculoController = require('../vinculo/controller_vinculo.js')
 const bycrypt = require('../../services/bcrypt.js')
 const { decodeJWT } = require('../../middleware/middlewareJWT.js')
+const {uploadFiles} = require('../upload/controller_upload_azure.js')
 
 // inserir nova paciente
 const inserirNovaPaciente = async (paciente,foto_avatar, contentType) => {
@@ -21,6 +22,17 @@ const inserirNovaPaciente = async (paciente,foto_avatar, contentType) => {
 
         paciente.senha_hash = await bycrypt.criarHash(paciente.senha)
         paciente.nivel = 2 // define o nivel do usuario como paciente
+
+        // Realiza o upload da imagem do paciente
+        if (foto_avatar) {
+            let urlImagem = await uploadFiles(foto_avatar)
+
+            if (!urlImagem) {
+                return message.ERROR_INTERNAL_SERVER_CONTROLLER
+            }
+
+            paciente.foto_avatar = urlImagem
+        }
 
         let resultUsuario = await usuarioController.inserirNovaUsuario(paciente, contentType)
         if(!resultUsuario.status) return resultUsuario
@@ -58,6 +70,17 @@ const atualizarPaciente = async (paciente, id, foto_avatar, contentType) => {
 
         let resultBuscarId = await buscarPaciente(id)
         if(!resultBuscarId.status) return resultBuscarId // 400 e 404
+
+        // Realiza o upload da imagem do paciente
+        if (foto_avatar) {
+            let urlImagem = await uploadFiles(foto_avatar)
+
+            if (!urlImagem) {
+                return message.ERROR_INTERNAL_SERVER_CONTROLLER
+            }
+
+            paciente.foto_avatar = urlImagem
+        }
 
         paciente.id = Number(id)
         let result = await pacienteDAO.updatePaciente(paciente)
@@ -182,13 +205,20 @@ const editarPacienteByToken = async (paciente, token, foto_avatar, contentType) 
         let idPaciente = decodedToken.decode.id
         paciente.id = Number(idPaciente)
 
+        // Realiza o upload da imagem do paciente
+        if (foto_avatar) {
+            let urlImagem = await uploadFiles(foto_avatar)
+
+            if (!urlImagem) {
+                return message.ERROR_INTERNAL_SERVER_CONTROLLER
+            }
+
+            paciente.foto_avatar = urlImagem
+        }
+
         let result = await pacienteDAO.updatePaciente(paciente)
 
         if(!result) return message.ERROR_INTERNAL_SERVER_MODEL // 500
-
-        let resultBuscarId = await buscarPaciente(idPaciente)
-        
-        return resultBuscarId // 200 ou 400 ou 404
 
     } catch (error) {console.log(error)}
     return message.ERROR_INTERNAL_SERVER_CONTROLLER // 500

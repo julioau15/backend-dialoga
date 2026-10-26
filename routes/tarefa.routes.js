@@ -10,6 +10,10 @@ const express = require('express')
 const router = express.Router()
 const bodyParser = require('body-parser')
 const bodyParserJSON = bodyParser.json()
+const multer = require('multer') // upload de arquivos
+
+// instancia para criar um objeto com as caracteristicas do multer
+const upload = multer()
 
 const {
     inserirNovaTarefa,
@@ -27,6 +31,21 @@ const {
     inserirNovaPergunta
 } = require('../controller/pergunta/controller_pergunta.js')
 
+const formatarJson = async (dados) => {
+    const tarefa = {
+       titulo                   : String(dados?.titulo)                  || null,
+       tipo                     : String(dados?.tipo)                    || null,
+       instrucoes               : String(dados?.instrucoes)              || null,
+       is_rascunho              : dados?.is_rascunho == 0 ? 0 : dados.is_rascunho || null,
+       id_profissional_criador  : Number(dados?.id_profissional_criador) || null,
+       id_paciente_criador      : Number(dados?.id_paciente_criador)     || null,
+       paciente_ids             : JSON.parse(dados?.paciente_ids)        || null,
+       prazos_por_paciente      : JSON.parse(dados?.prazos_por_paciente) || null
+    }
+
+    return tarefa
+}
+
 // ---------------- tarefa -----------------
 
 // endpoint para inserir pergunta
@@ -40,12 +59,13 @@ router.post('/:id/perguntas',bodyParserJSON, async (req,res) => {
 })
 
 // endpoint para inserir tarefa pelo token
-router.post('/',bodyParserJSON, async (req,res) => {
+router.post('/',upload.single('anexo_arquivo'), bodyParserJSON, async (req,res) => {
     let token = req.headers['x-access-token']
-    let dados = req.body
+    let dados = await formatarJson(req.body)
     let contentType = req.headers['content-type']
+    const anexo_arquivo = req.file
 
-    let result = await inserirTarefaByToken(dados, token, contentType)
+    let result = await inserirTarefaByToken(dados, anexo_arquivo, token, contentType)
     res.status(result.status_code).json(result)
 })
 
@@ -80,12 +100,13 @@ router.get('/:id', async (req,res) => {
 })
 
 // endpoint para atualizar um tarefa pelo id
-router.put('/:id', bodyParserJSON, async (req,res) => {
-    let id          = req.params.id                 // Recebe o id por parametro
-    let dados       = req.body                      // Recebe os dados do body da requisição
-    let contentType = req.headers['content-type']   // Recebe o ContentType do header da requisição
+router.put('/:id', upload.single('anexo_arquivo'), bodyParserJSON, async (req,res) => {
+    let id          = req.params.id          
+    let dados       = await formatarJson(req.body)   
+    let contentType = req.headers['content-type'] 
+    const anexo_arquivo = req.file
     
-    let result      = await atualizarTarefa(dados, id, contentType)
+    let result      = await atualizarTarefa(dados, id, anexo_arquivo, contentType)
     res.status(result.status_code).json(result)
 })
 

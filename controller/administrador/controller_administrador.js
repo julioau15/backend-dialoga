@@ -8,31 +8,51 @@
 const config_message = require('../module/configMessages.js')
 const administradorDAO = require('../../model/DAO/administrador/administrador.js')
 const usuarioController = require('../usuario/controller_usuario.js')
+const {uploadFiles} = require('../upload/controller_upload_azure.js')
 const bcrypt = require('../../services/bcrypt.js')
 const { decodeJWT } = require('../../middleware/middlewareJWT.js')
 
-// inserir nova administrador
-const inserirNovaAdministrador = async (administrador,foto_avatar, contentType) => {
+// inserir novo administrador
+const inserirNovaAdministrador = async (administrador, foto_avatar, contentType) => {
     let message = JSON.parse(JSON.stringify(config_message))
+
     try {
         let validar = await validarDados(administrador, contentType)
-        if(validar) return validar // 400 ou 415
+        if (validar) return validar
+
+        // Realiza o upload da imagem do administrador
+        if (foto_avatar) {
+            let urlImagem = await uploadFiles(foto_avatar)
+
+            if (!urlImagem) {
+                return message.ERROR_INTERNAL_SERVER_CONTROLLER
+            }
+
+            administrador.foto_avatar = urlImagem
+        }
 
         administrador.senha_hash = await bcrypt.criarHash(administrador.senha)
-        administrador.nivel = 0 // define o nivel do usuario como administrador
+        administrador.nivel = 0
 
-        let resultUsuario = await usuarioController.inserirNovaUsuario(administrador, contentType)
-        if(!resultUsuario.status) return resultUsuario // 400, 404, 415 ou 500
+        let resultUsuario = await usuarioController.inserirNovaUsuario(
+            administrador,
+            contentType
+        )
+
+        if (!resultUsuario.status) return resultUsuario
 
         administrador.id_usuario = resultUsuario.response.usuario.id
 
-        delete administrador.senha 
-        delete administrador.senha_hash 
+        delete administrador.senha
+        delete administrador.senha_hash
+
         let result = await administradorDAO.insertAdministrador(administrador)
 
-        if(!result) return message.ERROR_INTERNAL_SERVER_MODEL
+        if (!result) return message.ERROR_INTERNAL_SERVER_MODEL
 
-        let resultbuscarUsuario = await usuarioController.buscarUsuario(administrador.id_usuario)
+        let resultbuscarUsuario = await usuarioController.buscarUsuario(
+            administrador.id_usuario
+        )
 
         delete resultbuscarUsuario.response.usuario[0].senha
         delete resultbuscarUsuario.response.usuario[0].senha_hash
@@ -41,9 +61,16 @@ const inserirNovaAdministrador = async (administrador,foto_avatar, contentType) 
         administrador.id = result
         administrador.usuario = resultbuscarUsuario.response.usuario
 
-        return await montarMensagem(message, message.SUCESS_CREATED_ITEM, administrador)
+        return await montarMensagem(
+            message,
+            message.SUCESS_CREATED_ITEM,
+            administrador
+        )
 
-    } catch (error) {console.log(error)}
+    } catch (error) {
+        console.log(error)
+    }
+
     return message.ERROR_INTERNAL_SERVER_CONTROLLER
 }
 
@@ -59,6 +86,17 @@ const atualizarAdministrador = async (administrador, id, foto_avatar, contentTyp
         if(!resultBuscarId.status) return resultBuscarId // 400 e 404
 
         administrador.senha_hash = await bcrypt.criarHash(administrador?.senha)
+
+        // Realiza o upload da imagem do administrador
+        if (foto_avatar) {
+            let urlImagem = await uploadFiles(foto_avatar)
+
+            if (!urlImagem) {
+                return message.ERROR_INTERNAL_SERVER_CONTROLLER
+            }
+
+            administrador.foto_avatar = urlImagem
+        }
 
         administrador.id = Number(id)
         let result = await administradorDAO.updateAdministrador(administrador)
@@ -197,6 +235,17 @@ const editarAdministradorByToken = async (administrador, token, foto_avatar, con
             if(!resultEditarSenha.status) return resultEditarSenha // 400, 404, 415 ou 500
         }
 
+        // Realiza o upload da imagem do administrador
+        if (foto_avatar) {
+            let urlImagem = await uploadFiles(foto_avatar)
+
+            if (!urlImagem) {
+                return message.ERROR_INTERNAL_SERVER_CONTROLLER
+            }
+
+            administrador.foto_avatar = urlImagem
+        }
+
         administrador.id = Number(idAdministrador)
         let result = await administradorDAO.updateAdministrador(administrador)
 
@@ -293,7 +342,6 @@ const montarMensagem = async (base,status,response = null) => {
 
     return base.DEFAULT_MESSAGE // 200 ou 201
 }
-
 
 module.exports = {
     inserirNovaAdministrador,
