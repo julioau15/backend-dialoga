@@ -7,6 +7,7 @@
 
 const config_message = require('../module/configMessages.js')
 const disponibilidadeDAO = require('../../model/DAO/disponibilidade/disponibilidade.js')
+const diasDaSemanaDisponibilidadeController = require('../dias_da_semana_disponibilidade/controller_dias_da_semana_disponibilidade.js')
 const { decodeJWT } = require('../../middleware/middlewareJWT.js')
 
 // inserir nova disponibilidade
@@ -61,6 +62,16 @@ const listarDisponibilidade = async () => {
         // verfica se o array é vazio
         if(result.length <= 0) return message.ERROR_NOT_FOUND // status_code 404
 
+        // busca os dias da semana de cada disponibilidade
+        for (let disponibilidade of result) {
+            let diasDaSemana = await diasDaSemanaDisponibilidadeController.listarDiasDaSemanaByIdDisponibilidade(disponibilidade.id)
+
+            if(diasDaSemana.status){
+                disponibilidade.dias_da_semana = diasDaSemana.response.diasDaSemanaDisponibilidade
+            }
+
+        }
+
         let listarDisponibilidadeMessage = await montarMensagem(message, message.SUCESS_RESPONSE, result)
         message.DEFAULT_MESSAGE.response.count = result.length
 
@@ -84,6 +95,16 @@ const buscarDisponibilidade = async (id) => {
         if(!result) return message.ERROR_INTERNAL_SERVER_MODEL // 500
 
         if(result.length < 1) return config_message.ERROR_NOT_FOUND
+
+        // busca os dias da semana de cada disponibilidade
+        for (let disponibilidade of result) {
+            let diasDaSemana = await diasDaSemanaDisponibilidadeController.listarDiasDaSemanaByIdDisponibilidade(disponibilidade.id)
+
+            if(diasDaSemana.status){
+                disponibilidade.dias_da_semana = diasDaSemana.response.diasDaSemanaDisponibilidade
+            }
+
+        }
 
         return await montarMensagem(message, message.SUCESS_RESPONSE, result)
 
@@ -110,7 +131,6 @@ const excluirDisponibilidade = async (id) => {
     return message.ERROR_INTERNAL_SERVER_CONTROLLER // 500
 }
 
-// listar disponibilidades de um profissional pelo token
 const listarDisponibilidadeByToken = async (token) => {
     let message = JSON.parse(JSON.stringify(config_message))
 
@@ -124,15 +144,28 @@ const listarDisponibilidadeByToken = async (token) => {
 
         if(!result) return message.ERROR_INTERNAL_SERVER_MODEL // 500
 
-        // verfica se o array é vazio
-        if(result.length <= 0) return message.ERROR_NOT_FOUND // status_code 404
+        // verifica se o array é vazio
+        if(result.length <= 0) return message.ERROR_NOT_FOUND // 404
+
+        // busca os dias da semana de cada disponibilidade
+        for (let disponibilidade of result) {
+            let diasDaSemana = await diasDaSemanaDisponibilidadeController.listarDiasDaSemanaByIdDisponibilidade(disponibilidade.id)
+
+            if(diasDaSemana.status){
+                disponibilidade.dias_da_semana = diasDaSemana.response.diasDaSemanaDisponibilidade
+            }
+
+        }
 
         let listarDisponibilidadeMessage = await montarMensagem(message, message.SUCESS_RESPONSE, result)
         message.DEFAULT_MESSAGE.response.count = result.length
 
-        return listarDisponibilidadeMessage // status_code 200
+        return listarDisponibilidadeMessage // 200
 
-    } catch (error) {console.log(error)}
+    } catch (error) {
+        console.log(error)
+    }
+
     return message.ERROR_INTERNAL_SERVER_CONTROLLER // 500
 }
 
@@ -154,6 +187,22 @@ const inserirNovaDisponibilidadeByToken = async (disponibilidade, token, content
 
         if(!result) return message.ERROR_INTERNAL_SERVER_MODEL
 
+        // insere os novos dias da semana
+        for (let diaDaSemana of disponibilidade?.dias_da_semana || []) {
+            let dadosDiasDaSemana = {
+                id_dias_da_semana: diaDaSemana,
+                id_disponibilidade: result
+            }
+
+            let resultInserir = await diasDaSemanaDisponibilidadeController
+                .inserirNovoDiasDaSemanaDisponibilidade(
+                    dadosDiasDaSemana,
+                    contentType
+                )
+
+            if(!resultInserir.status) return resultInserir
+        }
+
         disponibilidade.id = result
         return await montarMensagem(message, message.SUCESS_CREATED_ITEM, disponibilidade)
 
@@ -161,12 +210,11 @@ const inserirNovaDisponibilidadeByToken = async (disponibilidade, token, content
     return message.ERROR_INTERNAL_SERVER_CONTROLLER
 }
 
-// atualizar disponibilidade eplo token
+// atualizar disponibilidade pelo token
 const atualizarDisponibilidadeByToken = async (disponibilidade, token, id, contentType) => {
     let message = JSON.parse(JSON.stringify(config_message))
 
     try {
-
         let decodedToken = await decodeJWT(token)
         if(!decodedToken.status) return message.ERROR_INVALID_TOKEN
 
@@ -181,13 +229,37 @@ const atualizarDisponibilidadeByToken = async (disponibilidade, token, id, conte
         if(!resultBuscarId.status) return resultBuscarId // 400 e 404
 
         disponibilidade.id = Number(id)
+
         let result = await disponibilidadeDAO.updateDisponibilidade(disponibilidade)
 
         if(!result) return message.ERROR_INTERNAL_SERVER_MODEL // 500
 
+        // exclui os dias da semana anteriores
+        let resultExcluir = await diasDaSemanaDisponibilidadeController
+            .excluirDiasDaSemanaDisponibilidadeByIdDisponibilidade(id)
+
+        // insere os novos dias da semana
+        for (let diaDaSemana of disponibilidade?.dias_da_semana || []) {
+            let dadosDiasDaSemana = {
+                id_dias_da_semana: diaDaSemana,
+                id_disponibilidade: Number(id)
+            }
+
+            let resultInserir = await diasDaSemanaDisponibilidadeController
+                .inserirNovoDiasDaSemanaDisponibilidade(
+                    dadosDiasDaSemana,
+                    contentType
+                )
+
+            if(!resultInserir.status) return resultInserir
+        }
+
         return await montarMensagem(message, message.SUCESS_UPDATE_ITEM, disponibilidade)
 
-    } catch (error) {console.log(error)}
+    } catch (error) {
+        console.log(error)
+    }
+
     return message.ERROR_INTERNAL_SERVER_CONTROLLER // 500
 }
 
