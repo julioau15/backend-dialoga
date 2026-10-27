@@ -53,6 +53,7 @@ const autenticarUsuario = async (usuario, contentType) => {
 
         // adiciona o token apenas na resposta
         dadosUsuario[0].token = token
+        delete dadosUsuario[0].senha_hash
 
         return await montarMensagem(
             message,

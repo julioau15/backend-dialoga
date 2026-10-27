@@ -2,7 +2,7 @@
  * Objetivo: Arquivo responsável pelo CRUD da tabela profissional
  * Data: 20/09/2026
  * Autor: Julio Augusto
- * Versão: 1.0
+ * Versão: 1.1
  * *********************************************************************************/
 
 const config_message = require('../module/configMessages.js')
@@ -106,7 +106,6 @@ const atualizarProfissional = async (profissional, id, foto_avatar, contentType)
         delete profissional.senha_hash
 
         let resultDeleteEspecialidades = await profissionalEspecialidadeController.excluirProfissionalEspecialidadeByIdProfissional(id)
-        console.log(resultDeleteEspecialidades)
 
         if(resultDeleteEspecialidades.status){
             for (const especialidade of profissional.id_especialidade || []) {
@@ -143,22 +142,7 @@ const listarProfissional = async () => {
         if(result.length <= 0) return message.ERROR_NOT_FOUND // status_code 404
 
         for (let profissional of result) {
-            let usuario = await usuarioController.buscarUsuario(profissional.id_usuario)
-
-            delete usuario.response.usuario[0].senha
-            delete usuario.response.usuario[0].senha_hash
-
-            if (usuario.status) {
-                delete usuario.response.usuario[0].id
-                Object.assign(profissional, usuario.response.usuario[0])
-            }
-
-            let especialidades = await profissionalEspecialidadeController.buscarEspecialidadesIdProfissional(profissional.id)
-
-            if(especialidades.status) {
-                profissional.especialidade = especialidades.response.profissionalEspecialidade
-                delete profissional.id_especialidade
-            }
+            await completarDadosProfissional(profissional)
         }
 
         let listarProfissionalMessage = await montarMensagem(message, message.SUCESS_RESPONSE, result)
@@ -170,7 +154,7 @@ const listarProfissional = async () => {
     return message.ERROR_INTERNAL_SERVER_CONTROLLER // 500
 }
 
-// buscar profissional pelo id
+// buscar profissional pelo id (tabela profissional)
 const buscarProfissional = async (id) => {
     let message = JSON.parse(JSON.stringify(config_message))
 
@@ -183,24 +167,35 @@ const buscarProfissional = async (id) => {
 
         if(!result) return message.ERROR_INTERNAL_SERVER_MODEL // 500
 
-        if(result.length < 1) return config_message.ERROR_NOT_FOUND
+        if(result.length < 1) return message.ERROR_NOT_FOUND // 404
 
         for (let profissional of result) {
-            let usuario = await usuarioController.buscarUsuario(profissional.id_usuario)
+            await completarDadosProfissional(profissional)
+        }
 
-            delete usuario.response.usuario[0].senha
-            delete usuario.response.usuario[0].senha_hash
+        return await montarMensagem(message, message.SUCESS_RESPONSE, result)
 
-            if (usuario.status) {
-                delete usuario.response.usuario[0].id
-                Object.assign(profissional, usuario.response.usuario[0])
-            }
+    } catch (error) {console.log(error)}
+    return message.ERROR_INTERNAL_SERVER_CONTROLLER // 500
+}
 
-            let especialidades = await profissionalEspecialidadeController.buscarEspecialidadesIdProfissional(profissional.id)
-            if(especialidades.status) {
-                profissional.especialidade = especialidades.response.profissionalEspecialidade
-                delete profissional.id_especialidade
-            }
+// buscar profissional pelo id do usuario (id_usuario)
+const buscarProfissionalByIdUsuario = async (idUsuario) => {
+    let message = JSON.parse(JSON.stringify(config_message))
+
+    try {
+
+        const validarID = await validarId(idUsuario)
+        if(validarID) return validarID
+
+        let result = await profissionalDAO.selectByIdUsuarioProfissional(idUsuario)
+
+        if(!result) return message.ERROR_INTERNAL_SERVER_MODEL // 500
+
+        if(result.length < 1) return message.ERROR_NOT_FOUND // 404
+
+        for (let profissional of result) {
+            await completarDadosProfissional(profissional)
         }
 
         return await montarMensagem(message, message.SUCESS_RESPONSE, result)
@@ -236,10 +231,8 @@ const buscarProfissionalByToken = async (token) => {
         let decodedToken = await decodeJWT(token)
         if(!decodedToken.status) return message.ERROR_INVALID_TOKEN // 401
 
-        let idProfissional = decodedToken.decode.id
-        let resultBuscarId = await buscarProfissional(idProfissional)
-
-        return resultBuscarId // 200 ou 400 ou 404
+        // o id do token é o id do USUARIO, não do profissional
+        return await buscarProfissionalByIdUsuario(decodedToken.decode.id) // 200 ou 400 ou 404
 
     } catch (error) {console.log(error)}
     return message.ERROR_INTERNAL_SERVER_CONTROLLER // 500
@@ -250,10 +243,10 @@ const editarProfissionalByToken = async (profissional, token, foto_avatar, conte
 
     try {
 
-        let decodedToken = await decodeJWT(token)
-        if(!decodedToken.status) return message.ERROR_INVALID_TOKEN // 401
+        let resultToken = await obterIdProfissionalByToken(token)
+        if(resultToken.erro) return resultToken.erro // 401, 400 ou 404
 
-        let idProfissional = decodedToken.decode.id
+        let idProfissional = resultToken.id
 
         let validar = await validarDadosAtualizacao(profissional, contentType)
         if(validar) return validar // 400 ou 415
@@ -308,12 +301,10 @@ const listarPacientesVinculados = async (token, filtro) => {
 
     try {
 
-        let decodedToken = await decodeJWT(token)
-        if(!decodedToken.status) return message.ERROR_INVALID_TOKEN // 401
+        let resultToken = await obterIdProfissionalByToken(token)
+        if(resultToken.erro) return resultToken.erro // 401, 400 ou 404
 
-        let idProfissional = decodedToken.decode.id
-        let resultBuscarId = await buscarProfissional(idProfissional)
-        if(!resultBuscarId.status) return resultBuscarId // 400 e 404
+        let idProfissional = resultToken.id
 
         let result = await vinculoController.listarPacientesByIdProfissional(idProfissional, filtro);
 
@@ -358,12 +349,10 @@ const inserirNovoVinculo = async (token, idPaciente) => {
 
     try {
 
-        let decodedToken = await decodeJWT(token)
-        if(!decodedToken.status) return message.ERROR_INVALID_TOKEN // 401
-        let idProfissional = decodedToken.decode.id
+        let resultToken = await obterIdProfissionalByToken(token)
+        if(resultToken.erro) return resultToken.erro // 401, 400 ou 404
 
-        let resultBuscarIdProfissional = await buscarProfissional(idProfissional)
-        if(!resultBuscarIdProfissional.status) return resultBuscarIdProfissional // 400 e 404
+        let idProfissional = resultToken.id
 
         let resultBuscarIdPaciente = await usuarioController.buscarUsuario(idPaciente)
         if(!resultBuscarIdPaciente.status) return resultBuscarIdPaciente // 400 e 404
@@ -389,9 +378,10 @@ const excluirVinculo = async (token, idPaciente) => {
 
     try {
 
-        let decodedToken = await decodeJWT(token)
-        if(!decodedToken.status) return message.ERROR_INVALID_TOKEN // 401
-        let idProfissional = decodedToken.decode.id
+        let resultToken = await obterIdProfissionalByToken(token)
+        if(resultToken.erro) return resultToken.erro // 401, 400 ou 404
+
+        let idProfissional = resultToken.id
 
         let result = await vinculoController.excluirVinculoPacienteProfissional(idPaciente, idProfissional)
 
@@ -401,6 +391,40 @@ const excluirVinculo = async (token, idPaciente) => {
 
     } catch (error) {console.log(error)}
     return message.ERROR_INTERNAL_SERVER_CONTROLLER // 500
+}
+
+// decodifica o token e converte o id_usuario nele contido no id do profissional
+// retorna { id } em caso de sucesso ou { erro } com a mensagem de erro (401, 400 ou 404)
+const obterIdProfissionalByToken = async (token) => {
+    let message = JSON.parse(JSON.stringify(config_message))
+
+    let decodedToken = await decodeJWT(token)
+    if(!decodedToken.status) return { erro: message.ERROR_INVALID_TOKEN } // 401
+
+    let resultProfissional = await buscarProfissionalByIdUsuario(decodedToken.decode.id)
+    if(!resultProfissional.status) return { erro: resultProfissional } // 400 e 404
+
+    return { id: resultProfissional.response.profissional[0].id }
+}
+
+// junta ao profissional os dados do usuario (sem senha) e as especialidades
+const completarDadosProfissional = async (profissional) => {
+    let usuario = await usuarioController.buscarUsuario(profissional.id_usuario)
+
+    if (usuario.status) {
+        delete usuario.response.usuario[0].senha
+        delete usuario.response.usuario[0].senha_hash
+        delete usuario.response.usuario[0].id
+        Object.assign(profissional, usuario.response.usuario[0])
+    }
+
+    let especialidades = await profissionalEspecialidadeController.buscarEspecialidadesIdProfissional(profissional.id)
+    if(especialidades.status) {
+        profissional.especialidade = especialidades.response.profissionalEspecialidade
+        delete profissional.id_especialidade
+    }
+
+    return profissional
 }
 
 const validarDados = async (profissional, contentType) => {
@@ -530,6 +554,7 @@ module.exports = {
     atualizarProfissional,
     listarProfissional,
     buscarProfissional,
+    buscarProfissionalByIdUsuario,
     excluirProfissional,
     buscarProfissionalByToken,
     editarProfissionalByToken,

@@ -118,10 +118,31 @@ const deleteProfissional = async (id) => {
     return false
 }
 
+const selectByIdUsuarioProfissional = async (idUsuario) => {
+    try {
+        let sql = `
+                    SELECT  id,
+                            nome_completo,
+                            cpf,
+                            crp,
+                            celular,
+                            instituicao_clinica,
+                            foto_avatar,
+                            id_usuario
+                    FROM tbl_profissional 
+                    WHERE id_usuario = ?`
+        let response = await knexConex.raw(sql, [idUsuario])
+        return response.length > 0 ? response[0] : []
+    } catch (error) {
+        return false
+    }
+}
+
 module.exports = {
     insertProfissional,
     updateProfissional,
     selectAllProfissional,
     selectByIdProfissional,
-    deleteProfissional
+    deleteProfissional,
+    selectByIdUsuarioProfissional
 }
