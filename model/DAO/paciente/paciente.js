@@ -107,6 +107,30 @@ const selectByIdPaciente = async (id) => {
     return false
 }
 
+// select de um paciente pelo id do usuario
+const selectByIdUsuarioPaciente = async (idUsuario) => {
+    let sql = `SELECT
+                   id,
+                   nome_completo,
+                   apelido,
+                   data_nascimento,
+                   celular,
+                   foto_avatar,
+                   primeiro_acesso_concluido,
+                   status_atividade,
+                   id_usuario
+               FROM tbl_paciente
+               WHERE id_usuario = ?`
+    try {
+        let response = await knexConex.raw(sql, [idUsuario])
+
+        if(response) return response[0]
+
+    } catch (error) { console.log(error) }
+
+    return false
+}
+
 // delete de paciente
 const deletePaciente = async (id) => {
     let sql = `DELETE FROM tbl_paciente
@@ -150,5 +174,6 @@ module.exports = {
     selectAllPaciente,
     selectByIdPaciente,
     deletePaciente,
-    updatePrimeiroAcessoPaciente
+    updatePrimeiroAcessoPaciente,
+    selectByIdUsuarioPaciente
 }

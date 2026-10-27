@@ -10,6 +10,9 @@ const authDAO = require('../../model/DAO/auth/auth.js')
 const usuarioDAO = require('../../model/DAO/usuario/usuario.js')
 const jwt = require('../../middleware/middlewareJWT.js')
 const bcrypt = require('../../services/bcrypt.js')
+const codigoController = require('../codigo_verificacao/controller_codigo_verificacao.js')
+
+const FINALIDADE_RECUPERAR_SENHA = 'recuperar_senha'
 
 // autenticar usuário
 const autenticarUsuario = async (usuario, contentType) => {
@@ -111,40 +114,89 @@ const autenticarUsuarioGoogle = async (id_google, contentType) => {
     }
 }
 
+// solicitar código de recuperação de senha
+const solicitarRecuperarSenhaUsuario = async (dados, contentType) => {
+    let message = JSON.parse(JSON.stringify(config_message))
+
+    try {
+        const validar = await validarDadosEmail(dados, contentType)
+        if (validar) return validar
+
+        let dadosUsuario = await authDAO.selectAuthUsuario(dados)
+
+        // se o email existe, gera e envia o código
+        if (dadosUsuario && dadosUsuario.length > 0) {
+            let resultCodigo = await codigoController.gerarCodigoVerificacao({
+                email: dados.email,
+                finalidade: FINALIDADE_RECUPERAR_SENHA
+            }, contentType)
+
+            if (!resultCodigo.status) return resultCodigo
+        }
+
+        // mesma resposta existindo ou não, para não revelar quais emails estão cadastrados
+        return await montarMensagem(message, message.SUCESS_RESPONSE)
+
+    } catch (error) {
+        console.log(error)
+        return message.ERROR_INTERNAL_SERVER_CONTROLLER
+    }
+}
+
+// validar código sem consumir (o código será consumido na redefinição)
+const validarCodigoUsuario = async (dados, contentType) => {
+    let message = JSON.parse(JSON.stringify(config_message))
+
+    try {
+        const validar = await validarDadosEmail(dados, contentType)
+        if (validar) return validar
+
+        return await codigoController.validarCodigoVerificacao({
+            email: dados.email,
+            finalidade: FINALIDADE_RECUPERAR_SENHA,
+            codigo: dados.codigo
+        }, contentType, false)
+
+    } catch (error) {
+        console.log(error)
+        return message.ERROR_INTERNAL_SERVER_CONTROLLER
+    }
+}
+
+// redefinir a senha (valida e consome o código)
 const redefinirSenhaUsuario = async (usuario, contentType) => {
     let message = JSON.parse(JSON.stringify(config_message))
 
     try {
-        // Valida os dados de entrada
         const validarDados = await validarDadosRedefinirSenha(usuario, contentType)
         if (validarDados) return validarDados
 
-        // procura o usuário no banco de dados
+        // valida e consome o código; se falhar, devolve o erro dele
+        const resultCodigo = await codigoController.validarCodigoVerificacao({
+            email: usuario.email,
+            finalidade: FINALIDADE_RECUPERAR_SENHA,
+            codigo: usuario.codigo
+        }, contentType, true)
+
+        if (!resultCodigo.status) return resultCodigo
+
         let dadosUsuario = await authDAO.selectAuthUsuario(usuario)
-        
-        // verifica se o usuário foi encontrado
+
         if (!dadosUsuario || dadosUsuario.length < 1)
             return message.ERROR_UNAUTHORIZED
 
-        // redefine a senha do usuário
-        const novaSenhaHash = await bcrypt.gerarSenhaHash(usuario.senha)
+        const novaSenhaHash = await bcrypt.criarHash(usuario.senha)
 
-        usuario.senha_hash = novaSenhaHash
-
-        const atualizarSenha = await usuarioDAO.updateUsuario(usuario)
+        const atualizarSenha = await authDAO.updateSenhaUsuario(dadosUsuario[0].id, novaSenhaHash)
 
         if (!atualizarSenha)
-            return message.ERROR_INTERNAL_SERVER_CONTROLLER
+            return message.ERROR_INTERNAL_SERVER_MODEL
 
-        return await montarMensagem(
-            message,
-            message.SUCESS_RESPONSE,
-            dadosUsuario
-        )
+        // não devolve dados do usuário (evita expor o senha_hash)
+        return await montarMensagem(message, message.SUCESS_UPDATE_ITEM)
 
-    }catch (error) {
+    } catch (error) {
         console.log(error)
-
         return message.ERROR_INTERNAL_SERVER_CONTROLLER
     }
 }
@@ -177,27 +229,46 @@ const validarDados = async (usuario, contentType) => {
     return false
 }
 
-const validarDadosRedefinirSenha = async (usuario, contentType) => {
+const validarDadosEmail = async (dados, contentType) => {
     let message = JSON.parse(JSON.stringify(config_message))
 
-    // Valida o formato da requisição
-    if(String(contentType).toLowerCase() != 'application/json') return message.ERROR_CONTENT_TYPE // Status code 415
+    if(String(contentType).toLowerCase() != 'application/json') return message.ERROR_CONTENT_TYPE // 415
 
-    // Garante que a senha foi informada
-    if(usuario.senha == undefined || usuario.senha == null || typeof usuario.senha != 'string' || usuario.senha.trim() == ''){
-        message.ERROR_BAD_REQUEST.field = '[SENHA] INVÁLIDA'
+    if(dados == undefined || dados == null || typeof dados != 'object'){
+        message.ERROR_BAD_REQUEST.field = '[DADOS] INVÁLIDOS'
         return message.ERROR_BAD_REQUEST // 400
     }
 
-    // garante que o email foi informado
-    if(usuario.email == undefined || usuario.email == null || typeof usuario.email != 'string' || usuario.email.trim() == ''){
+    if(typeof dados.email != 'string' || dados.email.trim() == '' || dados.email.length > 150){
         message.ERROR_BAD_REQUEST.field = '[EMAIL] INVÁLIDO'
         return message.ERROR_BAD_REQUEST // 400
     }
 
-    // garante que o codigo foi informado
-    if(usuario.codigo == undefined || usuario.codigo == null || typeof usuario.codigo != 'string' || usuario.codigo.trim() == ''){
+    return false
+}
+
+const validarDadosRedefinirSenha = async (usuario, contentType) => {
+    let message = JSON.parse(JSON.stringify(config_message))
+
+    if(String(contentType).toLowerCase() != 'application/json') return message.ERROR_CONTENT_TYPE // 415
+
+    if(usuario == undefined || usuario == null || typeof usuario != 'object'){
+        message.ERROR_BAD_REQUEST.field = '[USUARIO] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    if(typeof usuario.email != 'string' || usuario.email.trim() == '' || usuario.email.length > 150){
+        message.ERROR_BAD_REQUEST.field = '[EMAIL] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    if(typeof usuario.codigo != 'string' || usuario.codigo.trim() == ''){
         message.ERROR_BAD_REQUEST.field = '[CODIGO] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    if(typeof usuario.senha != 'string' || usuario.senha.trim() == '' || usuario.senha.length > 30){
+        message.ERROR_BAD_REQUEST.field = '[SENHA] INVÁLIDA'
         return message.ERROR_BAD_REQUEST // 400
     }
 
@@ -217,5 +288,7 @@ const montarMensagem = async (base,status,response = null) => {
 module.exports = {
     autenticarUsuario,
     autenticarUsuarioGoogle,
+    solicitarRecuperarSenhaUsuario,
+    validarCodigoUsuario,
     redefinirSenhaUsuario
 }

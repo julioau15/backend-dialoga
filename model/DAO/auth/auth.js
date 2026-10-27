@@ -51,7 +51,23 @@ const selectAuthUsuarioGoogle = async (id_google) => {
     return false
 }
 
+// atualiza somente a senha do usuário
+const updateSenhaUsuario = async (id, senha_hash) => {
+    let sql = `UPDATE tbl_usuario
+               SET senha_hash = ?
+               WHERE id = ?`
+    try {
+        let response = await knexConex.raw(sql, [senha_hash, id])
+
+        if(response) return response
+
+    } catch (error) { console.log(error) }
+
+    return false
+}
+
 module.exports = {
     selectAuthUsuario,
-    selectAuthUsuarioGoogle
+    selectAuthUsuarioGoogle,
+    updateSenhaUsuario
 }

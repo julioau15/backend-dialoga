@@ -178,6 +178,7 @@ const excluirPaciente = async (id) => {
     return message.ERROR_INTERNAL_SERVER_CONTROLLER // 500
 }
 
+// buscar paciente pelo token (o token guarda o id do usuario, não o id do paciente)
 const buscarPacienteByToken = async (token) => {
     let message = JSON.parse(JSON.stringify(config_message))
 
@@ -186,7 +187,11 @@ const buscarPacienteByToken = async (token) => {
         let decodedToken = await decodeJWT(token)
         if(!decodedToken.status) return message.ERROR_INVALID_TOKEN // 401
 
-        let idPaciente = decodedToken.decode.id
+        let resultPaciente = await pacienteDAO.selectByIdUsuarioPaciente(decodedToken.decode.id)
+        if(!resultPaciente) return message.ERROR_INTERNAL_SERVER_MODEL // 500
+        if(resultPaciente.length < 1) return message.ERROR_NOT_FOUND // 404
+
+        let idPaciente = resultPaciente[0].id
         let resultBuscarId = await buscarPaciente(idPaciente)
 
         return resultBuscarId // 200 ou 400 ou 404
@@ -195,6 +200,7 @@ const buscarPacienteByToken = async (token) => {
     return message.ERROR_INTERNAL_SERVER_CONTROLLER // 500
 }
 
+// editar paciente pelo token
 const editarPacienteByToken = async (paciente, token, foto_avatar, contentType) => {
     let message = JSON.parse(JSON.stringify(config_message))
 
@@ -202,8 +208,11 @@ const editarPacienteByToken = async (paciente, token, foto_avatar, contentType) 
         let decodedToken = await decodeJWT(token)
         if(!decodedToken.status) return message.ERROR_INVALID_TOKEN // 401
 
-        let idPaciente = decodedToken.decode.id
-        paciente.id = Number(idPaciente)
+        let resultPaciente = await pacienteDAO.selectByIdUsuarioPaciente(decodedToken.decode.id)
+        if(!resultPaciente) return message.ERROR_INTERNAL_SERVER_MODEL // 500
+        if(resultPaciente.length < 1) return message.ERROR_NOT_FOUND // 404
+
+        paciente.id = Number(resultPaciente[0].id)
 
         // Realiza o upload da imagem do paciente
         if (foto_avatar) {
@@ -220,10 +229,13 @@ const editarPacienteByToken = async (paciente, token, foto_avatar, contentType) 
 
         if(!result) return message.ERROR_INTERNAL_SERVER_MODEL // 500
 
+        return await montarMensagem(message, message.SUCESS_UPDATE_ITEM, paciente)
+
     } catch (error) {console.log(error)}
     return message.ERROR_INTERNAL_SERVER_CONTROLLER // 500
 }
 
+// primeiro acesso do paciente
 const primeiroAcessoPaciente = async (paciente, token) => {
     let message = JSON.parse(JSON.stringify(config_message))
 
@@ -231,8 +243,12 @@ const primeiroAcessoPaciente = async (paciente, token) => {
         let decodedToken = await decodeJWT(token)
         if(!decodedToken.status) return message.ERROR_INVALID_TOKEN // 401
 
-        let idPaciente = decodedToken.decode.id
-        
+        let resultPaciente = await pacienteDAO.selectByIdUsuarioPaciente(decodedToken.decode.id)
+        if(!resultPaciente) return message.ERROR_INTERNAL_SERVER_MODEL // 500
+        if(resultPaciente.length < 1) return message.ERROR_NOT_FOUND // 404
+
+        let idPaciente = resultPaciente[0].id
+
         let result = await pacienteDAO.updatePrimeiroAcessoPaciente(paciente, idPaciente)
 
         if(!result) return message.ERROR_INTERNAL_SERVER_MODEL // 500
@@ -255,7 +271,12 @@ const listarProfissionaisVinculados = async (token, filtro) => {
         let decodedToken = await decodeJWT(token)
         if(!decodedToken.status) return message.ERROR_INVALID_TOKEN // 401
 
-        let idPaciente = decodedToken.decode.id
+        let resultPaciente = await pacienteDAO.selectByIdUsuarioPaciente(decodedToken.decode.id)
+        if(!resultPaciente) return message.ERROR_INTERNAL_SERVER_MODEL // 500
+        if(resultPaciente.length < 1) return message.ERROR_NOT_FOUND // 404
+
+        let idPaciente = resultPaciente[0].id
+
         let resultBuscarId = await buscarPaciente(idPaciente)
         if(!resultBuscarId.status) return resultBuscarId // 400 e 404
 
@@ -307,7 +328,12 @@ const inserirNovoVinculo = async (token, idProfissional) => {
 
         let decodedToken = await decodeJWT(token)
         if(!decodedToken.status) return message.ERROR_INVALID_TOKEN // 401
-        let idPaciente = decodedToken.decode.id
+
+        let resultPaciente = await pacienteDAO.selectByIdUsuarioPaciente(decodedToken.decode.id)
+        if(!resultPaciente) return message.ERROR_INTERNAL_SERVER_MODEL // 500
+        if(resultPaciente.length < 1) return message.ERROR_NOT_FOUND // 404
+
+        let idPaciente = resultPaciente[0].id
 
         let resultBuscarIdPaciente = await buscarPaciente(idPaciente)
         if(!resultBuscarIdPaciente.status) return resultBuscarIdPaciente // 400 e 404
@@ -338,7 +364,12 @@ const excluirVinculo = async (token, idProfissional) => {
 
         let decodedToken = await decodeJWT(token)
         if(!decodedToken.status) return message.ERROR_INVALID_TOKEN // 401
-        let idPaciente = decodedToken.decode.id
+
+        let resultPaciente = await pacienteDAO.selectByIdUsuarioPaciente(decodedToken.decode.id)
+        if(!resultPaciente) return message.ERROR_INTERNAL_SERVER_MODEL // 500
+        if(resultPaciente.length < 1) return message.ERROR_NOT_FOUND // 404
+
+        let idPaciente = resultPaciente[0].id
 
         let result = await vinculoController.excluirVinculoPacienteProfissional(idPaciente, idProfissional)
 
