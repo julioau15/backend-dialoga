@@ -48,8 +48,8 @@ const gerarCodigoVerificacao = async (dados, contentType) => {
         let validarEmail = validarEmailFinalidade(dados)
         if(validarEmail) return validarEmail // 400
 
-        // código numérico de 6 dígitos
-        let codigoPlano = String(crypto.randomInt(0, 1000000)).padStart(6, '0')
+        // código numérico de 4 dígitos
+        let codigoPlano = String(crypto.randomInt(0, 10000)).padStart(4, '0')
 
         let novoCodigo = {
             email: dados.email.trim().toLowerCase(),
@@ -102,7 +102,7 @@ const validarCodigoVerificacao = async (dados, contentType, consumir = true) => 
         let validarEmail = validarEmailFinalidade(dados)
         if(validarEmail) return validarEmail // 400
 
-        if(typeof dados.codigo != 'string' || !/^\d{6}$/.test(dados.codigo)){
+        if(typeof dados.codigo != 'string' || !/^\d{4}$/.test(dados.codigo)){
             message.ERROR_BAD_REQUEST.field = '[CODIGO] INVÁLIDO'
             return message.ERROR_BAD_REQUEST // 400
         }
