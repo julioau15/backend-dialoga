@@ -29,6 +29,17 @@ const insertAdministradorProfissional = async (administradorProfissional) => {
     return false
 }
 
+// cria a solicitação de aprovação PENDENTE (status NULL, sem admin e sem data de decisão)
+const insertSolicitacaoPendente = async (idProfissional) => {
+    let sql = `INSERT INTO tbl_administrador_profissional (status_aprovacao, data_decisao, criado_em, id_profissional, id_administrador)
+               VALUES (NULL, NULL, now(), ?, NULL)`
+    try {
+        let response = await knexConex.raw(sql, [idProfissional])
+        if(response) return response[0].insertId
+    } catch (error) { console.log(error) }
+    return false
+}
+
 // update de administradorProfissional
 const updateAdministradorProfissional = async (administradorProfissional) => {
     let sql = `UPDATE tbl_administrador_profissional
@@ -154,6 +165,7 @@ module.exports = {
     selectAllAdministradorProfissional,
     selectByIdAdministradorProfissional,
     deleteAdministradorProfissional,
+    insertSolicitacaoPendente,
     aprovarAdministradorProfissional,
     reprovarAdministradorProfissional
 }

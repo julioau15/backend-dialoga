@@ -33,6 +33,39 @@ const insertProfissional = async (profissional) => {
     return false
 }
 
+// verifica se já existe e-mail, CPF ou CRP cadastrados. Devolve o primeiro campo duplicado ('email' | 'cpf' | 'crp') ou null
+const selectCampoDuplicado = async ({ email, cpf, crp, celular }) => {
+    // compara o celular só pelos dígitos, ignorando ( ) - e espaços
+    const limpa = (col) => `REPLACE(REPLACE(REPLACE(REPLACE(${col}, '(', ''), ')', ''), '-', ''), ' ', '')`
+    try {
+        let r
+        if (email) {
+            r = await knexConex.raw('SELECT 1 FROM tbl_usuario WHERE email = ? LIMIT 1', [email])
+            if (r[0].length > 0) return 'email'
+        }
+        if (cpf) {
+            r = await knexConex.raw('SELECT 1 FROM tbl_profissional WHERE cpf = ? LIMIT 1', [cpf])
+            if (r[0].length > 0) return 'cpf'
+        }
+        if (crp) {
+            r = await knexConex.raw('SELECT 1 FROM tbl_profissional WHERE crp = ? LIMIT 1', [crp])
+            if (r[0].length > 0) return 'crp'
+        }
+        const digitos = String(celular ?? '').replace(/\D/g, '')
+        if (digitos) {
+            r = await knexConex.raw(
+                `SELECT 1 FROM tbl_profissional WHERE ${limpa('celular')} = ?
+                 UNION ALL
+                 SELECT 1 FROM tbl_paciente WHERE ${limpa('celular')} = ?
+                 LIMIT 1`,
+                [digitos, digitos]
+            )
+            if (r[0].length > 0) return 'celular'
+        }
+    } catch (error) { console.log(error) }
+    return null
+}
+
 // update de profissional
 const updateProfissional = async (profissional) => {
     let sql = `UPDATE tbl_profissional
@@ -140,6 +173,7 @@ const selectByIdUsuarioProfissional = async (idUsuario) => {
 
 module.exports = {
     insertProfissional,
+    selectCampoDuplicado,
     updateProfissional,
     selectAllProfissional,
     selectByIdProfissional,

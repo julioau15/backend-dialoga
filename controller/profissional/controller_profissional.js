@@ -10,6 +10,7 @@ const profissionalDAO = require('../../model/DAO/profissional/profissional.js')
 const usuarioController = require('../usuario/controller_usuario.js')
 const vinculoController = require('../vinculo/controller_vinculo.js')
 const profissionalEspecialidadeController = require('../profissional_especialidade/controller_profissional_especialidade.js')
+const administradorProfissionalDAO = require('../../model/DAO/administrador_profissional/administrador_profissional.js')
 const bcrypt = require('../../services/bcrypt.js')
 const { decodeJWT } = require('../../middleware/middlewareJWT.js')
 const {uploadFiles} = require('../upload/controller_upload_azure.js')
@@ -20,6 +21,15 @@ const inserirNovaProfissional = async (profissional, foto_avatar, contentType) =
     try {
         let validar = await validarDados(profissional, contentType)
         if(validar) return validar // 400 ou 415
+
+        // confere e-mail/CPF/CRP ANTES de criar qualquer coisa (evita usuário "órfão" no banco)
+        const duplicado = await profissionalDAO.selectCampoDuplicado(profissional)
+        if(duplicado){
+            const nomes = { email: 'E-mail', cpf: 'CPF', crp: 'CRP', celular: 'Celular' }
+            message.ERROR_CONFLICT.message = `${nomes[duplicado]} já cadastrado.`
+            message.ERROR_CONFLICT.field = `[${duplicado.toUpperCase()}] JÁ CADASTRADO`
+            return message.ERROR_CONFLICT // 409
+        }
 
         profissional.senha_hash = await bcrypt.criarHash(profissional.senha)
         profissional.nivel = 1 // define o nivel do usuario como profissional
@@ -41,7 +51,14 @@ const inserirNovaProfissional = async (profissional, foto_avatar, contentType) =
         profissional.id_usuario = resultUsuario.response.usuario.id
         let result = await profissionalDAO.insertProfissional(profissional)
 
-        if(!result) return message.ERROR_INTERNAL_SERVER_MODEL
+        if(!result){
+            // desfaz o usuário criado, senão o e-mail fica "preso" sem profissional
+            await usuarioController.excluirUsuario(profissional.id_usuario)
+            return message.ERROR_INTERNAL_SERVER_MODEL
+        }
+
+        // registra o pedido de aprovação (pendente) para o admin avaliar
+        await administradorProfissionalDAO.insertSolicitacaoPendente(result)
 
         let resultBuscarUsuario = await usuarioController.buscarUsuario(profissional.id_usuario)
         if(resultBuscarUsuario.status){

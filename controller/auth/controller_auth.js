@@ -9,10 +9,67 @@ const config_message = require('../module/configMessages.js')
 const authDAO = require('../../model/DAO/auth/auth.js')
 const usuarioDAO = require('../../model/DAO/usuario/usuario.js')
 const jwt = require('../../middleware/middlewareJWT.js')
+const profissionalDAO = require('../../model/DAO/profissional/profissional.js')
 const bcrypt = require('../../services/bcrypt.js')
 const codigoController = require('../codigo_verificacao/controller_codigo_verificacao.js')
 
 const FINALIDADE_RECUPERAR_SENHA = 'recuperar_senha'
+
+const NIVEL_PROFISSIONAL = 1
+
+// Se for profissional e ainda não estiver aprovado, devolve a resposta 403 com o "codigo"
+// que o front usa para decidir a tela. Se estiver liberado (ou não for profissional), devolve null.
+const bloquearProfissionalNaoAprovado = async (usuario) => {
+    if (Number(usuario.nivel) !== NIVEL_PROFISSIONAL) return null
+
+    const status = await authDAO.selectStatusAprovacaoProfissional(usuario.id)
+
+    if (status === 1 || status === true) return null
+
+    if (status === 0 || status === false) {
+        return {
+            status: false,
+            status_code: 403,
+            codigo: 'PROFISSIONAL_RECUSADO',
+            message: 'Seu cadastro não foi aprovado pela equipe.'
+        }
+    }
+
+    return {
+        status: false,
+        status_code: 403,
+        codigo: 'PROFISSIONAL_EM_ANALISE',
+        message: 'Seu cadastro está em análise pela equipe.'
+    }
+}
+
+// verifica (antes de criar a conta) se e-mail / CPF / CRP já estão cadastrados
+// query: ?email=...&cpf=...&crp=...  (cpf e crp são opcionais, só para profissional)
+const verificarCadastroDisponivel = async (query = {}) => {
+    let message = JSON.parse(JSON.stringify(config_message))
+    try {
+        const email = String(query.email ?? '').trim()
+        const cpf   = String(query.cpf ?? '').replace(/\D/g, '')
+        const crp   = String(query.crp ?? '').trim()
+        const celular = String(query.celular ?? '').trim()
+
+        if (!email) {
+            message.ERROR_BAD_REQUEST.field = '[EMAIL] INVÁLIDO'
+            return message.ERROR_BAD_REQUEST // 400
+        }
+
+        const duplicado = await profissionalDAO.selectCampoDuplicado({ email, cpf, crp, celular })
+        if (duplicado) {
+            const nomes = { email: 'E-mail', cpf: 'CPF', crp: 'CRP', celular: 'Celular' }
+            message.ERROR_CONFLICT.message = `${nomes[duplicado]} já cadastrado.`
+            message.ERROR_CONFLICT.field = `[${duplicado.toUpperCase()}] JÁ CADASTRADO`
+            return message.ERROR_CONFLICT // 409
+        }
+
+        return await montarMensagem(message, message.SUCESS_RESPONSE, [{ disponivel: true }])
+    } catch (error) { console.log(error) }
+    return message.ERROR_INTERNAL_SERVER_CONTROLLER
+}
 
 // autenticar usuário
 const autenticarUsuario = async (usuario, contentType) => {
@@ -40,6 +97,10 @@ const autenticarUsuario = async (usuario, contentType) => {
 
         if (!validarSenha)
             return message.ERROR_UNAUTHORIZED
+
+        // profissional só entra depois de aprovado pelo admin
+        const bloqueio = await bloquearProfissionalNaoAprovado(dadosUsuario[0])
+        if (bloqueio) return bloqueio
 
         // cria os dados que serão armazenados dentro do JWT
         const payload = {
@@ -88,6 +149,9 @@ const autenticarUsuarioGoogle = async (id_google, contentType) => {
         // verifica se o usuário foi encontrado
         if (!dadosUsuario || dadosUsuario.length < 1)
             return message.ERROR_UNAUTHORIZED
+
+        const bloqueio = await bloquearProfissionalNaoAprovado(dadosUsuario[0])
+        if (bloqueio) return bloqueio
 
         // cria os dados que serão armazenados dentro do JWT
         const payload = {
@@ -289,6 +353,7 @@ const montarMensagem = async (base,status,response = null) => {
 module.exports = {
     autenticarUsuario,
     autenticarUsuarioGoogle,
+    verificarCadastroDisponivel,
     solicitarRecuperarSenhaUsuario,
     validarCodigoUsuario,
     redefinirSenhaUsuario

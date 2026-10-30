@@ -33,7 +33,20 @@ const {
     inserirNovaDisponibilidadeByToken
 } = require ('../controller/disponibilidade/controller_disponibilidade.js')
 
-const formatarJson = async (dados, acao) => {
+// converte o id_especialidade (que chega como texto no multipart) em array, sem quebrar se vier vazio/inválido
+const parseEspecialidades = (valor) => {
+    if (valor === undefined || valor === null || valor === '') return []
+    if (Array.isArray(valor)) return valor.map(Number)
+    try {
+        const parsed = JSON.parse(valor)
+        return Array.isArray(parsed) ? parsed.map(Number) : [Number(parsed)]
+    } catch {
+        // aceita também formato "1,3"
+        return String(valor).split(',').map(Number).filter(n => !isNaN(n))
+    }
+}
+
+const formatarJson = async (dados = {}, acao) => {
     const profissionalInserir = {
         nome_completo       : String(dados.nome_completo),
         celular             : String(dados.celular),
@@ -41,14 +54,14 @@ const formatarJson = async (dados, acao) => {
         senha               : String(dados.senha),
         cpf                 : String(dados.cpf),
         crp                 : String(dados.crp),
-        instituicao_clinica : String(dados.instituicao_clinica),
-        id_especialidade    : JSON.parse(dados.id_especialidade)
+        instituicao_clinica : dados.instituicao_clinica ? String(dados.instituicao_clinica) : null,
+        id_especialidade    : parseEspecialidades(dados.id_especialidade)
     }
 
      const profissionalEditar = {
         nome_completo       : String(dados.nome_completo),
         celular             : String(dados.celular),
-        id_especialidade    : JSON.parse(dados.id_especialidade)
+        id_especialidade    : parseEspecialidades(dados.id_especialidade)
     }
 
     if(acao == 'inserir') return profissionalInserir

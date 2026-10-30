@@ -15,6 +15,13 @@ const inserirNovaUsuario = async (usuario, contentType) => {
         let validar = await validarDados(usuario, contentType)
         if(validar) return validar // 400 ou 415
 
+        // e-mail já cadastrado -> 409 (em vez de estourar erro 500 no banco)
+        if(await usuarioDAO.existeEmailUsuario(usuario.email)){
+            message.ERROR_CONFLICT.message = 'E-mail já cadastrado.'
+            message.ERROR_CONFLICT.field = '[EMAIL] JÁ CADASTRADO'
+            return message.ERROR_CONFLICT // 409
+        }
+
         let result = await usuarioDAO.insertUsuario(usuario)
 
         if(!result) return message.ERROR_INTERNAL_SERVER_MODEL

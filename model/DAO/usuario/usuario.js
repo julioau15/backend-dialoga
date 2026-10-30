@@ -94,7 +94,17 @@ const deleteUsuario = async (id) => {
     return false
 }
 
+// verifica se já existe um usuário com o e-mail informado
+const existeEmailUsuario = async (email) => {
+    try {
+        let response = await knexConex.raw('SELECT 1 FROM tbl_usuario WHERE email = ? LIMIT 1', [email])
+        return response[0].length > 0
+    } catch (error) { console.log(error) }
+    return false
+}
+
 module.exports = {
+    existeEmailUsuario,
     insertUsuario,
     updateUsuario,
     selectAllUsuario,
