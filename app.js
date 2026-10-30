@@ -57,6 +57,13 @@ const verifyJWTExcetoCadastro = (req, res, next) => {
     return verifyJWT(req, res, next)
 }
 
+// Libera apenas a LISTAGEM de especialidades (GET na raiz), usada no formulário de cadastro do profissional antes do login.
+// As demais rotas de especialidades continuam protegidas pelo verifyJWT.
+const verifyJWTExcetoListaEspecialidades = (req, res, next) => {
+    if (req.method === 'GET' && req.path === '/') return next()
+    return verifyJWT(req, res, next)
+}
+
 // ******** ROTAS ***********
 // Import das rotas
 const administradorProfissionalRouter = require('./routes/administrador_profissional.routes.js')
@@ -94,7 +101,7 @@ app.use('/v1/dialoga/categorias', cors(), verifyJWT, categoriaRouter)
 app.use('/v1/dialoga/categorias-compartilhadas', cors(), verifyJWT, categoriaCompartilhadaRouter)
 app.use('/v1/dialoga/consultas', cors(), verifyJWT, consultaRouter)
 app.use('/v1/dialoga/disponibilidades', cors(), verifyJWT, disponibilidadeRouter)
-app.use('/v1/dialoga/especialidades', cors(), verifyJWT, especialidadeRouter)
+app.use('/v1/dialoga/especialidades', cors(), verifyJWTExcetoListaEspecialidades, especialidadeRouter)
 app.use('/v1/dialoga/horarios-tratamento', cors(), verifyJWT, horarioTratamentoRouter)
 app.use('/v1/dialoga/notificacoes', cors(), verifyJWT, notificacaoRouter)
 app.use('/v1/dialoga/opcoes-pergunta', cors(), verifyJWT, opcaoPerguntaRouter)

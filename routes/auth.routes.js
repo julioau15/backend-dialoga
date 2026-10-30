@@ -59,6 +59,7 @@ const bodyParserJSON = bodyParser.json()
 const {
     autenticarUsuario,
     autenticarUsuarioGoogle,
+    verificarCadastroDisponivel,
     solicitarRecuperarSenhaUsuario,
     validarCodigoUsuario,
     redefinirSenhaUsuario
@@ -111,6 +112,12 @@ router.post('/recuperar-senha/redefinir', bodyParserJSON, async (req,res) => {
 
     let result = await redefinirSenhaUsuario(dados, contentType)
 
+    res.status(result.status_code).json(result)
+})
+
+// endpoint público: confere se e-mail / CPF / CRP já estão cadastrados (usado no passo 1 do cadastro)
+router.get('/verificar-cadastro', async (req,res) => {
+    let result = await verificarCadastroDisponivel(req.query)
     res.status(result.status_code).json(result)
 })
 

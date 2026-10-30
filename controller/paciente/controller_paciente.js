@@ -9,6 +9,7 @@ const config_message = require('../module/configMessages.js')
 const pacienteDAO = require('../../model/DAO/paciente/paciente.js')
 const usuarioController = require('../usuario/controller_usuario.js')
 const vinculoController = require('../vinculo/controller_vinculo.js')
+const profissionalDAO = require('../../model/DAO/profissional/profissional.js')
 const bycrypt = require('../../services/bcrypt.js')
 const { decodeJWT } = require('../../middleware/middlewareJWT.js')
 const {uploadFiles} = require('../upload/controller_upload_azure.js')
@@ -19,6 +20,14 @@ const inserirNovaPaciente = async (paciente,foto_avatar, contentType) => {
     try {
         let validar = await validarDados(paciente, contentType)
         if(validar) return validar // 400 ou 415
+
+        // e-mail e celular já cadastrados -> 409 (antes de criar o usuário)
+        const duplicado = await profissionalDAO.selectCampoDuplicado({ email: paciente.email, celular: paciente.celular })
+        if(duplicado){
+            message.ERROR_CONFLICT.message = duplicado == 'email' ? 'E-mail já cadastrado.' : 'Celular já cadastrado.'
+            message.ERROR_CONFLICT.field = `[${duplicado.toUpperCase()}] JÁ CADASTRADO`
+            return message.ERROR_CONFLICT // 409
+        }
 
         paciente.senha_hash = await bycrypt.criarHash(paciente.senha)
         paciente.nivel = 2 // define o nivel do usuario como paciente
