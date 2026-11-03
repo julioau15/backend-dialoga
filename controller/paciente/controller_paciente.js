@@ -252,6 +252,9 @@ const primeiroAcessoPaciente = async (paciente, token) => {
         let decodedToken = await decodeJWT(token)
         if(!decodedToken.status) return message.ERROR_INVALID_TOKEN // 401
 
+        let validar = await validarDadosPrimeiroAcesso(paciente)
+        if(validar) return validar // 400
+
         let resultPaciente = await pacienteDAO.selectByIdUsuarioPaciente(decodedToken.decode.id)
         if(!resultPaciente) return message.ERROR_INTERNAL_SERVER_MODEL // 500
         if(resultPaciente.length < 1) return message.ERROR_NOT_FOUND // 404
@@ -331,6 +334,7 @@ const listarProfissionaisVinculados = async (token, filtro) => {
 
 // insere um novo vinculo entre profissional e paciente
 const inserirNovoVinculo = async (token, idProfissional) => {
+    const profissionalController = require('../profissional/controller_profissional.js')
     let message = JSON.parse(JSON.stringify(config_message))
 
     try {
@@ -347,7 +351,7 @@ const inserirNovoVinculo = async (token, idProfissional) => {
         let resultBuscarIdPaciente = await buscarPaciente(idPaciente)
         if(!resultBuscarIdPaciente.status) return resultBuscarIdPaciente // 400 e 404
 
-        let resultBuscarIdProfissional = await usuarioController.buscarUsuario(idProfissional)
+        let resultBuscarIdProfissional = await profissionalController.buscarProfissional(idProfissional)
         if(!resultBuscarIdProfissional.status) return resultBuscarIdProfissional // 400 e 404
 
         let vinculo = {
@@ -451,6 +455,41 @@ const validarDados = async (paciente, contentType) => {
     }
 
     return false
+}
+
+const validarDadosPrimeiroAcesso = async (paciente) => {
+    let message = JSON.parse(JSON.stringify(config_message))
+
+    // Valida o apelido opcional
+    if(paciente.apelido != undefined && paciente.apelido != null &&
+       (typeof paciente.apelido != 'string' || paciente.apelido.length > 80)){
+        message.ERROR_BAD_REQUEST.field = '[APELIDO] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Valida a data de nascimento opcional
+    if(paciente.data_nascimento != undefined && paciente.data_nascimento != null && !validarDataNascimento(paciente.data_nascimento)){
+        message.ERROR_BAD_REQUEST.field = '[DATA_NASCIMENTO] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    return false
+}
+
+// verifica se a data está no formato AAAA-MM-DD, existe no calendário e não é futura
+const validarDataNascimento = (data) => {
+    if(typeof data != 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(data)) return false
+
+    const [ano, mes, dia] = data.split('-').map(Number)
+    const dataInformada = new Date(Date.UTC(ano, mes - 1, dia))
+
+    // datas como 2026-02-30 são ajustadas pelo Date e deixam de bater com o valor informado
+    if(dataInformada.getUTCFullYear() != ano || dataInformada.getUTCMonth() != mes - 1 || dataInformada.getUTCDate() != dia) return false
+
+    const agora = new Date()
+    const hoje = Date.UTC(agora.getFullYear(), agora.getMonth(), agora.getDate())
+
+    return dataInformada.getTime() <= hoje
 }
 
 const validarId = async (id) => {

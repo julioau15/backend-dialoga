@@ -10,12 +10,14 @@ const authDAO = require('../../model/DAO/auth/auth.js')
 const usuarioDAO = require('../../model/DAO/usuario/usuario.js')
 const jwt = require('../../middleware/middlewareJWT.js')
 const profissionalDAO = require('../../model/DAO/profissional/profissional.js')
+const pacienteDAO = require('../../model/DAO/paciente/paciente.js')
 const bcrypt = require('../../services/bcrypt.js')
 const codigoController = require('../codigo_verificacao/controller_codigo_verificacao.js')
 
 const FINALIDADE_RECUPERAR_SENHA = 'recuperar_senha'
 
 const NIVEL_PROFISSIONAL = 1
+const NIVEL_PACIENTE = 2
 
 // Se for profissional e ainda não estiver aprovado, devolve a resposta 403 com o "codigo"
 // que o front usa para decidir a tela. Se estiver liberado (ou não for profissional), devolve null.
@@ -102,6 +104,17 @@ const autenticarUsuario = async (usuario, contentType) => {
         const bloqueio = await bloquearProfissionalNaoAprovado(dadosUsuario[0])
         if (bloqueio) return bloqueio
 
+        // paciente recebe na resposta se já concluiu o primeiro acesso (não vai para o JWT)
+        let primeiroAcessoConcluido = null
+
+        if (Number(dadosUsuario[0].nivel) === NIVEL_PACIENTE) {
+            const resultPaciente = await pacienteDAO.selectByIdUsuarioPaciente(dadosUsuario[0].id)
+            if (!resultPaciente) return message.ERROR_INTERNAL_SERVER_MODEL // 500
+            if (resultPaciente.length < 1) return message.ERROR_NOT_FOUND // 404
+
+            primeiroAcessoConcluido = Number(resultPaciente[0].primeiro_acesso_concluido)
+        }
+
         // cria os dados que serão armazenados dentro do JWT
         const payload = {
             id: dadosUsuario[0].id,
@@ -115,6 +128,9 @@ const autenticarUsuario = async (usuario, contentType) => {
         // adiciona o token apenas na resposta
         dadosUsuario[0].token = token
         delete dadosUsuario[0].senha_hash
+
+        if (primeiroAcessoConcluido !== null)
+            dadosUsuario[0].primeiro_acesso_concluido = primeiroAcessoConcluido
 
         return await montarMensagem(
             message,

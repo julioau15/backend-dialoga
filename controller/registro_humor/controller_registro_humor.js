@@ -7,6 +7,7 @@
 
 const config_message = require('../module/configMessages.js')
 const registroHumorDAO = require('../../model/DAO/registro_humor/registro_humor.js')
+const pacienteDAO = require('../../model/DAO/paciente/paciente.js')
 const { decodeJWT } = require('../../middleware/middlewareJWT.js')
 
 // inserir novo registroHumor
@@ -117,7 +118,11 @@ const inserirNovaRegistroHumorByToken = async (registroHumor, token, contentType
         let decodedToken = await decodeJWT(token)
         if(!decodedToken.status) return message.ERROR_INVALID_TOKEN
 
-        let idPaciente = decodedToken.decode.id
+        let resultPaciente = await pacienteDAO.selectByIdUsuarioPaciente(decodedToken.decode.id)
+        if(!resultPaciente) return message.ERROR_INTERNAL_SERVER_MODEL // 500
+        if(resultPaciente.length < 1) return message.ERROR_NOT_FOUND // 404
+
+        let idPaciente = resultPaciente[0].id
 
         registroHumor.id_paciente = idPaciente
 
@@ -143,7 +148,11 @@ const listarRegistroHumorByToken = async (token, filtro = {}) => {
         let decodedToken = await decodeJWT(token)
         if(!decodedToken.status) return message.ERROR_INVALID_TOKEN
 
-        let idPaciente = decodedToken.decode.id
+        let resultPaciente = await pacienteDAO.selectByIdUsuarioPaciente(decodedToken.decode.id)
+        if(!resultPaciente) return message.ERROR_INTERNAL_SERVER_MODEL // 500
+        if(resultPaciente.length < 1) return message.ERROR_NOT_FOUND // 404
+
+        let idPaciente = resultPaciente[0].id
 
         let result = await registroHumorDAO.selectByIdPacienteRegistroHumor(idPaciente, filtro)
 
