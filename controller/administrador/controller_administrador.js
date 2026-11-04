@@ -177,7 +177,7 @@ const buscarAdministrador = async (id) => {
 }
 
 // excluir administrador pelo id
-const excluirAdministrador = async (id) => {
+const excluirAdministrador = async (id, token) => {
     let message = JSON.parse(JSON.stringify(config_message))
 
     try {
@@ -185,9 +185,29 @@ const excluirAdministrador = async (id) => {
         let resultBuscarId = await buscarAdministrador(id)
         if(!resultBuscarId.status) return resultBuscarId // 400 e 404
 
-        let result = await administradorDAO.deleteAdministrador(id)
+        let alvo = resultBuscarId.response.administrador[0]
 
-        if(!result) return message.ERROR_INTERNAL_SERVER_MODEL // 500
+        let decodedToken = await decodeJWT(token)
+        if(!decodedToken.status) return message.ERROR_INVALID_TOKEN
+
+        // Bloqueia a remoção da própria conta (o token traz o id de tbl_usuario)
+        if(Number(decodedToken.decode.id) === Number(alvo.id_usuario)){
+            message.ERROR_FORBIDDEN.message = 'Não é possível remover a própria conta.'
+            return message.ERROR_FORBIDDEN // 403
+        }
+
+        // Bloqueia a remoção do último administrador
+        let administradores = await administradorDAO.selectAllAdministrador()
+        if(!administradores) return message.ERROR_INTERNAL_SERVER_MODEL // 500
+
+        if(administradores.length <= 1){
+            message.ERROR_FORBIDDEN.message = 'Não é possível remover o último administrador.'
+            return message.ERROR_FORBIDDEN // 403
+        }
+
+        // Exclui o usuário para retirar o acesso; a FK com ON DELETE CASCADE apaga o administrador
+        let result = await usuarioController.excluirUsuario(alvo.id_usuario)
+        if(!result.status) return result // 400, 404 ou 500
 
         return await montarMensagem(message, message.SUCESS_DELETE_ITEM)
 
@@ -313,7 +333,7 @@ const validarDados = async (administrador, contentType) => {
 
     // Valida nova senha
     if(administrador?.senha != undefined && administrador?.senha != null &&
-       (typeof administrador?.senha != 'string' || administrador?.senha.length > 30)){
+       (typeof administrador?.senha != 'string' || administrador?.senha.length < 4 || administrador?.senha.length > 30)){
         message.ERROR_BAD_REQUEST.field = '[senha] INVÁLIDA'
         return message.ERROR_BAD_REQUEST
     }
