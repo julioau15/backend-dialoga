@@ -44,6 +44,29 @@ const enviarCodigoVerificacao = async (email, codigo, finalidade, minutosExpirac
     return false
 }
 
+const enviarSenhaAcesso = async (email, nome, senha) => {
+    try {
+        await transporter.sendMail({
+            from: process.env.SMTP_FROM,
+            to: email,
+            subject: 'Seus dados de acesso',
+            text: `Olá, ${nome}! Seu cadastro como administrador foi realizado. Sua senha de acesso é: ${senha}. Recomendamos alterá-la após o primeiro login.`,
+            html: `
+                <p>Olá, ${nome}!</p>
+                <p>Seu cadastro como administrador foi realizado.</p>
+                <p>Sua senha de acesso é:</p>
+                <h2 style="letter-spacing: 2px;">${senha}</h2>
+                <p>Recomendamos alterá-la após o primeiro login.</p>`
+        })
+
+        return true
+
+    } catch (error) { console.log(error) }
+
+    return false
+}
+
 module.exports = {
-    enviarCodigoVerificacao
+    enviarCodigoVerificacao,
+    enviarSenhaAcesso
 }
