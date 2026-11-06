@@ -394,6 +394,30 @@ const excluirVinculo = async (token, idProfissional) => {
     return message.ERROR_INTERNAL_SERVER_CONTROLLER // 500
 }
 
+// buscar paciente pelo nome ou e-mail
+const buscarPacientePorNomeOuEmail = async (busca) => {
+    let message = JSON.parse(JSON.stringify(config_message))
+
+    try {
+        const validarBusca = await validarTermoBusca(busca)
+        if(validarBusca) return validarBusca // 400
+
+        let result = await pacienteDAO.selectBuscaPaciente(busca.trim())
+
+        if(!result) return message.ERROR_INTERNAL_SERVER_MODEL // 500
+
+        // verifica se o array é vazio
+        if(result.length <= 0) return message.ERROR_NOT_FOUND // 404
+
+        let buscaPacienteMessage = await montarMensagem(message, message.SUCESS_RESPONSE, result)
+        message.DEFAULT_MESSAGE.response.count = result.length
+
+        return buscaPacienteMessage // 200
+
+    } catch (error) {console.log(error)}
+    return message.ERROR_INTERNAL_SERVER_CONTROLLER // 500
+}
+
 const validarDados = async (paciente, contentType) => {
     let message = JSON.parse(JSON.stringify(config_message))
 
@@ -476,6 +500,17 @@ const validarDadosPrimeiroAcesso = async (paciente) => {
     return false
 }
 
+const validarTermoBusca = async (busca) => {
+    let message = JSON.parse(JSON.stringify(config_message))
+
+    if(typeof busca != 'string' || busca.trim() == '' || busca.length > 150){
+        message.ERROR_BAD_REQUEST.field = '[BUSCA] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    return false
+}
+
 // verifica se a data está no formato AAAA-MM-DD, existe no calendário e não é futura
 const validarDataNascimento = (data) => {
     if(typeof data != 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(data)) return false
@@ -524,5 +559,6 @@ module.exports = {
     primeiroAcessoPaciente,
     listarProfissionaisVinculados,
     inserirNovoVinculo,
-    excluirVinculo
+    excluirVinculo,
+    buscarPacientePorNomeOuEmail
 }
