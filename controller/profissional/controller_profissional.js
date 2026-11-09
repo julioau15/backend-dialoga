@@ -276,6 +276,26 @@ const buscarProfissionalByToken = async (token) => {
     return message.ERROR_INTERNAL_SERVER_CONTROLLER // 500
 }
 
+const primeiroAcessoProfissional = async (token) => {
+    let message = JSON.parse(JSON.stringify(config_message))
+
+    try {
+        let resultToken = await obterIdProfissionalByToken(token)
+        if(resultToken.erro) return resultToken.erro
+
+        let idProfissional = resultToken.id
+        let result = await profissionalDAO.updatePrimeiroAcessoProfissional(idProfissional)
+
+        if(!result) return message.ERROR_INTERNAL_SERVER_MODEL // 500
+
+        return await montarMensagem(message, message.SUCESS_UPDATE_ITEM, {
+            id: idProfissional,
+            primeiro_acesso_concluido: 1
+        })
+    } catch (error) {console.log(error)}
+    return message.ERROR_INTERNAL_SERVER_CONTROLLER // 500
+}
+
 const editarProfissionalByToken = async (profissional, token, foto_avatar, contentType) => {
     let message = JSON.parse(JSON.stringify(config_message))
 
@@ -596,6 +616,7 @@ module.exports = {
     buscarProfissionalByIdUsuario,
     excluirProfissional,
     buscarProfissionalByToken,
+    primeiroAcessoProfissional,
     editarProfissionalByToken,
     listarPacientesVinculados,
     inserirNovoVinculo,

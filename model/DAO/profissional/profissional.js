@@ -114,6 +114,20 @@ const updateProfissional = async (profissional) => {
     return false
 }
 
+const updatePrimeiroAcessoProfissional = async (id) => {
+    let sql = `UPDATE tbl_profissional
+               SET primeiro_acesso_concluido = 1
+               WHERE id = ?`
+    try {
+        let response = await knexConex.raw(sql, [id])
+
+        if(response) return response
+
+    } catch (error) { console.log(error) }
+
+    return false
+}
+
 // select de todas profissionals
 const selectAllProfissional = async () => {
     let sql = `SELECT
@@ -202,6 +216,7 @@ module.exports = {
     selectCampoDuplicado,
     selectBuscaProfissionaisAprovados,
     updateProfissional,
+    updatePrimeiroAcessoProfissional,
     selectAllProfissional,
     selectByIdProfissional,
     deleteProfissional,

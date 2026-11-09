@@ -23,6 +23,7 @@ const {
     buscarProfissional,
     excluirProfissional,
     buscarProfissionalByToken,
+    primeiroAcessoProfissional,
     editarProfissionalByToken,
     listarPacientesVinculados,
     inserirNovoVinculo,
@@ -92,6 +93,13 @@ router.get('/me/disponibilidades', async (req,res) => {
 router.get('/me', async (req,res) => {
     let token = req.headers['x-access-token']
     let result = await buscarProfissionalByToken(token)
+    res.status(result.status_code).json(result)
+})
+
+// endpoint para concluir o primeiro acesso do profissional
+router.post('/me/primeiro-acesso', async (req,res) => {
+    let token = req.headers['x-access-token']
+    let result = await primeiroAcessoProfissional(token)
     res.status(result.status_code).json(result)
 })
 

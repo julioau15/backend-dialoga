@@ -57,6 +57,7 @@ CREATE TABLE tbl_profissional (
     instituicao_clinica VARCHAR(150),
     foto_avatar TEXT,
     status TINYINT,
+    primeiro_acesso_concluido TINYINT DEFAULT 0,
     id_usuario  INT NOT NULL UNIQUE, -- CORRIGIDO: 1 usuário só pode virar 1 profissional
     
     CONSTRAINT FK_USUARIO_PROFISSIONAL
