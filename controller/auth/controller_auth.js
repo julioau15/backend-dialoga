@@ -11,11 +11,13 @@ const usuarioDAO = require('../../model/DAO/usuario/usuario.js')
 const jwt = require('../../middleware/middlewareJWT.js')
 const profissionalDAO = require('../../model/DAO/profissional/profissional.js')
 const pacienteDAO = require('../../model/DAO/paciente/paciente.js')
+const administradorDAO = require('../../model/DAO/administrador/administrador.js')
 const bcrypt = require('../../services/bcrypt.js')
 const codigoController = require('../codigo_verificacao/controller_codigo_verificacao.js')
 
 const FINALIDADE_RECUPERAR_SENHA = 'recuperar_senha'
 
+const NIVEL_ADMINISTRADOR = 0
 const NIVEL_PROFISSIONAL = 1
 const NIVEL_PACIENTE = 2
 
@@ -115,6 +117,17 @@ const autenticarUsuario = async (usuario, contentType) => {
             primeiroAcessoConcluido = Number(resultPaciente[0].primeiro_acesso_concluido)
         }
 
+         // administrador recebe na resposta se ainda usa a senha provisória (não vai para o JWT)
+        let senhaProvisoria = null
+
+        if (Number(dadosUsuario[0].nivel) === NIVEL_ADMINISTRADOR) {
+            const resultAdministrador = await administradorDAO.selectByIdUsuarioAdministrador(dadosUsuario[0].id)
+            if (!resultAdministrador) return message.ERROR_INTERNAL_SERVER_MODEL // 500
+            if (resultAdministrador.length < 1) return message.ERROR_NOT_FOUND // 404
+
+            senhaProvisoria = Number(resultAdministrador[0].senha_provisoria)
+        }
+
         // cria os dados que serão armazenados dentro do JWT
         const payload = {
             id: dadosUsuario[0].id,
@@ -131,6 +144,9 @@ const autenticarUsuario = async (usuario, contentType) => {
 
         if (primeiroAcessoConcluido !== null)
             dadosUsuario[0].primeiro_acesso_concluido = primeiroAcessoConcluido
+
+        if (senhaProvisoria !== null)
+            dadosUsuario[0].senha_provisoria = senhaProvisoria
 
         return await montarMensagem(
             message,

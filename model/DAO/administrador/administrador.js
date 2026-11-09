@@ -97,6 +97,43 @@ const selectByIdAdministrador = async (id) => {
     return false
 }
 
+// select de um administrador pelo id do usuário (tbl_usuario)
+const selectByIdUsuarioAdministrador = async (idUsuario) => {
+    let sql = `SELECT
+                   id,
+                   nome_completo,
+                   senha_provisoria,
+                   celular,
+                   foto_avatar,
+                   id_usuario
+               FROM tbl_administrador
+               WHERE id_usuario = ?`
+    try {
+        let response = await knexConex.raw(sql, [idUsuario])
+
+        if(response) return response[0]
+
+    } catch (error) { console.log(error) }
+
+    return false
+}
+
+// marca a senha do administrador como definida (senha_provisoria = 0)
+const updateSenhaDefinidaAdministrador = async (id) => {
+    let sql = `UPDATE tbl_administrador
+               SET senha_provisoria = 0
+               WHERE id = ?`
+    try {
+        let response = await knexConex.raw(sql, [id])
+
+        if(response) return response
+
+    } catch (error) { console.log(error) }
+
+    return false
+}
+
+
 // delete de administrador
 const deleteAdministrador = async (id) => {
     let sql = `DELETE FROM tbl_administrador
@@ -117,5 +154,7 @@ module.exports = {
     updateAdministrador,
     selectAllAdministrador,
     selectByIdAdministrador,
+    selectByIdUsuarioAdministrador,
+    updateSenhaDefinidaAdministrador,
     deleteAdministrador
 }

@@ -8,6 +8,7 @@
 const config_message = require('../module/configMessages.js')
 const administradorDAO = require('../../model/DAO/administrador/administrador.js')
 const usuarioController = require('../usuario/controller_usuario.js')
+const usuarioDAO = require('../../model/DAO/usuario/usuario.js')
 const {uploadFiles} = require('../upload/controller_upload_azure.js')
 const bcrypt = require('../../services/bcrypt.js')
 const { decodeJWT } = require('../../middleware/middlewareJWT.js')
@@ -289,6 +290,56 @@ const editarAdministradorByToken = async (administrador, token, foto_avatar, con
     return message.ERROR_INTERNAL_SERVER_CONTROLLER // 500
 }
 
+// troca a senha do administrador logado e marca a senha como definida (senha_provisoria = 0)
+const atualizarSenhaAdministradorByToken = async (dados, token, contentType) => {
+    let message = JSON.parse(JSON.stringify(config_message))
+
+    try {
+        let validar = await validarDadosSenha(dados, contentType)
+        if (validar) return validar // 400 ou 415
+
+        let decodedToken = await decodeJWT(token)
+        if (!decodedToken.status) return message.ERROR_INVALID_TOKEN // 401
+
+        let idUsuario = decodedToken.decode.id
+
+        // o token traz o id de tbl_usuario; o administrador é localizado pelo id_usuario
+        let resultAdministrador = await administradorDAO.selectByIdUsuarioAdministrador(idUsuario)
+        if (!resultAdministrador) return message.ERROR_INTERNAL_SERVER_MODEL // 500
+        if (resultAdministrador.length < 1) return message.ERROR_NOT_FOUND // 404
+
+        let resultUsuario = await usuarioDAO.selectByIdUsuario(idUsuario)
+        if (!resultUsuario) return message.ERROR_INTERNAL_SERVER_MODEL // 500
+        if (resultUsuario.length < 1) return message.ERROR_NOT_FOUND // 404
+
+        // confere a senha atual com o hash salvo em tbl_usuario
+        let senhaConfere = await bcrypt.validarSenha(dados.senha_atual, resultUsuario[0].senha_hash)
+        if (!senhaConfere) {
+            message.ERROR_BAD_REQUEST.message = 'Senha atual incorreta.'
+            message.ERROR_BAD_REQUEST.field = '[SENHA_ATUAL] INCORRETA'
+            return message.ERROR_BAD_REQUEST // 400
+        }
+
+        // grava o novo hash em tbl_usuario
+        let resultSenha = await usuarioDAO.updateUsuario({
+            id: Number(idUsuario),
+            senha_hash: await bcrypt.criarHash(dados.nova_senha)
+        })
+        if (!resultSenha) return message.ERROR_INTERNAL_SERVER_MODEL // 500
+
+        // marca a senha como definida em tbl_administrador
+        let result = await administradorDAO.updateSenhaDefinidaAdministrador(resultAdministrador[0].id)
+        if (!result) return message.ERROR_INTERNAL_SERVER_MODEL // 500
+
+        return await montarMensagem(message, message.SUCESS_UPDATE_ITEM, { senha_provisoria: 0 })
+
+    } catch (error) { console.log(error) }
+    return message.ERROR_INTERNAL_SERVER_CONTROLLER // 500
+}
+
+// gera senha aleatória (mínimo 6 caracteres), sem caracteres ambíguos como 0/O e l/1/I
+
+
 // gera senha aleatória (mínimo 6 caracteres), sem caracteres ambíguos como 0/O e l/1/I
 const gerarSenhaAleatoria = (tamanho = 8) => {
     const caracteres = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789'
@@ -351,6 +402,42 @@ const validarDados = async (administrador, contentType) => {
     return false
 }
 
+const validarDadosSenha = async (dados, contentType) => {
+    let message = JSON.parse(JSON.stringify(config_message))
+
+    // Rejeita requisições que não sejam JSON
+    if(String(contentType).toLowerCase() != 'application/json') return message.ERROR_CONTENT_TYPE // 415
+
+    // Garante que os dados foram informados como objeto
+    if(dados == undefined || dados == null || typeof dados != 'object'){
+        message.ERROR_BAD_REQUEST.field = '[DADOS] INVÁLIDOS'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Valida a senha atual (mesmo limite do login)
+    if(typeof dados.senha_atual != 'string' || dados.senha_atual.trim() == '' || dados.senha_atual.length > 30){
+        message.ERROR_BAD_REQUEST.message = 'Informe a senha atual.'
+        message.ERROR_BAD_REQUEST.field = '[SENHA_ATUAL] INVÁLIDA'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Valida a nova senha: de 6 a 30 caracteres
+    if(typeof dados.nova_senha != 'string' || dados.nova_senha.length < 6 || dados.nova_senha.length > 30){
+        message.ERROR_BAD_REQUEST.message = 'A nova senha deve ter de 6 a 30 caracteres.'
+        message.ERROR_BAD_REQUEST.field = '[NOVA_SENHA] INVÁLIDA'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // A nova senha precisa ser diferente da atual
+    if(dados.nova_senha == dados.senha_atual){
+        message.ERROR_BAD_REQUEST.message = 'A nova senha deve ser diferente da senha atual.'
+        message.ERROR_BAD_REQUEST.field = '[NOVA_SENHA] IGUAL À ATUAL'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    return false
+}
+
 const validarId = async (id) => {
     let message = JSON.parse(JSON.stringify(config_message))
     
@@ -380,5 +467,6 @@ module.exports = {
     buscarAdministrador,
     excluirAdministrador,
     buscarAdministradorByToken,
-    editarAdministradorByToken
+    editarAdministradorByToken,
+    atualizarSenhaAdministradorByToken
 }
