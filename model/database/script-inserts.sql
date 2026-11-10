@@ -5,6 +5,18 @@
 -- ============================================================
 USE db_dialoga;
 
+
+-- INSERTS --
+# ------- DIAS DA SEMANA (dados fixos) --------
+INSERT INTO tbl_dias_da_semana (dias_da_semana) VALUES
+('Domingo'),
+('Segunda-feira'),
+('Terça-feira'),
+('Quarta-feira'),
+('Quinta-feira'),
+('Sexta-feira'),
+('Sábado');
+
 -- ------------------------------------------------------------
 -- USUARIO (nivel: 0 = administrador, 1 = profissional, 2 = paciente)
 -- ids: 1 admin | 2,3,4 profissionais | 5..9 pacientes
@@ -62,7 +74,7 @@ INSERT INTO tbl_administrador_profissional (status_aprovacao, data_decisao, cria
 -- PACIENTE (primeiro_acesso_concluido: 1 = sim, 0 = não)
 -- ------------------------------------------------------------
 INSERT INTO tbl_paciente (nome_completo, apelido, data_nascimento, celular, foto_avatar, primeiro_acesso_concluido, status_atividade, id_usuario) VALUES
-('João Pedro Almeida',   'João',   '1995-04-12', '(11) 96666-3333', NULL, 1, 'ativo',    5),
+('João Pedro Almeida',   'João',   '1995-04-12', '(11) 96666-3333', NULL, 0, 'ativo',    5),
 ('Maria Clara Santos',   'Mari',   '1988-11-30', '(11) 95555-4444', 'avatar_maria.png', 1, 'ativo',    6),
 ('Pedro Henrique Costa', NULL,     '2001-07-08', NULL,              NULL, 1, 'inativo',  7),
 ('Lúcia Ferreira',       'Lu',     '1979-02-25', '(11) 94444-5555', NULL, 1, 'ativo',    8),
@@ -82,7 +94,7 @@ INSERT INTO tbl_vinculo (status, origem_cadastro, data_solicitacao, data_aceite,
 -- ------------------------------------------------------------
 -- CONSULTA (agendada, realizada, cancelada; criada por paciente/profissional)
 -- ------------------------------------------------------------
-INSERT INTO tbl_consulta (criado_por, nome_da_conculta, especialidade, data, hora, status, id_vinculo) VALUES
+INSERT INTO tbl_consulta (criado_por, nome_da_consulta, especialidade, data, hora, status, id_vinculo) VALUES
 ('profissional', 'Sessão semanal - João',      'Psicologia Clínica',               '2026-10-20', '14:00:00', 'agendada',  1),
 ('paciente',     'Retorno - Maria',            'Terapia Cognitivo-Comportamental', '2026-10-22', '10:30:00', 'agendada',  2),
 ('profissional', 'Sessão - João',              'Psicologia Clínica',               '2026-10-06', '14:00:00', 'realizada', 1),
