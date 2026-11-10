@@ -73,7 +73,9 @@ const selectBuscaProfissionaisAprovados = async (termo) => {
     let sql = `SELECT
                    p.id,
                    p.nome_completo,
+                   p.crp,
                    p.foto_avatar,
+                   p.primeiro_acesso_concluido,
                    (SELECT GROUP_CONCAT(e.especialidade ORDER BY e.especialidade SEPARATOR ', ')
                       FROM tbl_profissional_especialidade pe
                       JOIN tbl_especialidade e ON e.id = pe.id_especialidade
@@ -82,7 +84,7 @@ const selectBuscaProfissionaisAprovados = async (termo) => {
                JOIN tbl_usuario u ON u.id = p.id_usuario
                WHERE (p.nome_completo LIKE ? OR u.email LIKE ?)
                  AND EXISTS (SELECT 1 FROM tbl_administrador_profissional ap
-                              WHERE ap.id_profissional = p.id AND ap.status_aprovacao = 1)
+                              WHERE ap.id_profissional = p.id AND (ap.status_aprovacao = 1 OR ap.status_aprovacao = 0))
                ORDER BY p.nome_completo
                LIMIT 8`
     try {
@@ -138,6 +140,7 @@ const selectAllProfissional = async () => {
                    celular,
                    instituicao_clinica,
                    foto_avatar,
+                   primeiro_acesso_concluido,
                    id_usuario
                FROM tbl_profissional
                ORDER BY id DESC`
@@ -162,6 +165,7 @@ const selectByIdProfissional = async (id) => {
                    celular,
                    instituicao_clinica,
                    foto_avatar,
+                   primeiro_acesso_concluido,
                    id_usuario
                FROM tbl_profissional
                WHERE id = ?`
@@ -201,6 +205,7 @@ const selectByIdUsuarioProfissional = async (idUsuario) => {
                             celular,
                             instituicao_clinica,
                             foto_avatar,
+                            primeiro_acesso_concluido,
                             id_usuario
                     FROM tbl_profissional 
                     WHERE id_usuario = ?`
