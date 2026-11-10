@@ -49,6 +49,8 @@ const {
     listarTratamentosByToken
 } = require('../controller/tratamento/controller_tratamento.js')
 
+const { listarConsultasByToken } = require('../controller/consulta/controller_consulta.js')
+
 const formatarJson = async (dados, acao) => {
     const pacienteInserir = {
         nome_completo     : String(dados.nome_completo),
@@ -100,6 +102,13 @@ router.get('/me/profissionais', async (req,res) => {
     let token = req.headers['x-access-token']
     let filtro = req.query
     let result = await listarProfissionaisVinculados(token, filtro)
+    res.status(result.status_code).json(result)
+})
+
+// endpoint para listar as consultas de um paciente pelo token
+router.get('/me/consultas', async (req,res) => {
+    let token = req.headers['x-access-token']
+    let result = await listarConsultasByToken(token)
     res.status(result.status_code).json(result)
 })
 

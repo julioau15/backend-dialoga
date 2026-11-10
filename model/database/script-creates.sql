@@ -157,7 +157,7 @@ CREATE TABLE tbl_vinculo (
 CREATE TABLE tbl_consulta (
 	id INT NOT NULL AUTO_INCREMENT UNIQUE,
     criado_por VARCHAR(20) NOT NULL,
-    nome_da_conculta VARCHAR(150) NOT NULL,
+    nome_da_consulta VARCHAR(150) NOT NULL,
     especialidade VARCHAR(100),
     data DATE NOT NULL,
     hora TIME NOT NULL,
@@ -483,14 +483,3 @@ CREATE TABLE tbl_registro_dose (
     REFERENCES tbl_horario_tratamento (id)
     ON DELETE CASCADE
 );
-
--- INSERTS --
-# ------- DIAS DA SEMANA (dados fixos) --------
-INSERT INTO tbl_dias_da_semana (dias_da_semana) VALUES
-('Domingo'),
-('Segunda-feira'),
-('Terça-feira'),
-('Quarta-feira'),
-('Quinta-feira'),
-('Sexta-feira'),
-('Sábado');
