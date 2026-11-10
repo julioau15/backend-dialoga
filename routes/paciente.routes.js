@@ -26,7 +26,8 @@ const {
     primeiroAcessoPaciente,
     listarProfissionaisVinculados,
     inserirNovoVinculo,
-    excluirVinculo
+    excluirVinculo,
+    buscarPacientePorNomeOuEmail
 } = require('../controller/paciente/controller_paciente.js')
 
 const {
@@ -106,6 +107,13 @@ router.get('/me/profissionais', async (req,res) => {
 router.get('/me', async (req,res) => {
     let token = req.headers['x-access-token']
     let result = await buscarPacienteByToken(token)
+    res.status(result.status_code).json(result)
+})
+
+// endpoint para buscar pacientes pelo nome ou e-mail
+router.get('/busca', async (req,res) => {
+    let busca = req.query.busca
+    let result = await buscarPacientePorNomeOuEmail(busca)
     res.status(result.status_code).json(result)
 })
 

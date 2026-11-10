@@ -36,7 +36,7 @@ CREATE TABLE tbl_administrador (
 	id INT NOT NULL AUTO_INCREMENT UNIQUE,
     nome_completo VARCHAR(150) NOT NULL,
     senha_provisoria TINYINT NOT NULL, -- CORRIGIDO: toda conta de admin nasce com uma definição explícita (0/1)
-    celular VARCHAR(20),
+    celular VARCHAR(20) UNIQUE,
     foto_avatar TEXT,
     id_usuario  INT NOT NULL UNIQUE, -- CORRIGIDO: 1 usuário só pode virar 1 administrador
     
@@ -53,8 +53,9 @@ CREATE TABLE tbl_profissional (
     nome_completo VARCHAR(150) NOT NULL,
     cpf CHAR(11) NOT NULL UNIQUE, -- CORRIGIDO: CPF tem tamanho fixo (CHAR) e não pode se repetir
     crp VARCHAR(20) NOT NULL UNIQUE, -- CORRIGIDO: CRP não pode se repetir
-    celular VARCHAR(20),
+    celular VARCHAR(20) UNIQUE,
     instituicao_clinica VARCHAR(150),
+    primeiro_acesso_concluido TINYINT DEFAULT 0,
     foto_avatar TEXT,
     status TINYINT,
     id_usuario  INT NOT NULL UNIQUE, -- CORRIGIDO: 1 usuário só pode virar 1 profissional
@@ -115,7 +116,7 @@ CREATE TABLE tbl_paciente (
     nome_completo VARCHAR(150) NOT NULL,
     apelido VARCHAR(80),
     data_nascimento DATE,
-    celular VARCHAR(20),
+    celular VARCHAR(20) UNIQUE,
     foto_avatar VARCHAR(255),
     primeiro_acesso_concluido TINYINT NOT NULL,
     status_atividade VARCHAR(20) NOT NULL,
@@ -435,7 +436,8 @@ CREATE TABLE tbl_registro_humor (
     data_criacao DATETIME NOT NULL,
     id_paciente INT NOT NULL,
 
-    CONSTRAINT FK_PACIENTE_REGISTROHUMOR
+    CONSTRA
+INT FK_PACIENTE_REGISTROHUMOR
     FOREIGN KEY (id_paciente)
     REFERENCES tbl_paciente (id)
     ON DELETE NO ACTION

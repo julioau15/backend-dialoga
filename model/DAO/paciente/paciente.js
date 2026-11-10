@@ -168,6 +168,35 @@ const updatePrimeiroAcessoPaciente = async (paciente, id) => {
     return false
 }
 
+// busca de pacientes pelo nome ou email
+const selectBuscaPaciente = async (busca) => {
+    let sql = `SELECT
+                   p.id,
+                   p.nome_completo,
+                   p.apelido,
+                   p.data_nascimento,
+                   p.celular,
+                   p.foto_avatar,
+                   p.primeiro_acesso_concluido,
+                   p.status_atividade,
+                   p.id_usuario,
+                   u.email
+               FROM tbl_paciente AS p
+               INNER JOIN tbl_usuario AS u ON u.id = p.id_usuario
+               WHERE p.nome_completo LIKE ?
+                  OR u.email LIKE ?
+               ORDER BY p.nome_completo ASC`
+    try {
+        let termo = `%${busca}%`
+        let response = await knexConex.raw(sql, [termo, termo])
+
+        if(response) return response[0]
+
+    } catch (error) { console.log(error) }
+
+    return false
+}
+
 module.exports = {
     insertPaciente,
     updatePaciente,
@@ -175,5 +204,6 @@ module.exports = {
     selectByIdPaciente,
     deletePaciente,
     updatePrimeiroAcessoPaciente,
-    selectByIdUsuarioPaciente
+    selectByIdUsuarioPaciente,
+    selectBuscaPaciente
 }

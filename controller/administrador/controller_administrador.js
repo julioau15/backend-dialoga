@@ -11,6 +11,8 @@ const usuarioController = require('../usuario/controller_usuario.js')
 const {uploadFiles} = require('../upload/controller_upload_azure.js')
 const bcrypt = require('../../services/bcrypt.js')
 const { decodeJWT } = require('../../middleware/middlewareJWT.js')
+const crypto = require('crypto')
+const { enviarSenhaAcesso } = require('../../services/email.js')
 
 // inserir novo administrador
 const inserirNovaAdministrador = async (administrador, foto_avatar, contentType) => {
@@ -31,7 +33,10 @@ const inserirNovaAdministrador = async (administrador, foto_avatar, contentType)
             administrador.foto_avatar = urlImagem
         }
 
-        administrador.senha_hash = await bcrypt.criarHash(administrador.senha)
+        // gera a senha aleatória (ignora qualquer senha enviada no body)
+        const senhaGerada = gerarSenhaAleatoria(8)
+        administrador.senha = senhaGerada
+        administrador.senha_hash = await bcrypt.criarHash(senhaGerada)
         administrador.nivel = 0
 
         let resultUsuario = await usuarioController.inserirNovaUsuario(
@@ -49,6 +54,18 @@ const inserirNovaAdministrador = async (administrador, foto_avatar, contentType)
         let result = await administradorDAO.insertAdministrador(administrador)
 
         if (!result) return message.ERROR_INTERNAL_SERVER_MODEL
+
+        // envia a senha para o email cadastrado
+        let emailEnviado = await enviarSenhaAcesso(
+            administrador.email,
+            administrador.nome_completo,
+            senhaGerada
+        )
+
+        if (!emailEnviado) {
+            console.log('Administrador criado, mas o email com a senha não foi enviado')
+            return message.ERROR_INTERNAL_SERVER_CONTROLLER
+        }
 
         let resultbuscarUsuario = await usuarioController.buscarUsuario(
             administrador.id_usuario
@@ -290,6 +307,19 @@ const editarAdministradorByToken = async (administrador, token, foto_avatar, con
 
     } catch (error) {console.log(error)}
     return message.ERROR_INTERNAL_SERVER_CONTROLLER // 500
+}
+
+// gera senha aleatória (mínimo 6 caracteres), sem caracteres ambíguos como 0/O e l/1/I
+const gerarSenhaAleatoria = (tamanho = 8) => {
+    const caracteres = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789'
+    const total = Math.max(Number(tamanho) || 8, 6)
+    let senha = ''
+
+    for (let i = 0; i < total; i++) {
+        senha += caracteres[crypto.randomInt(caracteres.length)]
+    }
+
+    return senha
 }
 
 const validarDados = async (administrador, contentType) => {
