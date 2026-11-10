@@ -436,8 +436,7 @@ CREATE TABLE tbl_registro_humor (
     data_criacao DATETIME NOT NULL,
     id_paciente INT NOT NULL,
 
-    CONSTRA
-INT FK_PACIENTE_REGISTROHUMOR
+    CONSTRAINT FK_PACIENTE_REGISTROHUMOR
     FOREIGN KEY (id_paciente)
     REFERENCES tbl_paciente (id)
     ON DELETE NO ACTION
