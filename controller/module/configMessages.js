@@ -43,6 +43,8 @@ const ERROR_CONFLICT = { "status": false, "status_code": 409, "message": "Não f
 
 const ERROR_INVALID_TOKEN = { "status": false, "status_code": 401, "message": "Não foi possivel processar requisição. Token inválido."}
 
+const ERROR_FORBIDDEN = { "status": false, "status_code": 403, "message": "Não foi possivel processar requisição. Ação não permitida."}
+
 
 module.exports = {
     DEFAULT_MESSAGE,
@@ -58,5 +60,6 @@ module.exports = {
     SUCESS_CREATED_ITEM_WARNING,
     ERROR_UNAUTHORIZED,
     ERROR_CONFLICT,
-    ERROR_INVALID_TOKEN
+    ERROR_INVALID_TOKEN,
+    ERROR_FORBIDDEN
 }
