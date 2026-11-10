@@ -1000,6 +1000,46 @@ paths:
           $ref: '#/components/responses/UnsupportedMediaType'
         '500':
           $ref: '#/components/responses/InternalServerError'
+  /profissionais/me/primeiro-acesso:
+    post:
+      x-status: concluido
+      summary: "✅ Concluir primeiro acesso do profissional"
+      tags:
+      - Profissionais
+      responses:
+        '200':
+          description: Primeiro acesso concluído
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  status_code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Registro atualizado com sucesso!
+                  response:
+                    type: object
+                    properties:
+                      profissional:
+                        type: object
+                        properties:
+                          id:
+                            type: integer
+                          primeiro_acesso_concluido:
+                            type: integer
+                            example: 1
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
   /profissionais/me/pacientes:
     get:
       x-status: concluido

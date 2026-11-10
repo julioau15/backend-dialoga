@@ -121,7 +121,8 @@ router.put('/:id', upload.single('foto_avatar'), async (req,res) => {
 // endpoint para deletar um administrador pelo id
 router.delete('/:id', async (req,res) => {
     let id = req.params.id
-    let result = await excluirAdministrador(id)
+    let token = req.headers['x-access-token']
+    let result = await excluirAdministrador(id, token)
     res.status(result.status_code).json(result)
 })
 
