@@ -12,13 +12,13 @@ const knexConex = knex(knexConfig.development)
 
 // insert de consulta
 const insertConsulta = async (consulta) => {
-    let sql = `INSERT INTO tbl_consulta (criado_por, nome_da_conculta, especialidade, data, hora, status, id_vinculo)
+    let sql = `INSERT INTO tbl_consulta (criado_por, nome_da_consulta, especialidade, data, hora, status, id_vinculo)
                VALUES (?, ?, ?, ?, ?, ?, ?)`
 
     try {
         let response = await knexConex.raw(sql, [
             consulta.criado_por,
-            consulta.nome_da_conculta,
+            consulta.nome_da_consulta,
             consulta.especialidade,
             consulta.data,
             consulta.hora,
@@ -37,7 +37,7 @@ const insertConsulta = async (consulta) => {
 const updateConsulta = async (consulta) => {
     let sql = `UPDATE tbl_consulta
                SET criado_por = ?,
-                   nome_da_conculta = ?,
+                   nome_da_consulta = ?,
                    especialidade = ?,
                    data = ?,
                    hora = ?,
@@ -67,7 +67,7 @@ const selectAllConsulta = async (filtro = {}) => {
         SELECT
             tbl_consulta.id,
             tbl_consulta.criado_por,
-            tbl_consulta.nome_da_conculta,
+            tbl_consulta.nome_da_consulta,
             tbl_consulta.especialidade,
             tbl_consulta.data,
             tbl_consulta.hora,
@@ -106,8 +106,6 @@ const selectAllConsulta = async (filtro = {}) => {
         }
     }
 
-    console.log(sql)
-
     try {
         let response = await knexConex.raw(sql, params)
 
@@ -124,7 +122,7 @@ const selectByIdConsulta = async (id) => {
     let sql = `SELECT
                    id,
                    criado_por,
-                   nome_da_conculta,
+                   nome_da_consulta,
                    especialidade,
                    data,
                    hora,
@@ -158,10 +156,39 @@ const deleteConsulta = async (id) => {
     return false
 }
 
+// select das consultas de um paciente (via tbl_vinculo), com o nome do profissional
+const selectConsultasByIdPaciente = async (idPaciente) => {
+    let sql = `SELECT
+                   c.id,
+                   c.criado_por,
+                   c.nome_da_consulta,
+                   c.especialidade,
+                   c.data,
+                   c.hora,
+                   c.status,
+                   c.id_vinculo,
+                   p.nome_completo AS profissional_nome
+               FROM tbl_consulta c
+               INNER JOIN tbl_vinculo v ON c.id_vinculo = v.id
+               INNER JOIN tbl_profissional p ON v.id_profissional = p.id
+               WHERE v.id_paciente = ?
+               ORDER BY c.data, c.hora`
+    try {
+        let response = await knexConex.raw(sql, [idPaciente])
+
+        if(response) return response[0]
+    } catch (error) { console.log(error) }
+
+    return false
+}
+
+// lembre de exportar: selectConsultasByIdPaciente
+
 module.exports = {
     insertConsulta,
     updateConsulta,
     selectAllConsulta,
     selectByIdConsulta,
-    deleteConsulta
+    deleteConsulta,
+    selectConsultasByIdPaciente
 }

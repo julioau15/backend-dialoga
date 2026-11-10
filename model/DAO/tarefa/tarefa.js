@@ -156,24 +156,29 @@ const selectTarefasByIdProfissional = async (idProfissional) => {
     return false
 }
 
-// listar tarefas por id do paciente
+// listar tarefas por id do paciente (as atribuídas a ele, já enviadas)
 const selectTarefasByIdPaciente = async (idPaciente) => {
     let sql = `SELECT
-                   id,
-                   titulo,
-                   tipo,
-                   instrucoes,
-                   anexo_arquivo,
-                   is_rascunho,
-                   data_criacao,
-                   data_envio,
-                   id_paciente_criador
-               FROM tbl_tarefa
-               WHERE id_paciente_criador = ?
-               ORDER BY id DESC`
+                   t.id,
+                   t.titulo,
+                   t.tipo,
+                   t.instrucoes,
+                   t.anexo_arquivo,
+                   t.data_envio,
+                   td.id AS id_tarefa_destinatario,
+                   td.prazo,
+                   td.status,
+                   td.data_conclusao
+               FROM tbl_tarefa_destinatario td
+               INNER JOIN tbl_tarefa t ON t.id = td.id_tarefa
+               WHERE td.id_paciente = ?
+                 AND t.is_rascunho = 0
+               ORDER BY td.prazo IS NULL, td.prazo, t.id DESC`
     try {
         let response = await knexConex.raw(sql, [idPaciente])
-    }catch (error) { console.log(error) }
+
+        if(response) return response[0]
+    } catch (error) { console.log(error) }
 
     return false
 }

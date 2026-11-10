@@ -139,6 +139,36 @@ const excluirConsulta = async (id) => {
     return message.ERROR_INTERNAL_SERVER_CONTROLLER // 500
 }
 
+const pacienteDAO = require('../../model/DAO/paciente/paciente.js')
+
+// listar consultas do paciente pelo token
+const listarConsultasByToken = async (token) => {
+    let message = JSON.parse(JSON.stringify(config_message))
+
+    try {
+        let decodedToken = await decodeJWT(token)
+        if(!decodedToken.status) return message.ERROR_INVALID_TOKEN
+
+        let resultPaciente = await pacienteDAO.selectByIdUsuarioPaciente(decodedToken.decode.id)
+        if(!resultPaciente) return message.ERROR_INTERNAL_SERVER_MODEL // 500
+        if(resultPaciente.length < 1) return message.ERROR_NOT_FOUND // 404
+
+        let result = await consultaDAO.selectConsultasByIdPaciente(resultPaciente[0].id)
+
+        if(!result) return message.ERROR_INTERNAL_SERVER_MODEL // 500
+        if(result.length <= 0) return message.ERROR_NOT_FOUND // 404
+
+        let listarConsultaMessage = await montarMensagem(message, message.SUCESS_RESPONSE, result)
+        message.DEFAULT_MESSAGE.response.count = result.length
+
+        return listarConsultaMessage // 200
+
+    } catch (error) {console.log(error)}
+    return message.ERROR_INTERNAL_SERVER_CONTROLLER // 500
+}
+
+// lembre de exportar: listarConsultasByToken
+
 const validarDados = async (consulta, contentType) => {
     let message = JSON.parse(JSON.stringify(config_message))
 
@@ -212,5 +242,6 @@ module.exports = {
     atualizarConsulta,
     listarConsulta,
     buscarConsulta,
-    excluirConsulta
+    excluirConsulta,
+    listarConsultasByToken
 }
