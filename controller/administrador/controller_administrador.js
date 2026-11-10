@@ -63,7 +63,11 @@ const inserirNovaAdministrador = async (administrador, foto_avatar, contentType)
         )
 
         if (!emailEnviado) {
-            console.log('Administrador criado, mas o email com a senha não foi enviado')
+            console.log('Email com a senha não foi enviado; o cadastro do administrador foi desfeito')
+
+            // Remove o usuário criado; o ON DELETE CASCADE remove também o registro em tbl_administrador
+            await usuarioController.excluirUsuario(administrador.id_usuario)
+
             return message.ERROR_INTERNAL_SERVER_CONTROLLER
         }
 
