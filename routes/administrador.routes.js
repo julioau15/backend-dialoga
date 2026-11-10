@@ -22,7 +22,8 @@ const {
     buscarAdministrador,
     excluirAdministrador,
     buscarAdministradorByToken, 
-    editarAdministradorByToken
+    editarAdministradorByToken,
+    atualizarSenhaAdministradorByToken
 } = require('../controller/administrador/controller_administrador.js')
 
 const formatarJson = async (dados, acao) => {
@@ -81,6 +82,16 @@ router.get('/:id', async (req,res) => {
     res.status(result.status_code).json(result)
 })
 
+// endpoint para trocar a senha do administrador logado (define a senha provisória)
+router.put('/me/senha', bodyParserJSON, async (req,res) => {
+    let token = req.headers['x-access-token']
+    let dados = req.body
+    let contentType = req.headers['content-type']
+
+    let result = await atualizarSenhaAdministradorByToken(dados, token, contentType)
+    res.status(result.status_code).json(result)
+})
+
 // endpoint para atualizar um administrador pelo token
 router.put('/me', upload.single('foto_avatar'), async (req,res) => {
     let token = req.headers['x-access-token']
@@ -110,7 +121,8 @@ router.put('/:id', upload.single('foto_avatar'), async (req,res) => {
 // endpoint para deletar um administrador pelo id
 router.delete('/:id', async (req,res) => {
     let id = req.params.id
-    let result = await excluirAdministrador(id)
+    let token = req.headers['x-access-token']
+    let result = await excluirAdministrador(id, token)
     res.status(result.status_code).json(result)
 })
 
