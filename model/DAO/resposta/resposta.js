@@ -17,9 +17,9 @@ const insertResposta = async (resposta) => {
 
     try {
         let response = await knexConex.raw(sql, [
-            resposta.valor,
+            resposta.valor ?? null,
             resposta.id_pergunta, 
-            resposta.id_opcao_pergunta, 
+            resposta.id_opcao_pergunta ?? null, 
             Number(resposta.id_tarefa_destinatario)
         ])
 

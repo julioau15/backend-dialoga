@@ -17,11 +17,11 @@ const insertPergunta = async (pergunta, idTarefa) => {
 
     try {
         let response = await knexConex.raw(sql, [
-            pergunta.tipo,
-            pergunta.texto,
-            pergunta.imagem,
-            pergunta.obrigatoria,
-            pergunta.ordem,
+            pergunta.tipo || 'texto',
+            pergunta.texto || pergunta.enunciado || '',
+            pergunta.imagem || null,
+            pergunta.obrigatoria !== undefined && pergunta.obrigatoria !== null ? (pergunta.obrigatoria ? 1 : 0) : 1,
+            pergunta.ordem !== undefined && pergunta.ordem !== null ? Number(pergunta.ordem) : 1,
             idTarefa
         ])
 
@@ -43,11 +43,11 @@ const updatePergunta = async (pergunta) => {
                WHERE id = ?`
     try {
         let response = await knexConex.raw(sql, [
-            pergunta.tipo,
-            pergunta.texto,
-            pergunta.imagem,
-            pergunta.obrigatoria,
-            pergunta.ordem,
+            pergunta.tipo || 'texto',
+            pergunta.texto || pergunta.enunciado || '',
+            pergunta.imagem || null,
+            pergunta.obrigatoria !== undefined && pergunta.obrigatoria !== null ? (pergunta.obrigatoria ? 1 : 0) : 1,
+            pergunta.ordem !== undefined && pergunta.ordem !== null ? Number(pergunta.ordem) : 1,
             pergunta.id
         ])
 

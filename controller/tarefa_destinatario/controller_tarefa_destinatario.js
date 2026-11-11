@@ -32,11 +32,22 @@ const atualizarTarefaDestinatario = async (tarefaDestinatario, id, contentType) 
     let message = JSON.parse(JSON.stringify(config_message))
 
     try {
-        let validar = await validarDados(tarefaDestinatario, contentType)
-        if(validar) return validar // 400 ou 415
-
         let resultBuscarId = await buscarTarefaDestinatario(id)
         if(!resultBuscarId.status) return resultBuscarId // 400 e 404
+
+        // atualização parcial: o app envia só {status}; os demais campos vêm da linha atual
+        if(tarefaDestinatario && typeof tarefaDestinatario == 'object'){
+            let atual = resultBuscarId.response.tarefaDestinatario[0]
+            for(let campo of ['prazo', 'status', 'data_conclusao', 'id_tarefa', 'id_paciente']){
+                if(tarefaDestinatario[campo] === undefined) tarefaDestinatario[campo] = atual[campo]
+            }
+            if(tarefaDestinatario.status === 'concluida' && !tarefaDestinatario.data_conclusao){
+                tarefaDestinatario.data_conclusao = new Date()
+            }
+        }
+
+        let validar = await validarDados(tarefaDestinatario, contentType)
+        if(validar) return validar // 400 ou 415
 
         tarefaDestinatario.id = Number(id)
         let result = await tarefaDestinatarioDAO.updateTarefaDestinatario(tarefaDestinatario)
@@ -86,7 +97,7 @@ const buscarTarefaDestinatario = async (id) => {
         if(result.length < 1) return config_message.ERROR_NOT_FOUND
 
         for(let tarefa of result){
-            resultBuscarPerguntas = await perguntaController.listarPerguntaByIdTarefa(tarefa.id)
+            let resultBuscarPerguntas = await perguntaController.listarPerguntaByIdTarefa(tarefa.id_tarefa)
             if(resultBuscarPerguntas.status) tarefa.perguntas = resultBuscarPerguntas.response.pergunta
         }
 
@@ -128,7 +139,7 @@ const filtrarTarefasDestinatarios = async (filtro) => {
         if(result.length <= 0) return message.ERROR_NOT_FOUND // status_code 404
 
         for(let tarefa of result){
-            resultBuscarPerguntas = await perguntaController.listarPerguntaByIdTarefa(tarefa.id)
+            let resultBuscarPerguntas = await perguntaController.listarPerguntaByIdTarefa(tarefa.id_tarefa)
             if(resultBuscarPerguntas.status) tarefa.perguntas = resultBuscarPerguntas.response.pergunta
         }
 

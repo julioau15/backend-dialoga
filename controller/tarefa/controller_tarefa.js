@@ -228,35 +228,44 @@ const inserirTarefaByToken = async (tarefa, anexo_arquivo, token, contentType) =
             }
         }
 
-        if(nivel == 2) result = await tarefaDAO.insertTarefaByIdPaciente(tarefa, id)
+        if(nivel == 2) {
+            result = await tarefaDAO.insertTarefaByIdPaciente(tarefa, id)
+            if (result) {
+                let tarefaDestinatario = {
+                    prazo: tarefa.prazo || null,
+                    id_paciente: id,
+                    id_tarefa: result,
+                    status: 'pendente'
+                }
+                await tarefaDestinatarioController.inserirNovaTarefaDestinatario(tarefaDestinatario, 'application/json')
+            }
+        }
 
         else if(nivel == 1) {
             result = await tarefaDAO.insertTarefaByIdProfissional(tarefa, id)
 
-            if(tarefa.prazos_por_paciente){
-
-                for(let paciente of tarefa.prazos_por_paciente){
-                    let tarefaDestinatario = {
-                        prazo: paciente.prazo,
-                        id_paciente: paciente.paciente_id,
-                        id_tarefa: result
-                    }
-    
-                    let resultInsert = await tarefaDestinatarioController.inserirNovaTarefaDestinatario(tarefaDestinatario, 'application/json')
-                    if(resultInsert) ids.push(resultInsert)
-    
-                    if(ids.length > 0){
-                        for(let id of ids){
-                            // busca as perguntas relacionadas a tarefa
-                            let resultBuscarPerguntas = await perguntasController.listarPerguntaByIdTarefa(id)
-                
-                            if(resultBuscarPerguntas.status){
-                                tarefa.perguntas = resultBuscarPerguntas.response.pergunta
-                            }
-                        }
-                    }
+            const listaPacientes = []
+            if (Array.isArray(tarefa.prazos_por_paciente) && tarefa.prazos_por_paciente.length > 0) {
+                for (let p of tarefa.prazos_por_paciente) {
+                    listaPacientes.push({ paciente_id: p.paciente_id || p.id, prazo: p.prazo || null })
                 }
+            } else if (Array.isArray(tarefa.paciente_ids) && tarefa.paciente_ids.length > 0) {
+                for (let pId of tarefa.paciente_ids) {
+                    listaPacientes.push({ paciente_id: Number(pId), prazo: tarefa.prazo || null })
+                }
+            }
 
+            for (let itemPac of listaPacientes) {
+                let tarefaDestinatario = {
+                    prazo: itemPac.prazo,
+                    id_paciente: itemPac.paciente_id,
+                    id_tarefa: result,
+                    status: 'pendente' // obrigatório no validarDados do destinatário; sem ele o insert era recusado (400) e o prazo se perdia
+                }
+                let resultInsert = await tarefaDestinatarioController.inserirNovaTarefaDestinatario(tarefaDestinatario, 'application/json')
+                // o controller devolve um objeto de erro (truthy) quando falha: precisa checar o status
+                if (resultInsert && resultInsert.status) ids.push(resultInsert)
+                else console.log('[TAREFA] falha ao gravar destinatário/prazo:', itemPac, resultInsert)
             }
         } 
 
@@ -290,7 +299,7 @@ const enviarTarefaParaPacienteByToken = async (idTarefa, token) => {
         let resultBuscarId = await buscarTarefa(idTarefa)
         if(!resultBuscarId.status) return resultBuscarId // 400 e 404
 
-        let result = await tarefaDAO.enviarTarefaParaPaciente(idTarefa, id)
+        let result = await tarefaDAO.enviarTarefaParaPaciente(idTarefa)
 
         if(!result) return message.ERROR_INTERNAL_SERVER_MODEL // 500
 
@@ -339,10 +348,11 @@ const validarDados = async (tarefa, contentType) => {
     }
 
     // Valida o indicador de rascunho
-    if(![0, 1, true, false].includes(tarefa.is_rascunho)){
+    if (![0, 1, '0', '1', true, false, 'true', 'false'].includes(tarefa.is_rascunho)) {
         message.ERROR_BAD_REQUEST.field = '[IS_RASCUNHO] INVÁLIDO'
         return message.ERROR_BAD_REQUEST // 400
     }
+    tarefa.is_rascunho = [1, '1', true, 'true'].includes(tarefa.is_rascunho) ? 1 : 0
 
     // Valida o profissional quando informado
     if(tarefa.id_profissional_criador != undefined && tarefa.id_profissional_criador != null &&

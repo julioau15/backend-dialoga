@@ -31,16 +31,31 @@ const {
     inserirNovaPergunta
 } = require('../controller/pergunta/controller_pergunta.js')
 
+const parseBoolOrInt = (val) => {
+    if (val === undefined || val === null || val === '') return 0
+    if (val === 0 || val === '0' || val === false || val === 'false') return 0
+    if (val === 1 || val === '1' || val === true || val === 'true') return 1
+    return Number(val) || 0
+}
+
+const parseJsonSafe = (val) => {
+    if (!val) return null
+    if (typeof val === 'object') return val
+    try { return JSON.parse(val) } catch { return null }
+}
+
 const formatarJson = async (dados) => {
     const tarefa = {
-       titulo                   : String(dados?.titulo)                  || null,
-       tipo                     : String(dados?.tipo)                    || null,
-       instrucoes               : String(dados?.instrucoes)              || null,
-       is_rascunho              : dados?.is_rascunho == 0 ? 0 : dados.is_rascunho || null,
-       id_profissional_criador  : Number(dados?.id_profissional_criador) || null,
-       id_paciente_criador      : Number(dados?.id_paciente_criador)     || null,
-       paciente_ids             : JSON.parse(dados?.paciente_ids)        || null,
-       prazos_por_paciente      : JSON.parse(dados?.prazos_por_paciente) || null
+       titulo                   : dados?.titulo ? String(dados.titulo) : null,
+       tipo                     : dados?.tipo ? String(dados.tipo) : null,
+       instrucoes               : dados?.instrucoes ? String(dados.instrucoes) : null,
+       anexo_arquivo            : dados?.anexo_url || dados?.anexo_arquivo || null,
+       is_rascunho              : parseBoolOrInt(dados?.is_rascunho),
+       id_profissional_criador  : dados?.id_profissional_criador ? Number(dados.id_profissional_criador) : null,
+       id_paciente_criador      : dados?.id_paciente_criador ? Number(dados.id_paciente_criador) : null,
+       prazo                    : dados?.prazo ? String(dados.prazo) : null,
+       paciente_ids             : parseJsonSafe(dados?.paciente_ids),
+       prazos_por_paciente      : parseJsonSafe(dados?.prazos_por_paciente)
     }
 
     return tarefa

@@ -7,6 +7,7 @@
 
 const config_message = require('../module/configMessages.js')
 const respostaDAO = require('../../model/DAO/resposta/resposta.js')
+const tarefaDestinatarioDAO = require('../../model/DAO/tarefa_destinatario/tarefa_destinatario.js')
 
 // inserir nova resposta
 const inserirNovaResposta = async (resposta, idTarefa, contentType) => {
@@ -18,6 +19,11 @@ const inserirNovaResposta = async (resposta, idTarefa, contentType) => {
         if(resposta.enviar_definitivamente == true) resposta.enviar_definitivamente = 1
         else if(resposta.enviar_definitivamente == false) resposta.enviar_definitivamente = 0
 
+        if(!resposta || !Array.isArray(resposta.respostas)){
+            message.ERROR_BAD_REQUEST.field = '[RESPOSTAS] INVÁLIDO'
+            return message.ERROR_BAD_REQUEST // 400
+        }
+
         for(let res of resposta.respostas){
             res.id_tarefa_destinatario = idTarefa
             let resultInserirResposta = await respostaDAO.insertResposta(res)
@@ -28,6 +34,21 @@ const inserirNovaResposta = async (resposta, idTarefa, contentType) => {
         }
 
         resposta.ids = ids
+
+        // envio definitivo: marca o destinatário como concluído (o PUT separado do app não era aceito pelo back)
+        if(resposta.enviar_definitivamente == 1){
+            let atual = await tarefaDestinatarioDAO.selectByIdTarefaDestinatario(idTarefa)
+            if(atual && atual.length > 0){
+                await tarefaDestinatarioDAO.updateTarefaDestinatario({
+                    id: atual[0].id,
+                    prazo: atual[0].prazo,
+                    status: 'concluida',
+                    data_conclusao: new Date(),
+                    id_tarefa: atual[0].id_tarefa,
+                    id_paciente: atual[0].id_paciente
+                })
+            }
+        }
 
         return await montarMensagem(message, message.SUCESS_CREATED_ITEM, resposta)
 

@@ -167,15 +167,15 @@ const selectTarefasByIdPaciente = async (idPaciente) => {
                    t.data_envio,
                    td.id AS id_tarefa_destinatario,
                    td.prazo,
-                   td.status,
+                   COALESCE(td.status, 'pendente') AS status,
                    td.data_conclusao
-               FROM tbl_tarefa_destinatario td
-               INNER JOIN tbl_tarefa t ON t.id = td.id_tarefa
-               WHERE td.id_paciente = ?
-                 AND t.is_rascunho = 0
+               FROM tbl_tarefa t
+               LEFT JOIN tbl_tarefa_destinatario td ON td.id_tarefa = t.id AND td.id_paciente = ?
+               WHERE (td.id_paciente = ? OR t.id_paciente_criador = ?)
+                 AND (t.is_rascunho = 0 OR t.is_rascunho IS NULL)
                ORDER BY td.prazo IS NULL, td.prazo, t.id DESC`
     try {
-        let response = await knexConex.raw(sql, [idPaciente])
+        let response = await knexConex.raw(sql, [idPaciente, idPaciente, idPaciente])
 
         if(response) return response[0]
     } catch (error) { console.log(error) }
@@ -185,14 +185,15 @@ const selectTarefasByIdPaciente = async (idPaciente) => {
 
 // insert de tarefa por id do profissional
 const insertTarefaByIdProfissional = async (tarefa, idProfissional) => {
-    let sql = `INSERT INTO tbl_tarefa (titulo, tipo, instrucoes, is_rascunho, data_criacao, data_envio, id_profissional_criador)
-               VALUES (?, ?, ?, ?, now(), null, ?)`
+    let sql = `INSERT INTO tbl_tarefa (titulo, tipo, instrucoes, anexo_arquivo, is_rascunho, data_criacao, data_envio, id_profissional_criador)
+               VALUES (?, ?, ?, ?, ?, now(), null, ?)`
 
     try {
         let response = await knexConex.raw(sql, [
             tarefa.titulo,
             tarefa.tipo,
-            tarefa.instrucoes,
+            tarefa.instrucoes || null,
+            tarefa.anexo_arquivo || null,
             tarefa.is_rascunho,
             idProfissional
         ])
@@ -226,14 +227,15 @@ const insertTarefaByIdPaciente = async (tarefa, idPaciente) => {
 }
 
 // enviar tarefa para o paciente
-const enviarTarefaParaPaciente = async (idTarefa, idPaciente) => {
+const enviarTarefaParaPaciente = async (idTarefa) => {
+    // Os pacientes vinculam-se à tarefa por tbl_tarefa_destinatario; id_paciente_criador
+    // é só de quem CRIOU a tarefa, então não pode ser alterado no envio.
     let sql = `UPDATE tbl_tarefa
-               SET id_paciente_criador = ?,
-                   data_envio = now(),
+               SET data_envio = now(),
                    is_rascunho = false
                WHERE id = ?`
     try {
-        let response = await knexConex.raw(sql, [idPaciente, idTarefa])
+        let response = await knexConex.raw(sql, [idTarefa])
 
         if(response) return response
 

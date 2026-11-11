@@ -27,10 +27,12 @@ const inserirNovaPergunta = async (pergunta, idTarefa, contentType) => {
         let idsOpcoes = []
 
         // insere as opçoes da pergunta
-        for(let opcaoPergunta of pergunta.opcoes){
-            opcaoPergunta.id_pergunta = result
-            let resultInsertOpcoes = await opcaoPerguntaController.inserirNovaOpcaoPergunta(opcaoPergunta, contentType)
-            if(resultInsertOpcoes) idsOpcoes.push(resultInsertOpcoes)
+        if (pergunta.opcoes && Array.isArray(pergunta.opcoes)) {
+            for(let opcaoPergunta of pergunta.opcoes){
+                opcaoPergunta.id_pergunta = result
+                let resultInsertOpcoes = await opcaoPerguntaController.inserirNovaOpcaoPergunta(opcaoPergunta, contentType)
+                if(resultInsertOpcoes) idsOpcoes.push(resultInsertOpcoes)
+            }
         }
 
         if(idsOpcoes.length > 0) pergunta.ids_opcao

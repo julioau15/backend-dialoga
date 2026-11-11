@@ -17,8 +17,8 @@ const insertTarefaDestinatario = async (tarefaDestinatario) => {
 
     try {
         let response = await knexConex.raw(sql, [
-            tarefaDestinatario.prazo,
-            0, // status
+            tarefaDestinatario.prazo ?? null,
+            tarefaDestinatario.status || 'pendente', // status
             null, // data de conclusao
             tarefaDestinatario.id_tarefa,
             tarefaDestinatario.id_paciente
@@ -42,9 +42,9 @@ const updateTarefaDestinatario = async (tarefaDestinatario) => {
                WHERE id = ?`
     try {
         let response = await knexConex.raw(sql, [
-            tarefaDestinatario.prazo,
+            tarefaDestinatario.prazo ?? null,
             tarefaDestinatario.status,
-            tarefaDestinatario.data_conclusao,
+            tarefaDestinatario.data_conclusao ?? null,
             tarefaDestinatario.id_tarefa,
             tarefaDestinatario.id_paciente,
             tarefaDestinatario.id
