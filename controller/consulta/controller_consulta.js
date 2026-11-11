@@ -169,6 +169,33 @@ const listarConsultasByToken = async (token) => {
 
 // lembre de exportar: listarConsultasByToken
 
+// listar consultas dos pacientes do profissional logado (GET /profissionais/me/consultas)
+const listarConsultasByTokenProfissional = async (token, filtro = {}) => {
+    let message = JSON.parse(JSON.stringify(config_message))
+
+    try {
+        let decodedToken = await decodeJWT(token)
+        if(!decodedToken.status) return message.ERROR_INVALID_TOKEN // 401
+
+        const profissionalDAO = require('../../model/DAO/profissional/profissional.js')
+        let resultProfissional = await profissionalDAO.selectByIdUsuarioProfissional(decodedToken.decode.id)
+        if(!resultProfissional) return message.ERROR_INTERNAL_SERVER_MODEL // 500
+        if(resultProfissional.length < 1) return message.ERROR_NOT_FOUND // 404
+
+        let result = await consultaDAO.selectConsultasByIdProfissional(resultProfissional[0].id, filtro)
+
+        if(!result) return message.ERROR_INTERNAL_SERVER_MODEL // 500
+        if(result.length <= 0) return message.ERROR_NOT_FOUND // 404
+
+        let listarConsultaMessage = await montarMensagem(message, message.SUCESS_RESPONSE, result)
+        message.DEFAULT_MESSAGE.response.count = result.length
+
+        return listarConsultaMessage // 200
+
+    } catch (error) {console.log(error)}
+    return message.ERROR_INTERNAL_SERVER_CONTROLLER // 500
+}
+
 const validarDados = async (consulta, contentType) => {
     let message = JSON.parse(JSON.stringify(config_message))
 
@@ -243,5 +270,6 @@ module.exports = {
     listarConsulta,
     buscarConsulta,
     excluirConsulta,
-    listarConsultasByToken
+    listarConsultasByToken,
+    listarConsultasByTokenProfissional
 }

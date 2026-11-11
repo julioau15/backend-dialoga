@@ -10,6 +10,7 @@ const express = require('express')
 const router = express.Router()
 const bodyParser = require('body-parser')
 const bodyParserJSON = bodyParser.json()
+const { listarConsultasByTokenProfissional } = require('../controller/consulta/controller_consulta.js')
 const multer = require('multer') // upload de arquivos
 
 // instancia para criar um objeto com as caracteristicas do multer
@@ -79,6 +80,13 @@ router.get('/me/pacientes', async (req,res) => {
     const filtro = req.query
     
     let result = await listarPacientesVinculados(token, filtro)
+    res.status(result.status_code).json(result)
+})
+
+// endpoint para retornar as consultas dos pacientes do profissional logado (opcional: ?data=YYYY-MM-DD)
+router.get('/me/consultas', async (req,res) => {
+    let token = req.headers['x-access-token']
+    let result = await listarConsultasByTokenProfissional(token, req.query)
     res.status(result.status_code).json(result)
 })
 

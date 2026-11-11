@@ -184,7 +184,44 @@ const selectConsultasByIdPaciente = async (idPaciente) => {
 
 // lembre de exportar: selectConsultasByIdPaciente
 
+// consultas dos pacientes vinculados a um profissional (com o nome do paciente)
+// filtro opcional: data (YYYY-MM-DD)
+const selectConsultasByIdProfissional = async (idProfissional, filtro = {}) => {
+    let sql = `SELECT
+                   tbl_consulta.id,
+                   tbl_consulta.criado_por,
+                   tbl_consulta.nome_da_consulta,
+                   tbl_consulta.especialidade,
+                   tbl_consulta.data,
+                   tbl_consulta.hora,
+                   tbl_consulta.status,
+                   tbl_consulta.id_vinculo,
+                   tbl_vinculo.id_paciente,
+                   pac.nome_completo AS paciente_nome
+               FROM tbl_consulta
+               INNER JOIN tbl_vinculo ON tbl_consulta.id_vinculo = tbl_vinculo.id
+               INNER JOIN tbl_paciente ON tbl_vinculo.id_paciente = tbl_paciente.id
+               WHERE tbl_vinculo.id_profissional = ?`
+    const params = [idProfissional]
+
+    if (filtro.data) {
+        sql += ` AND DATE(tbl_consulta.data) = ?`
+        params.push(filtro.data)
+    }
+
+    sql += ` ORDER BY tbl_consulta.data, tbl_consulta.hora`
+
+    try {
+        let response = await knexConex.raw(sql, params)
+
+        if(response) return response[0]
+    } catch (error) { console.log(error) }
+
+    return false
+}
+
 module.exports = {
+    selectConsultasByIdProfissional,
     insertConsulta,
     updateConsulta,
     selectAllConsulta,
