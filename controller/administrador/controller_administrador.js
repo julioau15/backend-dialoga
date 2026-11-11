@@ -123,6 +123,7 @@ const atualizarAdministrador = async (administrador, id, foto_avatar, contentTyp
         administrador.id = Number(id)
         let result = await administradorDAO.updateAdministrador(administrador)
 
+        if(result?.duplicado) return celularDuplicado(message) // 409
         if(!result) return message.ERROR_INTERNAL_SERVER_MODEL // 500
 
         resultBuscarId = await buscarAdministrador(id)
@@ -260,55 +261,47 @@ const editarAdministradorByToken = async (administrador, token, foto_avatar, con
     let message = JSON.parse(JSON.stringify(config_message))
 
     try {
-        // valida se o usuario deseja editar a senha 
-        let resultEditarSenha = false
-
         let decodedToken = await decodeJWT(token)
-        if(!decodedToken.status) return message.ERROR_INVALID_TOKEN
+        if(!decodedToken.status) return message.ERROR_INVALID_TOKEN // 401
 
-        let idAdministrador = decodedToken.decode.id
+        // o e-mail não é editável aqui: vem do token (a validação exige o campo)
         administrador.email = decodedToken.decode.email
 
-        // caso a senha for valida, cria o hash e atualiza a senha do usuario
-        if(administrador?.senha != undefined && administrador?.senha != null){
-            administrador.senha_hash = await bcrypt.criarHash(administrador.senha)
+        let validar = await validarDados(administrador, contentType)
+        if(validar) return validar // 400 ou 415
 
-            resultEditarSenha = await usuarioController.atualizarUsuario(administrador, idAdministrador, contentType)
-            if(!resultEditarSenha.status) return resultEditarSenha // 400, 404, 415 ou 500
-        }
+        // o token traz o id de tbl_usuario; o administrador é localizado pelo id_usuario
+        let resultAdministrador = await administradorDAO.selectByIdUsuarioAdministrador(decodedToken.decode.id)
+        if(!resultAdministrador) return message.ERROR_INTERNAL_SERVER_MODEL // 500
+        if(resultAdministrador.length < 1) return message.ERROR_NOT_FOUND // 404
 
-        // Realiza o upload da imagem do administrador
+        let idAdministrador = Number(resultAdministrador[0].id)
+
+        // 1) grava nome e celular primeiro: uma foto com problema não pode impedir o resto
+        administrador.id = idAdministrador
+        let result = await administradorDAO.updateAdministrador(administrador)
+
+        if(result?.duplicado) return celularDuplicado(message) // 409
+        if(!result) return message.ERROR_INTERNAL_SERVER_MODEL // 500
+
+        // 2) foto: upload no Azure e depois grava a URL
         if (foto_avatar) {
             let urlImagem = await uploadFiles(foto_avatar)
 
             if (!urlImagem) {
-                return message.ERROR_INTERNAL_SERVER_CONTROLLER
+                // nome e celular JÁ foram salvos; o campo avisa o front que só a foto falhou
+                message.ERROR_INTERNAL_SERVER_CONTROLLER.message = 'Dados salvos, mas não foi possível enviar a foto de perfil.'
+                message.ERROR_INTERNAL_SERVER_CONTROLLER.field = '[FOTO_AVATAR] FALHA NO UPLOAD'
+                return message.ERROR_INTERNAL_SERVER_CONTROLLER // 500
             }
 
             administrador.foto_avatar = urlImagem
+            result = await administradorDAO.updateAdministrador(administrador)
+            if(!result) return message.ERROR_INTERNAL_SERVER_MODEL // 500
         }
 
-        administrador.id = Number(idAdministrador)
-        let result = await administradorDAO.updateAdministrador(administrador)
-
-        if(!result) return message.ERROR_INTERNAL_SERVER_MODEL // 500
-
-        let resultBuscarId = await buscarAdministrador(idAdministrador)
-        if(!resultBuscarId.status) return resultBuscarId // 400 e 404
-
-        delete resultEditarSenha.response.usuario.senha
-        delete resultEditarSenha.response.usuario.senha_hash
-
-        // caso a senha não for editada, retorna apenas o administrador editado
-        if(resultEditarSenha){
-            return await montarMensagem(
-                message, 
-                message.SUCESS_UPDATE_ITEM,
-                resultBuscarId.response.administrador[0]
-            )
-        }
-
-        return resultBuscarId
+        // a troca de senha fica em atualizarSenhaAdministradorByToken (PUT /me/senha)
+        return await buscarAdministrador(idAdministrador) // 200 ou 400 ou 404
 
     } catch (error) {console.log(error)}
     return message.ERROR_INTERNAL_SERVER_CONTROLLER // 500
@@ -460,6 +453,13 @@ const validarDadosSenha = async (dados, contentType) => {
     }
 
     return false
+}
+
+// celular já usado por outro administrador (coluna UNIQUE)
+const celularDuplicado = (message) => {
+    message.ERROR_CONFLICT.message = 'Este celular já está cadastrado em outra conta.'
+    message.ERROR_CONFLICT.field = '[CELULAR] JÁ CADASTRADO'
+    return message.ERROR_CONFLICT // 409
 }
 
 const validarId = async (id) => {

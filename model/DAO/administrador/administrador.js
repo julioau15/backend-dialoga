@@ -35,7 +35,7 @@ const updateAdministrador = async (administrador) => {
     let sql = `UPDATE tbl_administrador
                SET nome_completo = ?,
                    celular = ?,
-                   foto_avatar = ?,
+                   foto_avatar = COALESCE(?, foto_avatar),
                    senha_provisoria = 0
                WHERE id = ?`
     try {
@@ -48,7 +48,11 @@ const updateAdministrador = async (administrador) => {
 
         if(response) return response
 
-    } catch (error) { console.log(error) }
+    } catch (error) {
+        console.log(error)
+        // celular é UNIQUE: o controller transforma isso em 409 em vez de 500
+        if(error.code === 'ER_DUP_ENTRY') return { duplicado: true }
+    }
 
     return false
 }

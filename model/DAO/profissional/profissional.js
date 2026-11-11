@@ -99,7 +99,7 @@ const updateProfissional = async (profissional) => {
     let sql = `UPDATE tbl_profissional
                SET nome_completo = ?,
                    celular = ?,
-                   foto_avatar = ?
+                   foto_avatar = COALESCE(?, foto_avatar)
                WHERE id = ?`
     try {
         let response = await knexConex.raw(sql, [

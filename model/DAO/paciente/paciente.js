@@ -35,9 +35,9 @@ const updatePaciente = async (paciente) => {
     let sql = `UPDATE tbl_paciente
                SET nome_completo = ?,
                    apelido = ?,
-                   data_nascimento = ?,
+                   data_nascimento = COALESCE(?, data_nascimento),
                    celular = ?,
-                   foto_avatar = ?,
+                   foto_avatar = COALESCE(?, foto_avatar),
                    primeiro_acesso_concluido = 1
                WHERE id = ?`
     try {

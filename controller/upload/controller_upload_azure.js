@@ -49,21 +49,34 @@ const uploadFiles = async (input) => {
     const container = imagem ? AZURE.CONTAINER_IMAGEM : AZURE.CONTAINER_ARQUIVO
     const token     = imagem ? AZURE.TOKEN_IMAGEM     : AZURE.TOKEN_ARQUIVO
 
+    // Sem essas variáveis no .env o upload nunca vai funcionar: avisa o motivo no log
+    if (!AZURE.ACCOUNT || !container || !token) {
+        console.error('Upload Azure não configurado: confira AZURE_ACCOUNT, AZURE_CONTAINER_* e AZURE_TOKEN_* no .env')
+        return false
+    }
+
     const urlFile      = `https://${AZURE.ACCOUNT}.blob.core.windows.net/${container}/${encodeURIComponent(fileName)}`
     const urlFileToken = `${urlFile}?${token}`
 
-    const response = await fetch(urlFileToken, {
-        method: 'PUT',
-        headers: {
-            'x-ms-blob-type': 'BlockBlob',
-            'Content-Type': mimetype || 'application/octet-stream'
-        },
-        body: fileBuffer
-    })
+    // Erro de rede não pode derrubar a requisição inteira: devolve false e o controller responde
+    try {
+        const response = await fetch(urlFileToken, {
+            method: 'PUT',
+            headers: {
+                'x-ms-blob-type': 'BlockBlob',
+                'Content-Type': mimetype || 'application/octet-stream'
+            },
+            body: fileBuffer
+        })
 
-    if (response.status === 201) return urlFile
+        if (response.status === 201) return urlFile
 
-    console.error('Falha no upload para a Azure:', response.status)
+        // 403 normalmente é token SAS vencido ou sem permissão de escrita
+        console.error('Falha no upload para a Azure:', response.status)
+    } catch (error) {
+        console.error('Falha de conexão no upload para a Azure:', error.code || error.message)
+    }
+
     return false
 }
 

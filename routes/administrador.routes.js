@@ -98,7 +98,13 @@ router.put('/me', upload.single('foto_avatar'), async (req,res) => {
     let dados = req.body
     let contentType = req.headers['content-type']
 
-    const administrador = await formatarJson(dados, 'editar')
+    // Aqui só nome e celular. NÃO usar formatarJson: ele transforma "senha" ausente
+    // no texto "undefined", e o controller gravaria essa senha. A troca de senha
+    // é feita em PUT /me/senha.
+    const administrador = {
+        nome_completo : String(dados.nome_completo),
+        celular       : dados.celular ? String(dados.celular) : null
+    }
     let foto_avatar = req.file
 
     let result = await editarAdministradorByToken(administrador, token, foto_avatar, contentType)
