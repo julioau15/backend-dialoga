@@ -52,4 +52,4 @@ jobs:
           app-name: 'back-dialoga'
           slot-name: 'Production'
           package: .
-          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_42AB53F920644F169B46220B494779DC }}
+          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_D73600E408EF4711AD33F93F021CC92E }}
