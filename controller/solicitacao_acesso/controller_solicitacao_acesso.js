@@ -10,13 +10,22 @@ const solicitacaoAcessoDAO = require('../../model/DAO/solicitacao_acesso/solicit
 const { decodeJWT } = require('../../middleware/middlewareJWT.js')
 
 // inserir nova solicitacaoAcesso
+// o token traz o id do USUÁRIO; a solicitação guarda o id do PROFISSIONAL
+const obterIdProfissionalDoToken = async (idUsuario) => {
+    const profissionalDAO = require('../../model/DAO/profissional/profissional.js')
+    let result = await profissionalDAO.selectByIdUsuarioProfissional(idUsuario)
+    if(!result || result.length < 1) return false
+    return result[0].id
+}
+
 const inserirNovaSolicitacaoAcesso = async (token, idPaciente) => {
     let message = JSON.parse(JSON.stringify(config_message))
     try {
         let decodedToken = await decodeJWT(token)
         if(!decodedToken.status) return message.ERROR_INVALID_TOKEN
 
-        let idProfissional = decodedToken.decode.id
+        let idProfissional = await obterIdProfissionalDoToken(decodedToken.decode.id)
+        if(!idProfissional) return message.ERROR_NOT_FOUND // 404
 
         let solicitacaoAcesso = {
             id_profissional: idProfissional,

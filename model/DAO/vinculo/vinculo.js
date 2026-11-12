@@ -154,10 +154,18 @@ const selectByIdProfissional = async (idProfissional, filtro = {}) => {
             tbl_paciente.id,
             tbl_paciente.nome_completo,
             tbl_paciente.apelido,
-            tbl_paciente.status_atividade
+            tbl_paciente.status_atividade,
+            tbl_paciente.foto_avatar,
+            tbl_vinculo.id AS id_vinculo,
+            tbl_vinculo.status AS status_vinculo,
+            COALESCE(tbl_vinculo.data_inicio_acompanhamento, tbl_vinculo.data_solicitacao) AS desde,
+            CASE WHEN tbl_vinculo.status = 1 THEN tbl_usuario.email END AS email,
+            CASE WHEN tbl_vinculo.status = 1 THEN tbl_paciente.celular END AS celular
         FROM tbl_vinculo
         INNER JOIN tbl_paciente
             ON tbl_paciente.id = tbl_vinculo.id_paciente
+        INNER JOIN tbl_usuario
+            ON tbl_usuario.id = tbl_paciente.id_usuario
         WHERE tbl_vinculo.id_profissional = ?
     `
 
@@ -202,7 +210,13 @@ const selectByIdPaciente = async (id, filtro = {}) => {
                    tbl_profissional.instituicao_clinica,
                    tbl_profissional.foto_avatar,
                    tbl_profissional.id_usuario,
-                   tbl_vinculo.status
+                   tbl_vinculo.status,
+                   tbl_vinculo.id AS id_vinculo,
+                   COALESCE(tbl_vinculo.data_inicio_acompanhamento, tbl_vinculo.data_solicitacao) AS desde,
+                   (SELECT GROUP_CONCAT(e.especialidade ORDER BY e.especialidade SEPARATOR ', ')
+                      FROM tbl_profissional_especialidade pe
+                      JOIN tbl_especialidade e ON e.id = pe.id_especialidade
+                     WHERE pe.id_profissional = tbl_profissional.id) AS especialidades
                FROM tbl_vinculo
                INNER JOIN tbl_profissional
                    ON tbl_vinculo.id_profissional = tbl_profissional.id

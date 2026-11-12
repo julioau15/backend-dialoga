@@ -9,6 +9,14 @@ const config_message = require('../module/configMessages.js')
 const anotacaoDAO = require('../../model/DAO/anotacao/anotacao.js')
 const { decodeJWT } = require('../../middleware/middlewareJWT.js')
 
+// o token traz o id do USUÁRIO; a anotação guarda o id do PROFISSIONAL
+const obterIdProfissionalDoToken = async (idUsuario) => {
+    const profissionalDAO = require('../../model/DAO/profissional/profissional.js')
+    let result = await profissionalDAO.selectByIdUsuarioProfissional(idUsuario)
+    if(!result || result.length < 1) return false
+    return result[0].id
+}
+
 // inserir nova anotacao
 const inserirNovaAnotacao = async (anotacao, idPaciente, token, contentType) => {
     let message = JSON.parse(JSON.stringify(config_message))
@@ -16,7 +24,8 @@ const inserirNovaAnotacao = async (anotacao, idPaciente, token, contentType) => 
         let decodedToken = await decodeJWT(token)
         if(!decodedToken.status) return message.ERROR_INVALID_TOKEN
 
-        let idProfissional = decodedToken.decode.id
+        let idProfissional = await obterIdProfissionalDoToken(decodedToken.decode.id)
+        if(!idProfissional) return message.ERROR_NOT_FOUND // 404
 
         anotacao.id_profissional = Number(idProfissional)
         anotacao.id_paciente = Number(idPaciente)
@@ -127,7 +136,8 @@ const listarAnotacaoByIdPaciente = async (token, idPaciente) => {
         let decodedToken = await decodeJWT(token)
         if(!decodedToken.status) return message.ERROR_INVALID_TOKEN
 
-        let idProfissional = decodedToken.decode.id
+        let idProfissional = await obterIdProfissionalDoToken(decodedToken.decode.id)
+        if(!idProfissional) return message.ERROR_NOT_FOUND // 404
 
         let result = await anotacaoDAO.selectByIdPacienteAnotacao(idPaciente, idProfissional)
 
