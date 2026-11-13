@@ -160,6 +160,7 @@ INSERT INTO tbl_notificacao (titulo_mensagem, lida, data_criacao, referencia_eve
 ('Sua consulta de 08/10 foi cancelada',             1, '2026-10-07 12:00:00', 'consulta:5', 2, NULL, 4),
 ('Nova tarefa disponível: Diário de pensamentos',   0, '2026-10-12 09:00:00', 'tarefa:1',   3, NULL, 1),
 ('Rafael Novaes solicitou acompanhamento',          0, '2026-10-16 09:30:00', 'vinculo:5',  4, 1,    NULL),
+('O paciente aceitou a sua solicitação de vínculo', 1, '2026-03-03 09:00:00', 'vinculo:1',  4, 1,    1),
 ('Hora de tomar Sertralina 50mg',                   1, '2026-10-19 08:00:00', 'dose:1',     5, NULL, 1),
 ('Bem-vinda ao Dialoga!',                           0, '2026-09-20 08:45:00', NULL,         6, 3,    NULL);
 

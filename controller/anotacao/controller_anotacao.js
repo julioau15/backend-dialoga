@@ -27,6 +27,16 @@ const inserirNovaAnotacao = async (anotacao, idPaciente, token, contentType) => 
         let idProfissional = await obterIdProfissionalDoToken(decodedToken.decode.id)
         if(!idProfissional) return message.ERROR_NOT_FOUND // 404
 
+        const vinculoDAO = require('../../model/DAO/vinculo/vinculo.js')
+        let vinculo = await vinculoDAO.selectByIdPacienteProfissional(idPaciente, idProfissional)
+        if (!vinculo || vinculo.length < 1 || Number(vinculo[0].status) !== 1) {
+            return {
+                status: false,
+                status_code: 403,
+                message: 'Acesso negado. O paciente ainda não aceitou a solicitação de vínculo.'
+            }
+        }
+
         anotacao.id_profissional = Number(idProfissional)
         anotacao.id_paciente = Number(idPaciente)
 
@@ -138,6 +148,16 @@ const listarAnotacaoByIdPaciente = async (token, idPaciente) => {
 
         let idProfissional = await obterIdProfissionalDoToken(decodedToken.decode.id)
         if(!idProfissional) return message.ERROR_NOT_FOUND // 404
+
+        const vinculoDAO = require('../../model/DAO/vinculo/vinculo.js')
+        let vinculo = await vinculoDAO.selectByIdPacienteProfissional(idPaciente, idProfissional)
+        if (!vinculo || vinculo.length < 1 || Number(vinculo[0].status) !== 1) {
+            return {
+                status: false,
+                status_code: 403,
+                message: 'Acesso negado. O paciente ainda não aceitou a solicitação de vínculo.'
+            }
+        }
 
         let result = await anotacaoDAO.selectByIdPacienteAnotacao(idPaciente, idProfissional)
 

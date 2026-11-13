@@ -162,7 +162,7 @@ const autenticarUsuario = async (usuario, contentType) => {
     }
 }
 
-const autenticarUsuarioGoogle = async (id_google, contentType) => {
+const autenticarUsuarioGoogle = async (id_google, contentType, dados = {}) => {
     let message = JSON.parse(JSON.stringify(config_message))
 
     try {
@@ -175,12 +175,29 @@ const autenticarUsuarioGoogle = async (id_google, contentType) => {
             return message.ERROR_BAD_REQUEST // 400
         }
 
-        // procura o usuário no banco de dados
+        // 1. Procura o usuário pelo id_google
         let dadosUsuario = await authDAO.selectAuthUsuarioGoogle(id_google)
         
-        // verifica se o usuário foi encontrado
-        if (!dadosUsuario || dadosUsuario.length < 1)
-            return message.ERROR_UNAUTHORIZED
+        // 2. Se não encontrou por id_google, mas um e-mail foi enviado no body, verifica se o e-mail já está cadastrado
+        if ((!dadosUsuario || dadosUsuario.length < 1) && dados && dados.email && typeof dados.email === 'string' && dados.email.trim() !== '') {
+            const email = dados.email.trim()
+            let usuarioPorEmail = await authDAO.selectAuthUsuario({ email: email })
+            if (usuarioPorEmail && usuarioPorEmail.length > 0) {
+                // Usuário cadastrado sem id_google! Atualiza/salva o id_google para essa conta
+                await knexConex.raw('UPDATE tbl_usuario SET id_google = ? WHERE id = ?', [id_google, usuarioPorEmail[0].id])
+                dadosUsuario = await authDAO.selectAuthUsuarioGoogle(id_google)
+            }
+        }
+
+        // 3. Se o usuário não foi encontrado por id_google nem por e-mail
+        if (!dadosUsuario || dadosUsuario.length < 1) {
+            return {
+                status: false,
+                status_code: 404,
+                codigo: 'USUARIO_NAO_ENCONTRADO',
+                message: 'Usuário não cadastrado.'
+            }
+        }
 
         const bloqueio = await bloquearProfissionalNaoAprovado(dadosUsuario[0])
         if (bloqueio) return bloqueio

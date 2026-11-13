@@ -265,6 +265,47 @@ const primeiroAcessoPaciente = async (paciente, token) => {
 
         if(!result) return message.ERROR_INTERNAL_SERVER_MODEL // 500
 
+        if (paciente.registro_humor && typeof paciente.registro_humor === 'object') {
+            const registroHumorDAO = require('../../model/DAO/registro_humor/registro_humor.js')
+            const humorData = {
+                sentimento: paciente.registro_humor.sentimento || null,
+                energia: paciente.registro_humor.energia || null,
+                humor: paciente.registro_humor.humor || 3,
+                padrao_pensamentos: paciente.registro_humor.padrao_pensamentos || null,
+                horas_sono: paciente.registro_humor.horas_sono || null,
+                relato: paciente.registro_humor.relato || paciente.registro_humor.observacoes || null,
+                id_paciente: idPaciente
+            }
+            await registroHumorDAO.insertRegistroHumor(humorData)
+        }
+
+        if (paciente.id_profissional) {
+            const vinculoDAO = require('../../model/DAO/vinculo/vinculo.js')
+            const notificacaoDAO = require('../../model/DAO/notificacao/notificacao.js')
+            const idProfissional = Number(paciente.id_profissional)
+
+            let vinculoExistente = await vinculoDAO.selectVinculoExato(idPaciente, idProfissional)
+            if (vinculoExistente && vinculoExistente.length < 1) {
+                let idVinculo = await vinculoDAO.insertVinculoPaciente({
+                    id_profissional: idProfissional,
+                    id_paciente: idPaciente
+                })
+                if (!idVinculo) {
+                    console.log('[primeiro-acesso] falha ao inserir vínculo', { idPaciente, idProfissional })
+                } else {
+                    let idNotificacao = await notificacaoDAO.insertNotificacao({
+                        titulo_mensagem: 'Você recebeu uma solicitação de vínculo de um paciente.',
+                        lida: 0,
+                        referencia_evento: 'solicitacao_vinculo',
+                        id_categoria: 4,
+                        id_profissional: idProfissional,
+                        id_paciente: null
+                    })
+                    if (!idNotificacao) console.log('[primeiro-acesso] falha ao inserir notificação', { idVinculo, idProfissional })
+                }
+            }
+        }
+
         return await montarMensagem(message, message.SUCESS_UPDATE_ITEM, paciente)
 
     } catch (error) {

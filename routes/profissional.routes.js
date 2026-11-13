@@ -58,7 +58,8 @@ const formatarJson = async (dados = {}, acao) => {
         cpf                 : String(dados.cpf),
         crp                 : String(dados.crp),
         instituicao_clinica : dados.instituicao_clinica ? String(dados.instituicao_clinica) : null,
-        id_especialidade    : parseEspecialidades(dados.id_especialidade)
+        id_especialidade    : parseEspecialidades(dados.id_especialidade),
+        id_google           : dados.id_google ? String(dados.id_google) : null
     }
 
      const profissionalEditar = {

@@ -47,6 +47,21 @@ const inserirNovaResposta = async (resposta, idTarefa, contentType) => {
                     id_tarefa: atual[0].id_tarefa,
                     id_paciente: atual[0].id_paciente
                 })
+
+                // Envia notificação para o profissional criador da tarefa
+                const tarefaDAO = require('../../model/DAO/tarefa/tarefa.js')
+                const notificacaoDAO = require('../../model/DAO/notificacao/notificacao.js')
+                let dadosTarefa = await tarefaDAO.selectByIdTarefa(atual[0].id_tarefa)
+                if (dadosTarefa && dadosTarefa.length > 0 && dadosTarefa[0].id_profissional_criador) {
+                    await notificacaoDAO.insertNotificacao({
+                        titulo_mensagem: 'Um paciente respondeu a uma tarefa.',
+                        lida: 0,
+                        referencia_evento: 'tarefa_respondida',
+                        id_categoria: 3,
+                        id_profissional: dadosTarefa[0].id_profissional_criador,
+                        id_paciente: null
+                    })
+                }
             }
         }
 

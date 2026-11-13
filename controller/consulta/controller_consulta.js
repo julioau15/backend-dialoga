@@ -31,6 +31,26 @@ const inserirNovaConsulta = async (consulta, token, contentType) => {
         let validar = await validarDados(consulta, contentType)
         if(validar) return validar // 400 ou 415
 
+        // Valida se o paciente e o profissional possuem vínculo ativo (status = 1) e paciente ativo
+        if (consulta.id_paciente && consulta.id_profissional) {
+            const vinculoDAO = require('../../model/DAO/vinculo/vinculo.js')
+            let vinculo = await vinculoDAO.selectByIdPacienteProfissional(consulta.id_paciente, consulta.id_profissional)
+            if (!vinculo || vinculo.length < 1 || Number(vinculo[0].status) !== 1) {
+                return {
+                    status: false,
+                    status_code: 403,
+                    message: 'Ação não permitida. Profissional e paciente precisam ter um vínculo ativo para marcar consultas.'
+                }
+            }
+            if (vinculo[0].status_paciente === 'inativo') {
+                return {
+                    status: false,
+                    status_code: 403,
+                    message: 'Ação não permitida. Não é possível marcar consulta para paciente inativo.'
+                }
+            }
+        }
+
         let result = await consultaDAO.insertConsulta(consulta)
 
         if(!result) return message.ERROR_INTERNAL_SERVER_MODEL

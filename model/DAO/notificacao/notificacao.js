@@ -16,7 +16,16 @@ const insertNotificacao = async (notificacao) => {
                VALUES (?, ?, ?, ?, ?, ?, ?)`
 
     try {
-        let response = await knexConex.raw(sql, [notificacao.titulo_mensagem, notificacao.lida, notificacao.data_criacao, notificacao.referencia_evento, notificacao.id_categoria, notificacao.id_profissional, notificacao.id_paciente])
+        const dataCriacao = notificacao.data_criacao || new Date().toISOString().slice(0, 19).replace('T', ' ')
+        let response = await knexConex.raw(sql, [
+            notificacao.titulo_mensagem ?? null,
+            notificacao.lida ?? 0,
+            dataCriacao,
+            notificacao.referencia_evento ?? null,
+            notificacao.id_categoria ?? null,
+            notificacao.id_profissional ?? null,
+            notificacao.id_paciente ?? null
+        ])
 
         if(response) return response[0].insertId 
 
@@ -37,7 +46,17 @@ const updateNotificacao = async (notificacao) => {
                    id_paciente = ?
                WHERE id = ?`
     try {
-        let response = await knexConex.raw(sql, [notificacao.titulo_mensagem, notificacao.lida, notificacao.data_criacao, notificacao.referencia_evento, notificacao.id_categoria, notificacao.id_profissional, notificacao.id_paciente, notificacao.id])
+        const dataCriacao = notificacao.data_criacao || new Date().toISOString().slice(0, 19).replace('T', ' ')
+        let response = await knexConex.raw(sql, [
+            notificacao.titulo_mensagem ?? null,
+            notificacao.lida ?? 0,
+            dataCriacao,
+            notificacao.referencia_evento ?? null,
+            notificacao.id_categoria ?? null,
+            notificacao.id_profissional ?? null,
+            notificacao.id_paciente ?? null,
+            notificacao.id
+        ])
 
         if(response) return response
 
@@ -120,7 +139,7 @@ const selectNotificacaoByIdPaciente = async (idPaciente, filtro = {}) => {
                    id_categoria,
                    id_paciente
                FROM tbl_notificacao
-               WHERE id_paciente = ?`
+               WHERE id_paciente = (SELECT id FROM tbl_paciente WHERE id_usuario = ? LIMIT 1)`
 
     const params = [idPaciente]
 
@@ -161,7 +180,7 @@ const selectNotificacaoByIdProfissional = async (idProfissional, filtro = {}) =>
                    id_categoria,
                    id_profissional
                FROM tbl_notificacao
-               WHERE id_profissional = ?`
+               WHERE id_profissional = (SELECT id FROM tbl_profissional WHERE id_usuario = ? LIMIT 1)`
 
     const params = [idProfissional]
 
@@ -210,7 +229,7 @@ const marcarNotificacaoComoLida = async (id) => {
 const marcarTodasNotificacoesComoLidasByIdPaciente = async (idPaciente) => {
     let sql = `UPDATE tbl_notificacao
                SET lida = 1
-               WHERE id_paciente = ?`
+               WHERE id_paciente = (SELECT id FROM tbl_paciente WHERE id_usuario = ? LIMIT 1)`
     try {
         let response = await knexConex.raw(sql, [idPaciente])
 
@@ -225,7 +244,7 @@ const marcarTodasNotificacoesComoLidasByIdPaciente = async (idPaciente) => {
 const marcarTodasNotificacoesComoLidasByIdProfissional = async (idProfissional) => {
     let sql = `UPDATE tbl_notificacao
                SET lida = 1
-               WHERE id_profissional = ?`
+               WHERE id_profissional = (SELECT id FROM tbl_profissional WHERE id_usuario = ? LIMIT 1)`
     try {
         let response = await knexConex.raw(sql, [idProfissional])
 

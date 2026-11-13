@@ -56,7 +56,8 @@ const formatarJson = async (dados, acao) => {
         nome_completo     : String(dados.nome_completo),
         email             : String(dados.email),
         celular           : String(dados.celular),
-        senha             : String(dados.senha)
+        senha             : String(dados.senha),
+        id_google         : dados.id_google ? String(dados.id_google) : null
     }
 
     const pacienteEditar = {
@@ -121,7 +122,7 @@ router.get('/me', async (req,res) => {
 
 // endpoint para buscar pacientes pelo nome ou e-mail
 router.get('/busca', async (req,res) => {
-    let busca = req.query.busca
+    let busca = req.query.busca || req.query.q || req.query.nome
     let result = await buscarPacientePorNomeOuEmail(busca)
     res.status(result.status_code).json(result)
 })

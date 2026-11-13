@@ -128,19 +128,37 @@ const deleteVinculo = async (id) => {
 
 const selectByIdPacienteProfissional = async (idPaciente, idProfissonal) => {
     let sql = `SELECT
-                   id,
-                   status,
-                   origem_cadastro,
-                   data_solicitacao,
-                   data_aceite,
-                   data_inicio_acompanhamento,
-                   data_fim,
-                   id_profissional,
-                   id_paciente
-               FROM tbl_vinculo
-               WHERE id_profissional = ? AND id_paciente = ?`
+                   v.id,
+                   v.status,
+                   v.origem_cadastro,
+                   v.data_solicitacao,
+                   v.data_aceite,
+                   v.data_inicio_acompanhamento,
+                   v.data_fim,
+                   v.id_profissional,
+                   v.id_paciente,
+                   p.status_atividade AS status_paciente
+               FROM tbl_vinculo v
+               INNER JOIN tbl_paciente p ON p.id = v.id_paciente
+               WHERE (v.id_profissional = ? OR v.id_profissional = (SELECT id FROM tbl_profissional WHERE id_usuario = ? LIMIT 1))
+                 AND (v.id_paciente = ? OR p.id_usuario = ?)`
     try {
-        let response = await knexConex.raw(sql, [idProfissonal, idPaciente])
+        let response = await knexConex.raw(sql, [idProfissonal, idProfissonal, idPaciente, idPaciente])
+        if(response) return response[0]
+    } catch (error) { console.log(error) }
+
+    return false
+}
+
+// verifica se já existe vínculo em andamento entre o paciente e o profissional (ids de tbl_paciente / tbl_profissional)
+const selectVinculoExato = async (idPaciente, idProfissional) => {
+    let sql = `SELECT id, status, origem_cadastro
+               FROM tbl_vinculo
+               WHERE id_paciente = ?
+                 AND id_profissional = ?
+                 AND status NOT IN ('2', 'recusado', 'encerrado')`
+    try {
+        let response = await knexConex.raw(sql, [idPaciente, idProfissional])
         if(response) return response[0]
     } catch (error) { console.log(error) }
 
@@ -158,6 +176,7 @@ const selectByIdProfissional = async (idProfissional, filtro = {}) => {
             tbl_paciente.foto_avatar,
             tbl_vinculo.id AS id_vinculo,
             tbl_vinculo.status AS status_vinculo,
+            tbl_vinculo.origem_cadastro,
             COALESCE(tbl_vinculo.data_inicio_acompanhamento, tbl_vinculo.data_solicitacao) AS desde,
             CASE WHEN tbl_vinculo.status = 1 THEN tbl_usuario.email END AS email,
             CASE WHEN tbl_vinculo.status = 1 THEN tbl_paciente.celular END AS celular
@@ -167,6 +186,7 @@ const selectByIdProfissional = async (idProfissional, filtro = {}) => {
         INNER JOIN tbl_usuario
             ON tbl_usuario.id = tbl_paciente.id_usuario
         WHERE tbl_vinculo.id_profissional = ?
+        AND tbl_vinculo.status IN (0, 1)
     `
 
     const params = [idProfissional]
@@ -212,6 +232,7 @@ const selectByIdPaciente = async (id, filtro = {}) => {
                    tbl_profissional.id_usuario,
                    tbl_vinculo.status,
                    tbl_vinculo.id AS id_vinculo,
+                   tbl_vinculo.origem_cadastro,
                    COALESCE(tbl_vinculo.data_inicio_acompanhamento, tbl_vinculo.data_solicitacao) AS desde,
                    (SELECT GROUP_CONCAT(e.especialidade ORDER BY e.especialidade SEPARATOR ', ')
                       FROM tbl_profissional_especialidade pe
@@ -353,6 +374,7 @@ module.exports = {
     insertVinculoProfissional,
     deleteVinculoPacienteProfissional,
     selectByIdPacienteProfissional,
+    selectVinculoExato,
     selectByIdPaciente,
     insertVinculoPaciente,
     aceitarVinculo,

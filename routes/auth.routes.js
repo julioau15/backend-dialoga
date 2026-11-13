@@ -69,8 +69,9 @@ const {
 router.post('/login/google/:id_google', bodyParserJSON, async (req,res) => {
     let id_google = req.params.id_google
     let contentType = req.headers['content-type']
+    let dados = req.body
 
-    let result = await autenticarUsuarioGoogle(id_google, contentType)
+    let result = await autenticarUsuarioGoogle(id_google, contentType, dados)
 
     res.status(result.status_code).json(result)
 })

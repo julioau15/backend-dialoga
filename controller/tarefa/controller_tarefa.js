@@ -242,7 +242,10 @@ const inserirTarefaByToken = async (tarefa, anexo_arquivo, token, contentType) =
         }
 
         else if(nivel == 1) {
-            result = await tarefaDAO.insertTarefaByIdProfissional(tarefa, id)
+            let profissionalDAO = require('../../model/DAO/profissional/profissional.js')
+            let profResult = await profissionalDAO.selectByIdUsuarioProfissional(id)
+            if (!profResult || profResult.length < 1) return message.ERROR_NOT_FOUND
+            let idProfissional = profResult[0].id
 
             const listaPacientes = []
             if (Array.isArray(tarefa.prazos_por_paciente) && tarefa.prazos_por_paciente.length > 0) {
@@ -255,6 +258,28 @@ const inserirTarefaByToken = async (tarefa, anexo_arquivo, token, contentType) =
                 }
             }
 
+            // Validar se todos os pacientes possuem vínculo aceito (status = 1) com o profissional e estão ativos
+            const vinculoDAO = require('../../model/DAO/vinculo/vinculo.js')
+            for (let itemPac of listaPacientes) {
+                let vinculo = await vinculoDAO.selectByIdPacienteProfissional(itemPac.paciente_id, idProfissional)
+                if (!vinculo || vinculo.length < 1 || Number(vinculo[0].status) !== 1) {
+                    return {
+                        status: false,
+                        status_code: 403,
+                        message: 'Acesso negado. O profissional só pode enviar tarefas para pacientes com vínculo aceito.'
+                    }
+                }
+                if (vinculo[0].status_paciente === 'inativo') {
+                    return {
+                        status: false,
+                        status_code: 403,
+                        message: 'Acesso negado. Não é possível enviar tarefas para pacientes inativos.'
+                    }
+                }
+            }
+
+            result = await tarefaDAO.insertTarefaByIdProfissional(tarefa, id)
+
             for (let itemPac of listaPacientes) {
                 let tarefaDestinatario = {
                     prazo: itemPac.prazo,
@@ -264,7 +289,18 @@ const inserirTarefaByToken = async (tarefa, anexo_arquivo, token, contentType) =
                 }
                 let resultInsert = await tarefaDestinatarioController.inserirNovaTarefaDestinatario(tarefaDestinatario, 'application/json')
                 // o controller devolve um objeto de erro (truthy) quando falha: precisa checar o status
-                if (resultInsert && resultInsert.status) ids.push(resultInsert)
+                if (resultInsert && resultInsert.status) {
+                    ids.push(resultInsert)
+                    const notificacaoDAO = require('../../model/DAO/notificacao/notificacao.js')
+                    await notificacaoDAO.insertNotificacao({
+                        titulo_mensagem: 'Uma nova tarefa foi atribuída pelo profissional.',
+                        lida: 0,
+                        referencia_evento: 'nova_tarefa',
+                        id_categoria: 3,
+                        id_profissional: null,
+                        id_paciente: itemPac.paciente_id
+                    })
+                }
                 else console.log('[TAREFA] falha ao gravar destinatário/prazo:', itemPac, resultInsert)
             }
         } 

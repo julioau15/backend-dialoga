@@ -7,6 +7,7 @@
 
 const config_message = require('../module/configMessages.js')
 const vinculoDAO = require('../../model/DAO/vinculo/vinculo.js')
+const notificacaoDAO = require('../../model/DAO/notificacao/notificacao.js')
 
 // inserir nova vinculo
 const inserirNovaVinculo = async (vinculo, contentType) => {
@@ -160,6 +161,16 @@ const inserirNovoVinculoByProfissional = async (vinculo) => {
         if(!result) return message.ERROR_INTERNAL_SERVER_MODEL
 
         vinculo.id = result
+
+        await notificacaoDAO.insertNotificacao({
+            titulo_mensagem: 'Você recebeu uma solicitação de vínculo de um profissional.',
+            lida: 0,
+            referencia_evento: 'solicitacao_vinculo',
+            id_categoria: 4,
+            id_profissional: null,
+            id_paciente: vinculo.id_paciente
+        })
+
         return await montarMensagem(message, message.SUCESS_CREATED_ITEM, vinculo)
 
     } catch (error) {console.log(error)}
@@ -175,6 +186,16 @@ const inserirNovoVinculoByPaciente = async (vinculo) => {
         if(!result) return message.ERROR_INTERNAL_SERVER_MODEL
 
         vinculo.id = result
+
+        await notificacaoDAO.insertNotificacao({
+            titulo_mensagem: 'Você recebeu uma solicitação de vínculo de um paciente.',
+            lida: 0,
+            referencia_evento: 'solicitacao_vinculo',
+            id_categoria: 4,
+            id_profissional: vinculo.id_profissional,
+            id_paciente: null
+        })
+
         return await montarMensagem(message, message.SUCESS_CREATED_ITEM, vinculo)
 
     } catch (error) {console.log(error)}
@@ -211,9 +232,24 @@ const aceitarVinculo = async (id) => {
         let resultBuscarId = await buscarVinculo(id)
         if(!resultBuscarId.status) return resultBuscarId // 400 e 404
 
+        let vinculoInfo = resultBuscarId.response.vinculo[0] || await vinculoDAO.selectByIdVinculo(id)
+        let profId = vinculoInfo.id_profissional
+        let pacId = vinculoInfo.id_paciente
+
         let result = await vinculoDAO.aceitarVinculo(id)
 
         if(!result) return message.ERROR_INTERNAL_SERVER_MODEL // 500
+
+        if (profId) {
+            await notificacaoDAO.insertNotificacao({
+                titulo_mensagem: 'O paciente aceitou a sua solicitação de vínculo.',
+                lida: 0,
+                referencia_evento: 'vinculo_aceito',
+                id_categoria: 4,
+                id_profissional: profId,
+                id_paciente: null
+            })
+        }
 
         return await montarMensagem(message, message.SUCESS_UPDATE_ITEM)
 

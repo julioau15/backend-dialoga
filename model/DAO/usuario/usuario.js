@@ -12,15 +12,16 @@ const knexConex = knex(knexConfig.development)
 
 // insert de usuario
 const insertUsuario = async (usuario) => {
-    let sql = `INSERT INTO tbl_usuario (email, senha_hash, data_criacao, nivel)
-               VALUES (?, ?, NOW(), ?)`
+    let sql = `INSERT INTO tbl_usuario (email, senha_hash, data_criacao, nivel, id_google)
+               VALUES (?, ?, NOW(), ?, ?)`
 
     try {
         let response = await knexConex.raw(sql, 
             [
                 usuario.email,
                 usuario.senha_hash,
-                usuario.nivel
+                usuario.nivel,
+                usuario.id_google || null
             ]
         )
 
