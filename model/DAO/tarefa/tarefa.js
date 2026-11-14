@@ -173,17 +173,15 @@ const selectTarefasByIdPaciente = async (idPaciente) => {
                    td.data_conclusao
                FROM tbl_tarefa t
                LEFT JOIN tbl_tarefa_destinatario td ON td.id_tarefa = t.id
-                   AND (td.id_paciente = ? OR td.id_paciente = (SELECT id FROM tbl_paciente WHERE id_usuario = ? LIMIT 1))
+                   AND td.id_paciente = ?
                WHERE (
                    td.id_paciente = ?
-                   OR td.id_paciente = (SELECT id FROM tbl_paciente WHERE id_usuario = ? LIMIT 1)
                    OR t.id_paciente_criador = ?
-                   OR t.id_paciente_criador = (SELECT id FROM tbl_paciente WHERE id_usuario = ? LIMIT 1)
                )
                  AND (t.is_rascunho = 0 OR t.is_rascunho IS NULL)
                ORDER BY td.prazo IS NULL, td.prazo, t.id DESC`
     try {
-        let response = await knexConex.raw(sql, [idPaciente, idPaciente, idPaciente, idPaciente, idPaciente, idPaciente])
+        let response = await knexConex.raw(sql, [idPaciente, idPaciente, idPaciente])
 
         if(response) return response[0]
     } catch (error) { console.log(error) }

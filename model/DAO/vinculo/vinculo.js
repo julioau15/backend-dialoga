@@ -165,6 +165,23 @@ const selectVinculoExato = async (idPaciente, idProfissional) => {
     return false
 }
 
+// busca o vínculo ACEITO (status 1 / 'ativo') entre o paciente e o profissional, usando ids de tbl_paciente / tbl_profissional
+const selectVinculoAceito = async (idPaciente, idProfissional) => {
+    let sql = `SELECT v.id, v.status, p.status_atividade AS status_paciente
+               FROM tbl_vinculo v
+               INNER JOIN tbl_paciente p ON p.id = v.id_paciente
+               WHERE v.id_paciente = ?
+                 AND v.id_profissional = ?
+                 AND v.status IN ('1', 'ativo')
+               LIMIT 1`
+    try {
+        let response = await knexConex.raw(sql, [idPaciente, idProfissional])
+        if(response) return response[0]
+    } catch (error) { console.log(error) }
+
+    return false
+}
+
 // listar pacientes vinculados ao profissional, filtrando por nome e status
 const selectByIdProfissional = async (idProfissional, filtro = {}) => {
     let sql = `
@@ -375,6 +392,7 @@ module.exports = {
     deleteVinculoPacienteProfissional,
     selectByIdPacienteProfissional,
     selectVinculoExato,
+    selectVinculoAceito,
     selectByIdPaciente,
     insertVinculoPaciente,
     aceitarVinculo,

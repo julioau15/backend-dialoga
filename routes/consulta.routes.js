@@ -16,7 +16,8 @@ const {
     atualizarConsulta,
     listarConsulta,
     buscarConsulta,
-    excluirConsulta
+    excluirConsulta,
+    listarHorariosDoVinculo
 } = require('../controller/consulta/controller_consulta.js')
 
 // ---------------- consulta -----------------
@@ -36,6 +37,15 @@ router.post('/',bodyParserJSON, async (req,res) => {
 router.get('/', async (req,res) => {
     let filtro = req.query
     let result = await listarConsulta(filtro)
+    res.status(result.status_code).json(result)
+})
+
+// endpoint com os dias e horários livres do profissional de um vínculo (opcional: ?dias=60)
+// (precisa vir antes de '/:id')
+router.get('/vinculos/:idVinculo/horarios', async (req,res) => {
+    let token = req.headers['x-access-token']
+    let idVinculo = req.params.idVinculo
+    let result = await listarHorariosDoVinculo(idVinculo, token, req.query)
     res.status(result.status_code).json(result)
 })
 
@@ -59,8 +69,9 @@ router.put('/:id', bodyParserJSON, async (req,res) => {
 
 // endpoint para deletar um consulta pelo id
 router.delete('/:id', async (req,res) => {
+    let token = req.headers['x-access-token']
     let id = req.params.id
-    let result = await excluirConsulta(id)
+    let result = await excluirConsulta(id, token)
     res.status(result.status_code).json(result)
 })
 

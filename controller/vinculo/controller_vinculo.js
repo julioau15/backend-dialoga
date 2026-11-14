@@ -240,7 +240,20 @@ const aceitarVinculo = async (id) => {
 
         if(!result) return message.ERROR_INTERNAL_SERVER_MODEL // 500
 
-        if (profId) {
+        // origem 2 (ou 'paciente') = o paciente solicitou, então quem aceita é o profissional e o aviso vai para o paciente
+        // origem 1 (ou 'profissional') = o profissional convidou, então quem aceita é o paciente e o aviso vai para o profissional
+        let pacienteSolicitou = ['2', 'paciente'].includes(String(vinculoInfo.origem_cadastro).toLowerCase())
+
+        if (pacienteSolicitou && pacId) {
+            await notificacaoDAO.insertNotificacao({
+                titulo_mensagem: 'O profissional aceitou a sua solicitação de vínculo.',
+                lida: 0,
+                referencia_evento: 'vinculo_aceito',
+                id_categoria: 4,
+                id_profissional: null,
+                id_paciente: pacId
+            })
+        } else if (!pacienteSolicitou && profId) {
             await notificacaoDAO.insertNotificacao({
                 titulo_mensagem: 'O paciente aceitou a sua solicitação de vínculo.',
                 lida: 0,

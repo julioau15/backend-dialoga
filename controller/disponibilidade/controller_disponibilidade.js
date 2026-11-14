@@ -9,6 +9,15 @@ const config_message = require('../module/configMessages.js')
 const disponibilidadeDAO = require('../../model/DAO/disponibilidade/disponibilidade.js')
 const diasDaSemanaDisponibilidadeController = require('../dias_da_semana_disponibilidade/controller_dias_da_semana_disponibilidade.js')
 const { decodeJWT } = require('../../middleware/middlewareJWT.js')
+const agenda = require('../module/agendaHorarios.js')
+
+// o token traz o id do USUÁRIO; a disponibilidade guarda o id do PROFISSIONAL
+const obterIdProfissionalDoToken = async (idUsuario) => {
+    const profissionalDAO = require('../../model/DAO/profissional/profissional.js')
+    let result = await profissionalDAO.selectByIdUsuarioProfissional(idUsuario)
+    if(!result || result.length < 1) return false
+    return result[0].id
+}
 
 // inserir nova disponibilidade
 const inserirNovaDisponibilidade = async (disponibilidade, contentType) => {
@@ -112,14 +121,24 @@ const buscarDisponibilidade = async (id) => {
     return message.ERROR_INTERNAL_SERVER_CONTROLLER // 500
 }
 
-// excluir disponibilidade pelo id
-const excluirDisponibilidade = async (id) => {
+// excluir disponibilidade pelo id (só o profissional dono pode excluir)
+const excluirDisponibilidade = async (id, token) => {
     let message = JSON.parse(JSON.stringify(config_message))
 
     try {
+        let decodedToken = await decodeJWT(token)
+        if(!decodedToken.status) return message.ERROR_INVALID_TOKEN
 
         let resultBuscarId = await buscarDisponibilidade(id)
         if(!resultBuscarId.status) return resultBuscarId // 400 e 404
+
+        // administrador pode tudo; profissional só a própria
+        if(decodedToken.decode.nivel != 0){
+            let idProfissional = await obterIdProfissionalDoToken(decodedToken.decode.id)
+            if(!idProfissional || Number(resultBuscarId.response.disponibilidade[0].id_profissional) !== Number(idProfissional)){
+                return { status: false, status_code: 403, message: 'Ação não permitida. Esta disponibilidade é de outro profissional.' }
+            }
+        }
 
         let result = await disponibilidadeDAO.deleteDisponibilidade(id)
 
@@ -138,7 +157,8 @@ const listarDisponibilidadeByToken = async (token) => {
         let decodedToken = await decodeJWT(token)
         if(!decodedToken.status) return message.ERROR_INVALID_TOKEN
 
-        let idProfissional = decodedToken.decode.id
+        let idProfissional = await obterIdProfissionalDoToken(decodedToken.decode.id)
+        if(!idProfissional) return message.ERROR_NOT_FOUND // 404
 
         let result = await disponibilidadeDAO.selectAllDisponibilidadeByIdProfissional(idProfissional)
 
@@ -176,7 +196,8 @@ const inserirNovaDisponibilidadeByToken = async (disponibilidade, token, content
         let decodedToken = await decodeJWT(token)
         if(!decodedToken.status) return message.ERROR_INVALID_TOKEN
 
-        let idProfissional = decodedToken.decode.id
+        let idProfissional = await obterIdProfissionalDoToken(decodedToken.decode.id)
+        if(!idProfissional) return message.ERROR_NOT_FOUND // 404
 
         disponibilidade.id_profissional = idProfissional
 
@@ -218,7 +239,8 @@ const atualizarDisponibilidadeByToken = async (disponibilidade, token, id, conte
         let decodedToken = await decodeJWT(token)
         if(!decodedToken.status) return message.ERROR_INVALID_TOKEN
 
-        let idProfissional = decodedToken.decode.id
+        let idProfissional = await obterIdProfissionalDoToken(decodedToken.decode.id)
+        if(!idProfissional) return message.ERROR_NOT_FOUND // 404
 
         disponibilidade.id_profissional = idProfissional
 
@@ -227,6 +249,11 @@ const atualizarDisponibilidadeByToken = async (disponibilidade, token, id, conte
 
         let resultBuscarId = await buscarDisponibilidade(id)
         if(!resultBuscarId.status) return resultBuscarId // 400 e 404
+
+        // só o dono pode alterar a própria disponibilidade
+        if(Number(resultBuscarId.response.disponibilidade[0].id_profissional) !== Number(idProfissional)){
+            return { status: false, status_code: 403, message: 'Ação não permitida. Esta disponibilidade é de outro profissional.' }
+        }
 
         disponibilidade.id = Number(id)
 
@@ -304,6 +331,50 @@ const validarDados = async (disponibilidade, contentType) => {
     if(disponibilidade.data_final != undefined && disponibilidade.data_final != null && String(disponibilidade.data_final).trim() == ''){
         message.ERROR_BAD_REQUEST.field = '[DATA_FINAL] INVÁLIDO'
         return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Horários no formato HH:mm e fim depois do início
+    let horaInicio = agenda.paraHoraHHmm(disponibilidade.hora_inicio)
+    let horaFim = agenda.paraHoraHHmm(disponibilidade.hora_fim)
+    if(!horaInicio){
+        message.ERROR_BAD_REQUEST.field = '[HORA_INICIO] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+    if(!horaFim || horaFim <= horaInicio){
+        message.ERROR_BAD_REQUEST.field = '[HORA_FIM] INVÁLIDO (precisa ser depois da hora inicial)'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    // Tipo de repetição: unica | semanal | periodo
+    let tipo = disponibilidade.tipo_repeticao.trim().toLowerCase()
+    if(!['unica', 'semanal', 'periodo'].includes(tipo)){
+        message.ERROR_BAD_REQUEST.field = '[TIPO_REPETICAO] INVÁLIDO (use unica, semanal ou periodo)'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+    disponibilidade.tipo_repeticao = tipo
+
+    // Datas: unica precisa de data_inicial; periodo precisa das duas, com o fim depois do início
+    let dataInicial = agenda.paraIsoData(disponibilidade.data_inicial)
+    let dataFinal = agenda.paraIsoData(disponibilidade.data_final)
+    if((tipo === 'unica' || tipo === 'periodo') && !dataInicial){
+        message.ERROR_BAD_REQUEST.field = '[DATA_INICIAL] OBRIGATÓRIA PARA ESTE TIPO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+    if(tipo === 'periodo' && (!dataFinal || dataFinal < dataInicial)){
+        message.ERROR_BAD_REQUEST.field = '[DATA_FINAL] INVÁLIDA (precisa ser igual ou depois da inicial)'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+    if(tipo === 'unica') dataFinal = dataInicial
+    disponibilidade.data_inicial = dataInicial
+    disponibilidade.data_final = dataFinal
+
+    // Dias da semana (1 = Domingo ... 7 = Sábado): obrigatórios em semanal e periodo
+    if(tipo !== 'unica'){
+        let dias = disponibilidade.dias_da_semana
+        if(!Array.isArray(dias) || dias.length < 1 || dias.some(d => !Number.isInteger(Number(d)) || Number(d) < 1 || Number(d) > 7)){
+            message.ERROR_BAD_REQUEST.field = '[DIAS_DA_SEMANA] INVÁLIDO (informe ids de 1 a 7)'
+            return message.ERROR_BAD_REQUEST // 400
+        }
     }
 
     // Valida o profissional relacionado

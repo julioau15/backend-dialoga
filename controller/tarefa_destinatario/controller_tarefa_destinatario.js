@@ -41,6 +41,10 @@ const atualizarTarefaDestinatario = async (tarefaDestinatario, id, contentType) 
             for(let campo of ['prazo', 'status', 'data_conclusao', 'id_tarefa', 'id_paciente']){
                 if(tarefaDestinatario[campo] === undefined) tarefaDestinatario[campo] = atual[campo]
             }
+            // a tarefa e o paciente do destinatário não mudam: ignora o que o cliente mandou
+            // (o app mandava o id_usuario do token como id_paciente e quebrava a FK)
+            tarefaDestinatario.id_tarefa = atual.id_tarefa
+            tarefaDestinatario.id_paciente = atual.id_paciente
             if(tarefaDestinatario.status === 'concluida' && !tarefaDestinatario.data_conclusao){
                 tarefaDestinatario.data_conclusao = new Date()
             }

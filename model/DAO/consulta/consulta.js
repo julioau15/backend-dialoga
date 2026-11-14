@@ -221,7 +221,70 @@ const selectConsultasByIdProfissional = async (idProfissional, filtro = {}) => {
     return false
 }
 
+// vínculo com os dados dos dois lados (usado para validar quem pode marcar a consulta)
+const selectVinculoParaAgenda = async (idVinculo) => {
+    let sql = `SELECT
+                   v.id,
+                   v.status,
+                   v.id_paciente,
+                   v.id_profissional,
+                   pa.id_usuario AS usuario_paciente,
+                   pa.nome_completo AS paciente_nome,
+                   pa.status_atividade AS status_paciente,
+                   pr.id_usuario AS usuario_profissional,
+                   pr.nome_completo AS profissional_nome
+               FROM tbl_vinculo v
+               INNER JOIN tbl_paciente pa ON pa.id = v.id_paciente
+               INNER JOIN tbl_profissional pr ON pr.id = v.id_profissional
+               WHERE v.id = ?`
+    try {
+        let response = await knexConex.raw(sql, [idVinculo])
+
+        if(response) return response[0]
+    } catch (error) { console.log(error) }
+
+    return false
+}
+
+// horários já ocupados do profissional (consultas não canceladas) entre duas datas (YYYY-MM-DD, inclusive)
+// idIgnorar: id de uma consulta que não conta (ao reagendar a própria consulta)
+const selectConsultasOcupadasDoProfissional = async (idProfissional, de, ate, idIgnorar = 0) => {
+    let sql = `SELECT c.id, c.data, c.hora
+               FROM tbl_consulta c
+               INNER JOIN tbl_vinculo v ON c.id_vinculo = v.id
+               WHERE v.id_profissional = ?
+                 AND c.status <> 'cancelada'
+                 AND c.data BETWEEN ? AND ?
+                 AND c.id <> ?`
+    try {
+        let response = await knexConex.raw(sql, [idProfissional, de, ate, idIgnorar])
+
+        if(response) return response[0]
+    } catch (error) { console.log(error) }
+
+    return false
+}
+
+// especialidades cadastradas do profissional
+const selectEspecialidadesDoProfissional = async (idProfissional) => {
+    let sql = `SELECT e.id, e.especialidade
+               FROM tbl_especialidade e
+               INNER JOIN tbl_profissional_especialidade pe ON pe.id_especialidade = e.id
+               WHERE pe.id_profissional = ?
+               ORDER BY e.especialidade`
+    try {
+        let response = await knexConex.raw(sql, [idProfissional])
+
+        if(response) return response[0]
+    } catch (error) { console.log(error) }
+
+    return false
+}
+
 module.exports = {
+    selectVinculoParaAgenda,
+    selectConsultasOcupadasDoProfissional,
+    selectEspecialidadesDoProfissional,
     selectConsultasByIdProfissional,
     insertConsulta,
     updateConsulta,

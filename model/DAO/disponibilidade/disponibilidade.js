@@ -166,7 +166,37 @@ const insertDisponibilidadeByIdProfissional = async (disponibilidade, idProfissi
 
 //insere uma nova disponibilidade para um profissional pelo id do profissional
 
+// disponibilidades do profissional já com os ids dos dias da semana (1 = Domingo ... 7 = Sábado)
+const selectDisponibilidadesComDiasByIdProfissional = async (idProfissional) => {
+    let sql = `SELECT
+                   d.id,
+                   d.hora_inicio,
+                   d.hora_fim,
+                   d.tipo_repeticao,
+                   d.data_inicial,
+                   d.data_final,
+                   d.id_profissional,
+                   GROUP_CONCAT(dd.id_dias_da_semana) AS dias
+               FROM tbl_disponibilidade d
+               LEFT JOIN tbl_dias_da_semana_disponibilidade dd ON dd.id_disponibilidade = d.id
+               WHERE d.id_profissional = ?
+               GROUP BY d.id, d.hora_inicio, d.hora_fim, d.tipo_repeticao, d.data_inicial, d.data_final, d.id_profissional`
+    try {
+        let response = await knexConex.raw(sql, [idProfissional])
+
+        if(response) {
+            return response[0].map(d => ({
+                ...d,
+                dias: d.dias ? String(d.dias).split(',').map(Number) : []
+            }))
+        }
+    } catch (error) { console.log(error) }
+
+    return false
+}
+
 module.exports = {
+    selectDisponibilidadesComDiasByIdProfissional,
     insertDisponibilidade,
     updateDisponibilidade,
     selectAllDisponibilidade,

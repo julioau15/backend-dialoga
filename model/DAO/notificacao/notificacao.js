@@ -13,10 +13,10 @@ const knexConex = knex(knexConfig.development)
 // insert de notificacao
 const insertNotificacao = async (notificacao) => {
     let sql = `INSERT INTO tbl_notificacao (titulo_mensagem, lida, data_criacao, referencia_evento, id_categoria, id_profissional, id_paciente)
-               VALUES (?, ?, ?, ?, ?, ?, ?)`
+               VALUES (?, ?, COALESCE(?, NOW()), ?, ?, ?, ?)`
 
     try {
-        const dataCriacao = notificacao.data_criacao || new Date().toISOString().slice(0, 19).replace('T', ' ')
+        const dataCriacao = notificacao.data_criacao || null
         let response = await knexConex.raw(sql, [
             notificacao.titulo_mensagem ?? null,
             notificacao.lida ?? 0,
@@ -39,14 +39,14 @@ const updateNotificacao = async (notificacao) => {
     let sql = `UPDATE tbl_notificacao
                SET titulo_mensagem = ?,
                    lida = ?,
-                   data_criacao = ?,
+                   data_criacao = COALESCE(?, data_criacao),
                    referencia_evento = ?,
                    id_categoria = ?,
                    id_profissional = ?,
                    id_paciente = ?
                WHERE id = ?`
     try {
-        const dataCriacao = notificacao.data_criacao || new Date().toISOString().slice(0, 19).replace('T', ' ')
+        const dataCriacao = notificacao.data_criacao || null
         let response = await knexConex.raw(sql, [
             notificacao.titulo_mensagem ?? null,
             notificacao.lida ?? 0,

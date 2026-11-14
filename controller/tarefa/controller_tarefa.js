@@ -173,9 +173,18 @@ const listarTarefasByToken = async (token) => {
 
         let result = null
 
-        if(nivel == 1) result = await tarefaDAO.selectTarefasByIdProfissional(id)
+        // o token traz o id_usuario: resolve o id real de tbl_profissional / tbl_paciente
+        if(nivel == 1) {
+            let profResult = await require('../../model/DAO/profissional/profissional.js').selectByIdUsuarioProfissional(id)
+            if(!profResult || profResult.length < 1) return message.ERROR_NOT_FOUND
+            result = await tarefaDAO.selectTarefasByIdProfissional(profResult[0].id)
+        }
 
-        else if(nivel == 2) result = await tarefaDAO.selectTarefasByIdPaciente(id)
+        else if(nivel == 2) {
+            let pacResult = await require('../../model/DAO/paciente/paciente.js').selectByIdUsuarioPaciente(id)
+            if(!pacResult || pacResult.length < 1) return message.ERROR_NOT_FOUND
+            result = await tarefaDAO.selectTarefasByIdPaciente(pacResult[0].id)
+        }
 
         else return message.ERROR_INVALID_TOKEN
 
@@ -229,11 +238,16 @@ const inserirTarefaByToken = async (tarefa, anexo_arquivo, token, contentType) =
         }
 
         if(nivel == 2) {
-            result = await tarefaDAO.insertTarefaByIdPaciente(tarefa, id)
+            // o token traz o id_usuario; a FK de tbl_tarefa aponta para tbl_paciente.id
+            let pacResult = await require('../../model/DAO/paciente/paciente.js').selectByIdUsuarioPaciente(id)
+            if(!pacResult || pacResult.length < 1) return message.ERROR_NOT_FOUND
+            let idPaciente = pacResult[0].id
+
+            result = await tarefaDAO.insertTarefaByIdPaciente(tarefa, idPaciente)
             if (result) {
                 let tarefaDestinatario = {
                     prazo: tarefa.prazo || null,
-                    id_paciente: id,
+                    id_paciente: idPaciente,
                     id_tarefa: result,
                     status: 'pendente'
                 }
@@ -261,8 +275,8 @@ const inserirTarefaByToken = async (tarefa, anexo_arquivo, token, contentType) =
             // Validar se todos os pacientes possuem vínculo aceito (status = 1) com o profissional e estão ativos
             const vinculoDAO = require('../../model/DAO/vinculo/vinculo.js')
             for (let itemPac of listaPacientes) {
-                let vinculo = await vinculoDAO.selectByIdPacienteProfissional(itemPac.paciente_id, idProfissional)
-                if (!vinculo || vinculo.length < 1 || Number(vinculo[0].status) !== 1) {
+                let vinculo = await vinculoDAO.selectVinculoAceito(Number(itemPac.paciente_id), idProfissional)
+                if (!vinculo || vinculo.length < 1) {
                     return {
                         status: false,
                         status_code: 403,
@@ -278,7 +292,7 @@ const inserirTarefaByToken = async (tarefa, anexo_arquivo, token, contentType) =
                 }
             }
 
-            result = await tarefaDAO.insertTarefaByIdProfissional(tarefa, id)
+            result = await tarefaDAO.insertTarefaByIdProfissional(tarefa, idProfissional)
 
             for (let itemPac of listaPacientes) {
                 let tarefaDestinatario = {

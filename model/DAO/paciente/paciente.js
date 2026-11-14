@@ -13,7 +13,7 @@ const knexConex = knex(knexConfig.development)
 // insert de paciente
 const insertPaciente = async (paciente) => {
     let sql = `INSERT INTO tbl_paciente (nome_completo, celular,foto_avatar, primeiro_acesso_concluido, status_atividade, id_usuario)
-               VALUES (?, ?, ?, 0, 1, ?)`
+               VALUES (?, ?, ?, 0, 'ativo', ?)`
 
     try {
         let response = await knexConex.raw(sql, [

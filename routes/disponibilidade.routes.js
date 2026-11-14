@@ -58,8 +58,9 @@ router.put('/:id', bodyParserJSON, async (req,res) => {
 
 // endpoint para deletar um disponibilidade pelo id
 router.delete('/:id', async (req,res) => {
+    let token = req.headers['x-access-token']
     let id = req.params.id
-    let result = await excluirDisponibilidade(id)
+    let result = await excluirDisponibilidade(id, token)
     res.status(result.status_code).json(result)
 })
 

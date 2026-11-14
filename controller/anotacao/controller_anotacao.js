@@ -17,6 +17,19 @@ const obterIdProfissionalDoToken = async (idUsuario) => {
     return result[0].id
 }
 
+// a anotação é privada: só o profissional que a escreveu pode editar ou excluir
+const exigirDonoDaAnotacao = async (anotacao, decode) => {
+    let idProfissional = await obterIdProfissionalDoToken(decode.id)
+    if(!idProfissional || Number(anotacao.id_profissional) !== Number(idProfissional)){
+        return {
+            status: false,
+            status_code: 403,
+            message: 'Acesso negado. Esta anotação pertence a outro profissional.'
+        }
+    }
+    return false
+}
+
 // inserir nova anotacao
 const inserirNovaAnotacao = async (anotacao, idPaciente, token, contentType) => {
     let message = JSON.parse(JSON.stringify(config_message))
@@ -55,15 +68,21 @@ const inserirNovaAnotacao = async (anotacao, idPaciente, token, contentType) => 
 }
 
 // atualizar anotacao
-const atualizarAnotacao = async (anotacao, id, contentType) => {
+const atualizarAnotacao = async (anotacao, id, token, contentType) => {
     let message = JSON.parse(JSON.stringify(config_message))
 
     try {
+        let decodedToken = await decodeJWT(token)
+        if(!decodedToken.status) return message.ERROR_INVALID_TOKEN
+
         let validar = await validarDados(anotacao, contentType)
         if(validar) return validar // 400 ou 415
 
         let resultBuscarId = await buscarAnotacao(id)
         if(!resultBuscarId.status) return resultBuscarId // 400 e 404
+
+        let naoEhDono = await exigirDonoDaAnotacao(resultBuscarId.response.anotacao[0], decodedToken.decode)
+        if(naoEhDono) return naoEhDono // 403
 
         anotacao.id = Number(id)
 
@@ -120,13 +139,18 @@ const buscarAnotacao = async (id) => {
 }
 
 // excluir anotacao pelo id
-const excluirAnotacao = async (id) => {
+const excluirAnotacao = async (id, token) => {
     let message = JSON.parse(JSON.stringify(config_message))
 
     try {
+        let decodedToken = await decodeJWT(token)
+        if(!decodedToken.status) return message.ERROR_INVALID_TOKEN
 
         let resultBuscarId = await buscarAnotacao(id)
         if(!resultBuscarId.status) return resultBuscarId // 400 e 404
+
+        let naoEhDono = await exigirDonoDaAnotacao(resultBuscarId.response.anotacao[0], decodedToken.decode)
+        if(naoEhDono) return naoEhDono // 403
 
         let result = await anotacaoDAO.deleteAnotacao(id)
 
