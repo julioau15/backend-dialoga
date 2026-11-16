@@ -1,200 +1,212 @@
 /*************************************************************************************
- * Objetivo: Arquivo responsável pela conexão com o banco da tabela solicitacaoAcesso
- * Data: 20/09/2026
- * Autor: Julio Augusto
- * Versão: 1.0
+ * Objetivo: Consultas e alterações das solicitações de acesso no banco de dados.
  * *********************************************************************************/
-
 
 const knex = require('knex')
 const knexConfig = require('../../database_config_knex/knexFile.js')
 const knexConex = knex(knexConfig.development)
 
-// insert de solicitacaoAcesso
-const insertSolicitacaoAcesso = async (solicitacaoAcesso) => {
-    let sql = `INSERT INTO tbl_solicitacao_acesso (status, data_solicitacao, data_resposta, id_profissional, id_paciente)
-               VALUES ("pendente", now(), null, ?, ?)`
-
+// O token contém o id do usuário. A solicitação usa o id do paciente/profissional.
+const selectPerfilByIdUsuario = async (idUsuario, nivel) => {
+    const tabela = nivel == 1 ? 'tbl_profissional' : 'tbl_paciente'
+    let sql = `SELECT id FROM ${tabela} WHERE id_usuario = ? LIMIT 1`
     try {
-        let response = await knexConex.raw(sql, [
-            solicitacaoAcesso.id_profissional,
-            solicitacaoAcesso.id_paciente
-        ])
-
-        if(response) return response[0].insertId 
-
+        let response = await knexConex.raw(sql, [idUsuario])
+        return response[0]
     } catch (error) { console.log(error) }
-
     return false
 }
 
-// update de solicitacaoAcesso
-const updateSolicitacaoAcesso = async (solicitacaoAcesso) => {
-    let sql = `UPDATE tbl_solicitacao_acesso
-               SET status = ?,
-                   data_solicitacao = ?,
-                   data_resposta = ?,
-                   id_profissional = ?,
-                   id_paciente = ?
-               WHERE id = ?`
+// Retorna somente a solicitação mais recente de cada par paciente/profissional.
+const selectSolicitacoesByPerfil = async (idPerfil, nivel) => {
+    let sql = `SELECT s.*
+               FROM tbl_solicitacao_acesso s
+               WHERE NOT EXISTS (
+                   SELECT 1 FROM tbl_solicitacao_acesso recente
+                   WHERE recente.id_profissional = s.id_profissional
+                     AND recente.id_paciente = s.id_paciente
+                     AND recente.id > s.id
+               )`
+    const params = []
+    if (nivel == 1) {
+        sql += ' AND s.id_profissional = ?'
+        params.push(idPerfil)
+    } else if (nivel == 2) {
+        sql += ' AND s.id_paciente = ?'
+        params.push(idPerfil)
+    }
+    sql += ' ORDER BY s.id DESC'
     try {
-        let response = await knexConex.raw(sql, [
-            solicitacaoAcesso.status,
-            solicitacaoAcesso.data_solicitacao,
-            solicitacaoAcesso.data_resposta,
-            solicitacaoAcesso.id_profissional,
-            solicitacaoAcesso.id_paciente,
-            solicitacaoAcesso.id
-        ])
-
-        if(response) return response
-
+        let response = await knexConex.raw(sql, params)
+        return response[0]
     } catch (error) { console.log(error) }
-
     return false
 }
 
-// select de todas solicitacaoAcessos
-const selectAllSolicitacaoAcesso = async () => {
-    let sql = `SELECT
-                   id,
-                   status,
-                   data_solicitacao,
-                   data_resposta,
-                   id_profissional,
-                   id_paciente
-               FROM tbl_solicitacao_acesso
-               ORDER BY id DESC`
-    try {
-        let response = await knexConex.raw(sql)
-
-
-        if(response) return response[0]
- 
-    } catch (error) { console.log(error) }
-
-    return false
-}
-
-// select de uma solicitacaoAcesso pelo id
 const selectByIdSolicitacaoAcesso = async (id) => {
-    let sql = `SELECT
-                   id,
-                   status,
-                   data_solicitacao,
-                   data_resposta,
-                   id_profissional,
-                   id_paciente
-               FROM tbl_solicitacao_acesso
-               WHERE id = ?`
+    let sql = 'SELECT * FROM tbl_solicitacao_acesso WHERE id = ?'
     try {
         let response = await knexConex.raw(sql, [id])
-
-
-        if(response) return response[0]
-        
+        return response[0]
     } catch (error) { console.log(error) }
-
     return false
 }
 
-// delete de solicitacaoAcesso
-const deleteSolicitacaoAcesso = async (id) => {
-    let sql = `DELETE FROM tbl_solicitacao_acesso
-               WHERE id = ?`
+// O mesmo bloqueio é usado para criar, responder, editar, remover e consultar acesso.
+const bloquearProfissional = async (conexao, idProfissional) => {
+    let sql = 'SELECT id FROM tbl_profissional WHERE id = ? FOR UPDATE'
+    await conexao.raw(sql, [idProfissional])
+}
+
+const selectUltimaSolicitacao = async (conexao, idProfissional, idPaciente) => {
+    let sql = `SELECT * FROM tbl_solicitacao_acesso
+               WHERE id_profissional = ? AND id_paciente = ?
+               ORDER BY id DESC LIMIT 1`
+    let response = await conexao.raw(sql, [idProfissional, idPaciente])
+    return response[0][0]
+}
+
+const selectVinculoAtivo = async (conexao, idProfissional, idPaciente) => {
+    let sql = `SELECT id FROM tbl_vinculo
+               WHERE id_profissional = ? AND id_paciente = ?
+                 AND status IN ('1', 'ativo') LIMIT 1`
+    let response = await conexao.raw(sql, [idProfissional, idPaciente])
+    return response[0].length > 0
+}
+
+const selectCategoriasByIdSolicitacao = async (idSolicitacao, conexao = knexConex) => {
+    let sql = `SELECT categoria, autorizado FROM tbl_categoria_compartilhada
+               WHERE id_solicitacao_acesso = ? ORDER BY id`
     try {
-        let response = await knexConex.raw(sql, [id])
-
-
-        if(response) return response
- 
-    } catch (error) { console.log(error) }
-
+        let response = await conexao.raw(sql, [idSolicitacao])
+        return response[0]
+    } catch (error) {
+        // Dentro de uma transação, o erro deve desfazer também as demais alterações.
+        if (conexao !== knexConex) throw error
+        console.log(error)
+    }
     return false
 }
 
-// aprova uma solicitação de acesso
-const aprovarSolicitacaoAcesso = async (id) => {
-    let sql = `UPDATE tbl_solicitacao_acesso
-               SET status = "aprovada",
-                   data_resposta = now()
-               WHERE id = ?`
+// Substitui as escolhas anteriores sem acumular categorias duplicadas.
+const substituirCategoriasCompartilhadas = async (conexao, idSolicitacao, categorias) => {
+    let sqlDelete = 'DELETE FROM tbl_categoria_compartilhada WHERE id_solicitacao_acesso = ?'
+    await conexao.raw(sqlDelete, [idSolicitacao])
+    let sqlInsert = `INSERT INTO tbl_categoria_compartilhada
+                     (categoria, autorizado, id_solicitacao_acesso) VALUES (?, 1, ?)`
+    for (let categoria of categorias) {
+        await conexao.raw(sqlInsert, [categoria, idSolicitacao])
+    }
+}
+
+// Cria o pedido e a notificação juntos. Um pedido pendente/aprovado é reutilizado.
+const insertSolicitacaoAcesso = async (solicitacaoAcesso) => {
     try {
-        let response = await knexConex.raw(sql, [id])
+        return await knexConex.transaction(async (conexao) => {
+            let idProfissional = solicitacaoAcesso.id_profissional
+            let idPaciente = solicitacaoAcesso.id_paciente
+            await bloquearProfissional(conexao, idProfissional)
 
-        if(response) return response
+            let vinculoAtivo = await selectVinculoAtivo(conexao, idProfissional, idPaciente)
+            if (!vinculoAtivo) return { semVinculo: true }
 
+            let solicitacao = await selectUltimaSolicitacao(conexao, idProfissional, idPaciente)
+            if (solicitacao && (solicitacao.status == 'pendente' || solicitacao.status == 'aprovada')) {
+                return { solicitacao: solicitacao, criada: false }
+            }
+
+            let sql = `INSERT INTO tbl_solicitacao_acesso
+                       (status, data_solicitacao, data_resposta, id_profissional, id_paciente)
+                       VALUES ('pendente', NOW(), NULL, ?, ?)`
+            let response = await conexao.raw(sql, [idProfissional, idPaciente])
+            let id = response[0].insertId
+
+            let sqlNotificacao = `INSERT INTO tbl_notificacao
+                (titulo_mensagem, lida, referencia_evento, id_categoria, id_profissional, id_paciente)
+                VALUES (?, 0, 'solicitacao_acesso', 4, NULL, ?)`
+            await conexao.raw(sqlNotificacao, [
+                'Um profissional enviou uma solicitação de acesso aos seus indicadores.', idPaciente
+            ])
+
+            return {
+                criada: true,
+                solicitacao: { id: id, status: 'pendente', id_profissional: idProfissional, id_paciente: idPaciente }
+            }
+        })
     } catch (error) { console.log(error) }
-
     return false
 }
 
-// reprovar uma solicitação de acesso
-const reprovarSolicitacaoAcesso = async (id) => {
-    let sql = `UPDATE tbl_solicitacao_acesso
-               SET status = "reprovada",
-                   data_resposta = now()
-               WHERE id = ?`
+// Status e categorias são gravados na mesma transação.
+const updateCompartilhamentoSolicitacao = async (solicitacao, statusEsperado, novoStatus, categorias) => {
     try {
-        let response = await knexConex.raw(sql, [id])
+        return await knexConex.transaction(async (conexao) => {
+            await bloquearProfissional(conexao, solicitacao.id_profissional)
+            let atual = await selectUltimaSolicitacao(conexao, solicitacao.id_profissional, solicitacao.id_paciente)
+            if (!atual || atual.id != solicitacao.id || atual.status != statusEsperado) {
+                return { conflito: true }
+            }
 
-        if(response) return response
-
+            let sql = `UPDATE tbl_solicitacao_acesso SET status = ?, data_resposta = NOW()
+                       WHERE id = ? AND id_paciente = ?`
+            await conexao.raw(sql, [novoStatus, atual.id, atual.id_paciente])
+            await substituirCategoriasCompartilhadas(conexao, atual.id, categorias)
+            return { solicitacao: { ...atual, status: novoStatus, categorias: categorias } }
+        })
     } catch (error) { console.log(error) }
-
     return false
 }
 
-// lista solicitações recebidas pelo paciente
-const selectSolicitacaoAcessoByIdPaciente = async (idPaciente) => {
-    let sql = `SELECT
-                   id,
-                   status,
-                   data_solicitacao,
-                   data_resposta,
-                   id_profissional,
-                   id_paciente
-               FROM tbl_solicitacao_acesso
-               WHERE id_paciente = ?`
+// Remove também pedidos antigos do mesmo par, evitando restaurar uma permissão anterior.
+const deleteSolicitacaoAcesso = async (solicitacao) => {
     try {
-        let response = await knexConex.raw(sql, [idPaciente])
+        return await knexConex.transaction(async (conexao) => {
+            await bloquearProfissional(conexao, solicitacao.id_profissional)
+            let atual = await selectUltimaSolicitacao(conexao, solicitacao.id_profissional, solicitacao.id_paciente)
+            if (!atual || atual.id != solicitacao.id) return { conflito: true }
 
-        if(response) return response[0]
+            let sqlCategorias = `DELETE c FROM tbl_categoria_compartilhada c
+                INNER JOIN tbl_solicitacao_acesso s ON s.id = c.id_solicitacao_acesso
+                WHERE s.id_profissional = ? AND s.id_paciente = ?`
+            await conexao.raw(sqlCategorias, [atual.id_profissional, atual.id_paciente])
 
+            let sql = 'DELETE FROM tbl_solicitacao_acesso WHERE id_profissional = ? AND id_paciente = ?'
+            await conexao.raw(sql, [atual.id_profissional, atual.id_paciente])
+            return { removida: true }
+        })
     } catch (error) { console.log(error) }
-
     return false
 }
 
-// lista solicitações enviadas pelo profissional
-const selectSolicitacaoAcessoByIdProfissional = async (idProfissional) => {
-    let sql = `SELECT
-                   id,
-                   status,
-                   data_solicitacao,
-                   data_resposta,
-                   id_profissional,
-                   id_paciente
-               FROM tbl_solicitacao_acesso
-               WHERE id_profissional = ?`
+// Lê a autorização vigente e os registros no mesmo momento da transação.
+const selectIndicadoresCompartilhados = async (idProfissional, idPaciente) => {
     try {
-        let response = await knexConex.raw(sql, [idProfissional])
+        return await knexConex.transaction(async (conexao) => {
+            await bloquearProfissional(conexao, idProfissional)
+            let vinculoAtivo = await selectVinculoAtivo(conexao, idProfissional, idPaciente)
+            if (!vinculoAtivo) return { semVinculo: true }
 
-        if(response) return response[0]
+            let solicitacao = await selectUltimaSolicitacao(conexao, idProfissional, idPaciente)
+            if (!solicitacao || solicitacao.status != 'aprovada') {
+                return { status: solicitacao ? solicitacao.status : 'sem_acesso', categorias: [], registros: [] }
+            }
 
+            let categorias = await selectCategoriasByIdSolicitacao(solicitacao.id, conexao)
+            let sql = 'SELECT * FROM tbl_registro_humor WHERE id_paciente = ? ORDER BY data DESC'
+            let response = await conexao.raw(sql, [idPaciente])
+            return { status: 'aprovada', categorias: categorias, registros: response[0] }
+        })
     } catch (error) { console.log(error) }
-
     return false
 }
 
 module.exports = {
-    insertSolicitacaoAcesso,
-    updateSolicitacaoAcesso,
-    selectAllSolicitacaoAcesso,
+    selectPerfilByIdUsuario,
+    selectSolicitacoesByPerfil,
     selectByIdSolicitacaoAcesso,
+    selectCategoriasByIdSolicitacao,
+    insertSolicitacaoAcesso,
+    updateCompartilhamentoSolicitacao,
     deleteSolicitacaoAcesso,
-    aprovarSolicitacaoAcesso,
-    reprovarSolicitacaoAcesso,
-    selectSolicitacaoAcessoByIdPaciente,
-    selectSolicitacaoAcessoByIdProfissional
+    selectIndicadoresCompartilhados
 }

@@ -41,10 +41,6 @@ const {
 } = require('../controller/anotacao/controller_anotacao.js')
 
 const {
-    inserirNovaSolicitacaoAcesso
-} = require('../controller/solicitacao_acesso/controller_solicitacao_acesso.js')
-
-const {
     inserirNovaTratamentoByToken,
     listarTratamentosByToken
 } = require('../controller/tratamento/controller_tratamento.js')
@@ -72,6 +68,19 @@ const formatarJson = async (dados, acao) => {
 
     return pacienteEditar
 }
+
+const {
+    inserirNovaSolicitacaoAcesso,
+    listarIndicadoresCompartilhados
+} = require('../controller/solicitacao_acesso/controller_solicitacao_acesso.js')
+
+// Retorna apenas os indicadores autorizados pelo paciente ao profissional logado.
+router.get('/:id/indicadores-compartilhados', async (req, res) => {
+    let token = req.headers['x-access-token']
+    let idPaciente = req.params.id
+    let result = await listarIndicadoresCompartilhados(token, idPaciente)
+    res.status(result.status_code).json(result)
+})
 
 // ---------------- paciente -----------------
 
@@ -162,7 +171,7 @@ router.post('/me/tratamentos', bodyParserJSON, async (req,res) => {
 })
 
 // endpoint para uma solicitação de acesso de um profissional a um paciente
-router.post('/:id/solicitacoes-acesso', async (req,res) => {
+router.post('/:id/solicitacoes-acesso', async (req, res) => {
     let token = req.headers['x-access-token']
     let idPaciente = req.params.id
     let result = await inserirNovaSolicitacaoAcesso(token, idPaciente)
