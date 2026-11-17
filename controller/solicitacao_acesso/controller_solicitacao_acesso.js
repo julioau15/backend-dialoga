@@ -215,8 +215,11 @@ const listarIndicadoresCompartilhados = async (token, idPaciente) => {
             }
         }
 
+        // O tratamento aparece para o profissional quando o paciente liberou qualquer uma das informações.
+        let tratamentos = (result.status == 'aprovada' && categorias.length > 0) ? (result.tratamentos || []) : []
+
         let resposta = montarMensagem(message, message.SUCESS_RESPONSE)
-        resposta.response = { status: result.status, categorias: categorias, registroHumor: registros }
+        resposta.response = { status: result.status, categorias: categorias, registroHumor: registros, tratamento: tratamentos }
         return resposta
     } catch (error) { console.log(error) }
     return message.ERROR_INTERNAL_SERVER_CONTROLLER

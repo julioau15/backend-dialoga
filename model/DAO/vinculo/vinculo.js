@@ -184,6 +184,9 @@ const selectVinculoAceito = async (idPaciente, idProfissional) => {
 
 // listar pacientes vinculados ao profissional, filtrando por nome e status
 const selectByIdProfissional = async (idProfissional, filtro = {}) => {
+    // O banco mistura os dois jeitos de gravar: texto ('pendente', 'ativo', 'paciente') e número (0, 1, 2).
+    // Aqui tudo sai normalizado: status_vinculo 0 = pendente, 1 = ativo; origem_cadastro 1 = profissional, 2 = paciente.
+    // (Antes, "status IN (0, 1)" deixava passar 'recusado' e 'encerrado', porque texto vira 0 na comparação com número.)
     let sql = `
         SELECT
             tbl_paciente.id,
@@ -192,18 +195,24 @@ const selectByIdProfissional = async (idProfissional, filtro = {}) => {
             tbl_paciente.status_atividade,
             tbl_paciente.foto_avatar,
             tbl_vinculo.id AS id_vinculo,
-            tbl_vinculo.status AS status_vinculo,
-            tbl_vinculo.origem_cadastro,
+            CASE
+                WHEN tbl_vinculo.status IN ('1', 'ativo') THEN 1
+                ELSE 0
+            END AS status_vinculo,
+            CASE
+                WHEN tbl_vinculo.origem_cadastro IN ('1', 'profissional') THEN 1
+                ELSE 2
+            END AS origem_cadastro,
             COALESCE(tbl_vinculo.data_inicio_acompanhamento, tbl_vinculo.data_solicitacao) AS desde,
-            CASE WHEN tbl_vinculo.status = 1 THEN tbl_usuario.email END AS email,
-            CASE WHEN tbl_vinculo.status = 1 THEN tbl_paciente.celular END AS celular
+            CASE WHEN tbl_vinculo.status IN ('1', 'ativo') THEN tbl_usuario.email END AS email,
+            CASE WHEN tbl_vinculo.status IN ('1', 'ativo') THEN tbl_paciente.celular END AS celular
         FROM tbl_vinculo
         INNER JOIN tbl_paciente
             ON tbl_paciente.id = tbl_vinculo.id_paciente
         INNER JOIN tbl_usuario
             ON tbl_usuario.id = tbl_paciente.id_usuario
         WHERE tbl_vinculo.id_profissional = ?
-        AND tbl_vinculo.status IN (0, 1)
+        AND tbl_vinculo.status IN ('0', '1', 'pendente', 'ativo')
     `
 
     const params = [idProfissional]

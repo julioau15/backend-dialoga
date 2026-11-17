@@ -9,6 +9,15 @@ const config_message = require('../module/configMessages.js')
 const tratamentoDAO = require('../../model/DAO/tratamento/tratamento.js')
 const horarioTratamentoController = require('../horario_tratamento/controller_horario_tratamento.js')
 const { decodeJWT } = require('../../middleware/middlewareJWT.js')
+const pacienteDAO = require('../../model/DAO/paciente/paciente.js')
+
+// O token traz o id do USUÁRIO (ex.: 10), mas o tratamento guarda o id do PACIENTE (tbl_paciente.id).
+// Gravar o id do usuário quebra a chave estrangeira FK_PACIENTE_TRATAMENTO (ou, pior, cai no paciente errado).
+const obterIdPacienteDoToken = async (idUsuario) => {
+    let result = await pacienteDAO.selectByIdUsuarioPaciente(idUsuario)
+    if(!result || result.length < 1) return false
+    return result[0].id
+}
 
 // inserir nova tratamento
 const inserirNovaTratamento = async (tratamento, contentType) => {
@@ -132,7 +141,8 @@ const inserirNovaTratamentoByToken = async (tratamento, token, contentType) => {
         let decodedToken = await decodeJWT(token)
         if(!decodedToken.status) return message.ERROR_INVALID_TOKEN
 
-        let idPaciente = decodedToken.decode.id
+        let idPaciente = await obterIdPacienteDoToken(decodedToken.decode.id)
+        if(!idPaciente) return message.ERROR_NOT_FOUND // 404 (o usuário do token não é um paciente)
 
         let result = await tratamentoDAO.insertTratamento(tratamento, idPaciente)
 
@@ -163,7 +173,8 @@ const listarTratamentosByToken = async (token) => {
         let decodedToken = await decodeJWT(token)
         if(!decodedToken.status) return message.ERROR_INVALID_TOKEN
 
-        let idPaciente = decodedToken.decode.id
+        let idPaciente = await obterIdPacienteDoToken(decodedToken.decode.id)
+        if(!idPaciente) return message.ERROR_NOT_FOUND // 404
 
         let result = await tratamentoDAO.selectAllTratamentosByIdPaciente(idPaciente)
 

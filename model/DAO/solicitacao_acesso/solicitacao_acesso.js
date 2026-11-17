@@ -121,9 +121,11 @@ const insertSolicitacaoAcesso = async (solicitacaoAcesso) => {
             let response = await conexao.raw(sql, [idProfissional, idPaciente])
             let id = response[0].insertId
 
+            // data_criacao é NOT NULL e a tabela não tem valor padrão: sem ela o MySQL recusa o INSERT, a transação
+            // inteira volta atrás e nem a solicitação nem a notificação chegam ao paciente.
             let sqlNotificacao = `INSERT INTO tbl_notificacao
-                (titulo_mensagem, lida, referencia_evento, id_categoria, id_profissional, id_paciente)
-                VALUES (?, 0, 'solicitacao_acesso', 4, NULL, ?)`
+                (titulo_mensagem, lida, data_criacao, referencia_evento, id_categoria, id_profissional, id_paciente)
+                VALUES (?, 0, NOW(), 'solicitacao_acesso', 4, NULL, ?)`
             await conexao.raw(sqlNotificacao, [
                 'Um profissional enviou uma solicitação de acesso aos seus indicadores.', idPaciente
             ])
@@ -194,7 +196,23 @@ const selectIndicadoresCompartilhados = async (idProfissional, idPaciente) => {
             let categorias = await selectCategoriasByIdSolicitacao(solicitacao.id, conexao)
             let sql = 'SELECT * FROM tbl_registro_humor WHERE id_paciente = ? ORDER BY data DESC'
             let response = await conexao.raw(sql, [idPaciente])
-            return { status: 'aprovada', categorias: categorias, registros: response[0] }
+
+            // Tratamentos do paciente, cada um com seus horários (o controller só os libera se o paciente
+            // compartilhou ao menos uma categoria).
+            let sqlTratamentos = `SELECT id, nome_medicamento, dosagem, frequencia, lembrete_ativo, id_paciente
+                                  FROM tbl_tratamento WHERE id_paciente = ? ORDER BY id DESC`
+            let tratamentos = (await conexao.raw(sqlTratamentos, [idPaciente]))[0]
+            if (tratamentos.length > 0) {
+                let ids = tratamentos.map(t => t.id)
+                let sqlHorarios = `SELECT id, horario, id_tratamento FROM tbl_horario_tratamento
+                                   WHERE id_tratamento IN (${ids.map(() => '?').join(',')}) ORDER BY horario`
+                let horarios = (await conexao.raw(sqlHorarios, ids))[0]
+                for (let tratamento of tratamentos) {
+                    tratamento.horarios = horarios.filter(h => h.id_tratamento == tratamento.id)
+                }
+            }
+
+            return { status: 'aprovada', categorias: categorias, registros: response[0], tratamentos: tratamentos }
         })
     } catch (error) { console.log(error) }
     return false
