@@ -226,7 +226,33 @@ const deletePreferenciaNotificacaoPaciente = async (id) => {
     return false
 }
 
+// substitui todas as preferências de um paciente ou profissional (apaga e insere numa transação)
+// campo -> 'id_paciente' ou 'id_profissional'
+const substituirPreferenciasNotificacao = async (campo, id, preferencias) => {
+    if(!['id_paciente', 'id_profissional'].includes(campo)) return false
+
+    try {
+        await knexConex.transaction(async (trx) => {
+            await trx.raw(`DELETE FROM tbl_preferencia_notificacao WHERE ${campo} = ?`, [id])
+
+            for(let preferencia of preferencias){
+                await trx.raw(
+                    `INSERT INTO tbl_preferencia_notificacao (categoria, tipo_especifico, ativo, ${campo})
+                     VALUES (?, ?, ?, ?)`,
+                    [preferencia.categoria, preferencia.tipo_especifico, preferencia.ativo, id]
+                )
+            }
+        })
+
+        return true
+
+    } catch (error) { console.log(error) }
+
+    return false
+}
+
 module.exports = {
+    substituirPreferenciasNotificacao,
     insertPreferenciaNotificacao,
     updatePreferenciaNotificacao,
     selectAllPreferenciaNotificacao,

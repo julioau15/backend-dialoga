@@ -8,6 +8,8 @@
 const config_message = require('../module/configMessages.js')
 const preferenciaNotificacaoDAO = require('../../model/DAO/preferencia_notificacao/preferencia_notificacao.js')
 const { decodeJWT } = require('../../middleware/middlewareJWT.js')
+const pacienteDAO = require('../../model/DAO/paciente/paciente.js')
+const profissionalDAO = require('../../model/DAO/profissional/profissional.js')
 
 // inserir nova preferenciaNotificacao
 const inserirNovaPreferenciaNotificacao = async (preferenciaNotificacao, contentType) => {
@@ -116,19 +118,13 @@ const listarPreferenciasNotificacaoByToken = async (token) => {
     let message = JSON.parse(JSON.stringify(config_message))
 
     try {
-        let decodedToken = await decodeJWT(token)
-        if(!decodedToken.status) return message.ERROR_INVALID_TOKEN
-
-        let id = decodedToken.decode.id
-        let nivel = decodedToken.decode.nivel
+        let usuario = await identificarUsuarioDoToken(token)
+        if(!usuario.status) return usuario.erro // 401, 404 ou 500
 
         let result = null
 
-        if(nivel == 1) result = await preferenciaNotificacaoDAO.selectPreferenciasProfissional(id)
-
-        else if(nivel == 2) result = await preferenciaNotificacaoDAO.selectPreferenciasPaciente(id)
-
-        else return message.ERROR_INVALID_TOKEN
+        if(usuario.campo == 'id_profissional') result = await preferenciaNotificacaoDAO.selectPreferenciasProfissional(usuario.id)
+        else result = await preferenciaNotificacaoDAO.selectPreferenciasPaciente(usuario.id)
 
         if(!result) return message.ERROR_INTERNAL_SERVER_MODEL // 500
 
@@ -144,92 +140,136 @@ const listarPreferenciasNotificacaoByToken = async (token) => {
     return message.ERROR_INTERNAL_SERVER_CONTROLLER // 500
 }
 
-// inserir preferências de notificações pelo token JWT
+// inserir uma preferência de notificação pelo token JWT
+// (o paciente/profissional vem do token, não do body)
 const inserirPreferenciasNotificacaoByToken = async (preferenciaNotificacao, token, contentType) => {
     let message = JSON.parse(JSON.stringify(config_message))
 
     try {
-        let validar = await validarDados(preferenciaNotificacao, contentType)
-        if(validar) return validar // 400 ou 415
+        if(String(contentType).toLowerCase() != 'application/json') return message.ERROR_CONTENT_TYPE // 415
 
-        let decodedToken = await decodeJWT(token)
-        if(!decodedToken.status) return message.ERROR_INVALID_TOKEN
+        let invalida = validarPreferencia(preferenciaNotificacao)
+        if(invalida) return invalida // 400
 
-        let id = decodedToken.decode.id
-        let nivel = decodedToken.decode.nivel
+        let usuario = await identificarUsuarioDoToken(token)
+        if(!usuario.status) return usuario.erro // 401, 404 ou 500
+
+        let preferencia = {
+            categoria: preferenciaNotificacao.categoria,
+            tipo_especifico: preferenciaNotificacao.tipo_especifico ?? null,
+            ativo: Number(preferenciaNotificacao.ativo),
+            [usuario.campo]: usuario.id
+        }
 
         let result = null
-
-        if(nivel == 1) {
-            preferenciaNotificacao.id_profissional = id
-            result = await preferenciaNotificacaoDAO.insertPreferenciaNotificacaoProfissional(preferenciaNotificacao)
-        }
-
-        else if(nivel == 2) {
-            preferenciaNotificacao.id_paciente = id
-            result = await preferenciaNotificacaoDAO.insertPreferenciaNotificacaoPaciente(preferenciaNotificacao)
-        }
-
-        else return message.ERROR_INVALID_TOKEN
+        if(usuario.campo == 'id_profissional') result = await preferenciaNotificacaoDAO.insertPreferenciaNotificacaoProfissional(preferencia)
+        else result = await preferenciaNotificacaoDAO.insertPreferenciaNotificacaoPaciente(preferencia)
 
         if(!result) return message.ERROR_INTERNAL_SERVER_MODEL // 500
 
-        preferenciaNotificacao.id = result
-        return await montarMensagem(message, message.SUCESS_CREATED_ITEM, preferenciaNotificacao)
+        preferencia.id = result
+        return await montarMensagem(message, message.SUCESS_CREATED_ITEM, preferencia)
 
     } catch (error) {console.log(error)}
     return message.ERROR_INTERNAL_SERVER_CONTROLLER // 500
 }
 
-// atualizar preferenciaNotificacao
+// substitui todas as preferências do usuário do token pela lista enviada
+// body: { preferencias: [{ categoria, tipo_especifico, ativo }] }
 const atualizarTodasPreferenciaNotificacao = async (preferenciaNotificacao, token, contentType) => {
     let message = JSON.parse(JSON.stringify(config_message))
 
     try {
+        if(String(contentType).toLowerCase() != 'application/json') return message.ERROR_CONTENT_TYPE // 415
 
-        let decodedToken = await decodeJWT(token)
-        if(!decodedToken.status) return message.ERROR_INVALID_TOKEN
-
-        let id = decodedToken.decode.id
-        let nivel = decodedToken.decode.nivel
-
-        let result = null
-        let ids = []
-
-        
-
-        if(nivel == 1) {
-
-            await preferenciaNotificacaoDAO.deletePreferenciaNotificacaoProfissional(id)
-
-            for(let preferencia of preferenciaNotificacao.preferencias){
-                preferencia.id_profissional = id
-                result = await preferenciaNotificacaoDAO.insertPreferenciaNotificacaoProfissional(preferencia)
-                if(!result) return message.ERROR_INTERNAL_SERVER_MODEL
-                ids.push(result)
-            }
+        let lista = preferenciaNotificacao?.preferencias
+        if(!Array.isArray(lista) || lista.length == 0){
+            message.ERROR_BAD_REQUEST.field = '[PREFERENCIAS] INVÁLIDO'
+            return message.ERROR_BAD_REQUEST // 400
         }
 
-        else if(nivel == 2) {
-            await preferenciaNotificacaoDAO.deletePreferenciaNotificacaoPaciente(id)
-
-            for(let preferencia of preferenciaNotificacao.preferencias){
-                preferencia.id_paciente = id
-                result = await preferenciaNotificacaoDAO.insertPreferenciaNotificacaoPaciente(preferencia)
-                if(!result) return message.ERROR_INTERNAL_SERVER_MODEL
-                ids.push(result)
-            }
+        // valida tudo ANTES de apagar as preferências antigas
+        for(let preferencia of lista){
+            let invalida = validarPreferencia(preferencia)
+            if(invalida) return invalida // 400
         }
 
-        else return message.ERROR_INVALID_TOKEN
+        let usuario = await identificarUsuarioDoToken(token)
+        if(!usuario.status) return usuario.erro // 401, 404 ou 500
 
+        // monta as linhas só com os campos permitidos (ignora id_paciente/id_profissional do body)
+        let preferencias = lista.map((preferencia) => ({
+            categoria: preferencia.categoria,
+            tipo_especifico: preferencia.tipo_especifico ?? null,
+            ativo: Number(preferencia.ativo),
+            [usuario.campo]: usuario.id
+        }))
+
+        let result = await preferenciaNotificacaoDAO.substituirPreferenciasNotificacao(usuario.campo, usuario.id, preferencias)
         if(!result) return message.ERROR_INTERNAL_SERVER_MODEL // 500
 
-        preferenciaNotificacao.id = result
-        return await montarMensagem(message, message.SUCESS_CREATED_ITEM, preferenciaNotificacao)
+        return await montarMensagem(message, message.SUCESS_UPDATE_ITEM, preferencias)
 
     } catch (error) {console.log(error)}
     return message.ERROR_INTERNAL_SERVER_CONTROLLER // 500
+}
+
+// Descobre o paciente ou profissional do usuário logado.
+// O token guarda o id de tbl_usuario; as preferências usam o id de tbl_paciente/tbl_profissional.
+// Devolve { status: true, campo: 'id_paciente' | 'id_profissional', id } ou { status: false, erro }
+const identificarUsuarioDoToken = async (token) => {
+    let message = JSON.parse(JSON.stringify(config_message))
+
+    let decodedToken = await decodeJWT(token)
+    if(!decodedToken.status) return { status: false, erro: message.ERROR_INVALID_TOKEN }
+
+    let idUsuario = decodedToken.decode.id
+    let nivel = Number(decodedToken.decode.nivel)
+    let result = null
+    let campo = null
+
+    if(nivel == 1) {
+        campo = 'id_profissional'
+        result = await profissionalDAO.selectByIdUsuarioProfissional(idUsuario)
+    }
+    else if(nivel == 2) {
+        campo = 'id_paciente'
+        result = await pacienteDAO.selectByIdUsuarioPaciente(idUsuario)
+    }
+    else return { status: false, erro: message.ERROR_INVALID_TOKEN }
+
+    if(!result) return { status: false, erro: message.ERROR_INTERNAL_SERVER_MODEL } // 500
+    if(result.length < 1) return { status: false, erro: message.ERROR_NOT_FOUND } // 404
+
+    return { status: true, campo, id: result[0].id }
+}
+
+// Valida categoria, tipo_especifico e ativo de uma preferência
+const validarPreferencia = (preferencia) => {
+    let message = JSON.parse(JSON.stringify(config_message))
+
+    if(preferencia == undefined || preferencia == null || typeof preferencia != 'object'){
+        message.ERROR_BAD_REQUEST.field = '[PREFERENCIA_NOTIFICACAO] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    if(typeof preferencia.categoria != 'string' || preferencia.categoria.trim() == '' || preferencia.categoria.length > 30){
+        message.ERROR_BAD_REQUEST.field = '[CATEGORIA] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    if(preferencia.tipo_especifico != undefined && preferencia.tipo_especifico != null &&
+       (typeof preferencia.tipo_especifico != 'string' || preferencia.tipo_especifico.length > 50)){
+        message.ERROR_BAD_REQUEST.field = '[TIPO_ESPECIFICO] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    if(![0, 1, true, false].includes(preferencia.ativo)){
+        message.ERROR_BAD_REQUEST.field = '[ATIVO] INVÁLIDO'
+        return message.ERROR_BAD_REQUEST // 400
+    }
+
+    return false
 }
 
 const validarDados = async (preferenciaNotificacao, contentType) => {
