@@ -101,10 +101,31 @@ const deleteCategoria = async (id) => {
     return false
 }
 
+// select de uma categoria pelo nome e pelo tipo específico (ex.: 'medicacao' / 'hora_da_dose'),
+// evita depender do id fixo gerado pelo script de inserts
+const selectCategoriaByTipo = async (categoria, tipoEspecifico) => {
+    let sql = `SELECT
+                   id,
+                   categoria,
+                   tipo_especifico
+               FROM tbl_categoria
+               WHERE categoria = ? AND tipo_especifico = ?
+               LIMIT 1`
+    try {
+        let response = await knexConex.raw(sql, [categoria, tipoEspecifico])
+
+        if(response) return response[0]
+
+    } catch (error) { console.log(error) }
+
+    return false
+}
+
 module.exports = {
     insertCategoria,
     updateCategoria,
     selectAllCategoria,
     selectByIdCategoria,
-    deleteCategoria
+    deleteCategoria,
+    selectCategoriaByTipo
 }

@@ -28,6 +28,9 @@ app.use(cors(corsOptions))
 
 const config_message = require('./controller/module/configMessages.js')
 
+// lembrete automático das doses dos tratamentos (roda a cada minuto)
+const { iniciarLembreteDoses } = require('./services/lembreteDoses.js')
+
 // Recebe o token encaminhado nas requisições e solicitar as validações
 const verifyJWT = async (req, res, next) => {
     let message = JSON.parse(JSON.stringify(config_message))
@@ -124,4 +127,7 @@ app.use('/v1/dialoga/usuarios', cors(), verifyJWT, usuarioRouter)
 // inicializar a API para receber requisições
 app.listen(port, () => {
     console.log(`API rodando em http://localhost:8080`)
+
+    // inicia o lembrete automático das doses depois que a API subiu
+    iniciarLembreteDoses()
 })

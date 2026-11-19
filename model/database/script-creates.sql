@@ -303,6 +303,9 @@ CREATE TABLE tbl_notificacao (
     ON DELETE CASCADE
 );
 
+-- índice usado para não enviar o mesmo lembrete duas vezes (busca por referencia_evento)
+CREATE INDEX IDX_NOTIFICACAO_REFERENCIA ON tbl_notificacao (referencia_evento);
+
 -- cria tbl_preferencia_notificacao
 CREATE TABLE tbl_preferencia_notificacao (
 	id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
@@ -477,6 +480,10 @@ CREATE TABLE tbl_registro_dose (
     status VARCHAR(25) NOT NULL,
     data_hora_confirmacao DATETIME,
     id_horario_tratamento INT NOT NULL,
+
+    -- uma única dose por horário em cada data/hora prevista (evita duplicidade de confirmação e de lembrete)
+    CONSTRAINT UQ_REGISTRODOSE_HORARIO_DATA
+    UNIQUE (id_horario_tratamento, data_hora_prevista),
 
     CONSTRAINT FK_HORARIOTRATAMENTO_REGISTRODOSE
     FOREIGN KEY (id_horario_tratamento)
