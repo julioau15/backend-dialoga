@@ -47,6 +47,11 @@ const {
 
 const { listarConsultasByToken } = require('../controller/consulta/controller_consulta.js')
 
+const {
+    listarDosesDoDiaByToken,
+    confirmarDoseByToken
+} = require('../controller/registro_dose/controller_registro_dose.js')
+
 const formatarJson = async (dados, acao) => {
     const pacienteInserir = {
         nome_completo     : String(dados.nome_completo),
@@ -96,6 +101,13 @@ router.get('/me/registros-humor', async (req,res) => {
 router.get('/me/tratamentos', async (req,res) => {
     let token = req.headers['x-access-token']
     let result = await listarTratamentosByToken(token)
+    res.status(result.status_code).json(result)
+})
+
+// endpoint para listar as doses de hoje do paciente pelo token (situação de cada horário)
+router.get('/me/doses', async (req,res) => {
+    let token = req.headers['x-access-token']
+    let result = await listarDosesDoDiaByToken(token)
     res.status(result.status_code).json(result)
 })
 
@@ -167,6 +179,14 @@ router.post('/me/tratamentos', bodyParserJSON, async (req,res) => {
     let contentType = req.headers['content-type']
 
     let result = await inserirNovaTratamentoByToken(dados, token, contentType)
+    res.status(result.status_code).json(result)
+})
+
+// endpoint para confirmar (marcar como tomada) a dose de hoje de um horário do paciente pelo token
+router.post('/me/doses/:idHorario/confirmar', async (req,res) => {
+    let token = req.headers['x-access-token']
+    let idHorario = req.params.idHorario
+    let result = await confirmarDoseByToken(token, idHorario)
     res.status(result.status_code).json(result)
 })
 
