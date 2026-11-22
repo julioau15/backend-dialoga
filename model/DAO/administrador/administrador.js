@@ -12,15 +12,16 @@ const knexConex = knex(knexConfig.development)
 
 // insert de administrador
 const insertAdministrador = async (administrador) => {
-    let sql = `INSERT INTO tbl_administrador (nome_completo, senha_provisoria, celular, foto_avatar, id_usuario)
-               VALUES (?, 1, ?, ?, ?)`
+    let sql = `INSERT INTO tbl_administrador (nome_completo, senha_provisoria, celular, foto_avatar, id_usuario, id_administrador_criador)
+               VALUES (?, 1, ?, ?, ?, ?)`
 
     try {
         let response = await knexConex.raw(sql, [
             administrador.nome_completo,
             administrador.celular || null,
             administrador.foto_avatar || null,
-            administrador.id_usuario
+            administrador.id_usuario,
+            administrador.id_administrador_criador || null
         ])
 
         if(response) return response[0].insertId 
@@ -60,14 +61,17 @@ const updateAdministrador = async (administrador) => {
 // select de todos administradores
 const selectAllAdministrador = async () => {
     let sql = `SELECT
-                   id,
-                   nome_completo,
-                   senha_provisoria,
-                   celular,
-                   foto_avatar,
-                   id_usuario
-               FROM tbl_administrador
-               ORDER BY id DESC`
+                   a.id,
+                   a.nome_completo,
+                   a.senha_provisoria,
+                   a.celular,
+                   a.foto_avatar,
+                   a.id_usuario,
+                   a.id_administrador_criador,
+                   criador.nome_completo AS criado_por
+               FROM tbl_administrador AS a
+               LEFT JOIN tbl_administrador AS criador ON criador.id = a.id_administrador_criador
+               ORDER BY a.id DESC`
     try {
         let response = await knexConex.raw(sql)
 
@@ -82,14 +86,17 @@ const selectAllAdministrador = async () => {
 // select de um administrador pelo id
 const selectByIdAdministrador = async (id) => {
     let sql = `SELECT
-                   id,
-                   nome_completo,
-                   senha_provisoria,
-                   celular,
-                   foto_avatar,
-                   id_usuario
-               FROM tbl_administrador
-               WHERE id = ?`
+                   a.id,
+                   a.nome_completo,
+                   a.senha_provisoria,
+                   a.celular,
+                   a.foto_avatar,
+                   a.id_usuario,
+                   a.id_administrador_criador,
+                   criador.nome_completo AS criado_por
+               FROM tbl_administrador AS a
+               LEFT JOIN tbl_administrador AS criador ON criador.id = a.id_administrador_criador
+               WHERE a.id = ?`
     try {
         let response = await knexConex.raw(sql, [id])
 
@@ -109,7 +116,8 @@ const selectByIdUsuarioAdministrador = async (idUsuario) => {
                    senha_provisoria,
                    celular,
                    foto_avatar,
-                   id_usuario
+                   id_usuario,
+                   id_administrador_criador
                FROM tbl_administrador
                WHERE id_usuario = ?`
     try {

@@ -27,7 +27,8 @@ const {
     listarProfissionaisVinculados,
     inserirNovoVinculo,
     excluirVinculo,
-    buscarPacientePorNomeOuEmail
+    buscarPacientePorNomeOuEmail,
+    buscarPerfilPacienteParaProfissional
 } = require('../controller/paciente/controller_paciente.js')
 
 const {
@@ -144,7 +145,8 @@ router.get('/me', async (req,res) => {
 // endpoint para buscar pacientes pelo nome ou e-mail
 router.get('/busca', async (req,res) => {
     let busca = req.query.busca || req.query.q || req.query.nome
-    let result = await buscarPacientePorNomeOuEmail(busca)
+    let token = req.headers['x-access-token']
+    let result = await buscarPacientePorNomeOuEmail(busca, token)
     res.status(result.status_code).json(result)
 })
 
@@ -155,9 +157,11 @@ router.get('/', async (req,res) => {
 })
 
 // endpoint para buscar um paciente pelo id
+// só o profissional com vínculo ativo com o paciente (senão 403)
 router.get('/:id/perfil-profissional', async (req,res) => {
     let id = req.params.id
-    let result = await buscarPaciente(id)
+    let token = req.headers['x-access-token']
+    let result = await buscarPerfilPacienteParaProfissional(id, token)
     res.status(result.status_code).json(result)
 })
 

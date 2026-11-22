@@ -39,11 +39,17 @@ CREATE TABLE tbl_administrador (
     celular VARCHAR(20) UNIQUE,
     foto_avatar TEXT,
     id_usuario  INT NOT NULL UNIQUE, -- CORRIGIDO: 1 usuário só pode virar 1 administrador
+    id_administrador_criador INT NULL, -- quem cadastrou este admin (NULL nos admins iniciais)
     
     CONSTRAINT FK_USUARIO_ADMINISTRADOR
     FOREIGN KEY (id_usuario)
     REFERENCES tbl_usuario (id)
-    ON DELETE CASCADE
+    ON DELETE CASCADE,
+
+    CONSTRAINT FK_ADMINISTRADOR_CRIADOR
+    FOREIGN KEY (id_administrador_criador)
+    REFERENCES tbl_administrador (id)
+    ON DELETE SET NULL
 );
 
 # ------- PROFISSIONAL ---------
@@ -97,6 +103,12 @@ CREATE TABLE tbl_administrador_profissional (
     criado_em DATETIME NOT NULL,
 	id_profissional INT NOT NULL,
     id_administrador INT,
+    id_admin_responsavel INT NULL, -- divisão fixa: admin que deve decidir a solicitação pendente
+
+    CONSTRAINT FK_ADMINISTRADOR_RESPONSAVEL_APROVACAO
+    FOREIGN KEY (id_admin_responsavel)
+    REFERENCES tbl_administrador (id)
+    ON DELETE SET NULL,
 
     CONSTRAINT FK_PROFISSIONAL_ADMINISTRADORPROFISSIONAL
     FOREIGN KEY (id_profissional)

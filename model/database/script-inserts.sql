@@ -139,10 +139,10 @@ INSERT INTO tbl_solicitacao_acesso (status, data_solicitacao, data_resposta, id_
 ('recusada', '2026-06-05 14:00:00', '2026-06-06 09:00:00', 2, 4);
 
 INSERT INTO tbl_categoria_compartilhada (categoria, autorizado, id_solicitacao_acesso) VALUES
-('humor',      1, 1), ('sono',       1, 1), ('medicacao', 1, 1),
-('humor',      1, 2), ('sono',       0, 2), ('medicacao', 0, 2),
-('humor',      0, 3), ('sono',       0, 3),
-('humor',      0, 4);
+('Humor',      1, 1), ('Horas de sono', 1, 1), ('Tratamentos', 1, 1),
+('Humor',      1, 2), ('Horas de sono', 0, 2), ('Tratamentos', 0, 2),
+('Humor',      0, 3), ('Horas de sono', 0, 3),
+('Humor',      0, 4);
 
 -- ------------------------------------------------------------
 -- CATEGORIA de notificação, NOTIFICACAO (para profissional ou paciente) e PREFERENCIAS
@@ -153,7 +153,10 @@ INSERT INTO tbl_categoria (categoria, tipo_especifico) VALUES
 ('tarefa',    'nova_tarefa'),
 ('vinculo',   'solicitacao_recebida'),
 ('medicacao', 'hora_da_dose'),
-('sistema',   NULL);
+('sistema',   NULL),
+('agenda',    'nova_consulta'),
+('agenda',    'lembrete_atendimento'),
+('agenda',    'lembrete_vespera');
 
 INSERT INTO tbl_notificacao (titulo_mensagem, lida, data_criacao, referencia_evento, id_categoria, id_profissional, id_paciente) VALUES
 ('Você tem consulta amanhã às 14:00',               0, '2026-10-19 08:00:00', 'consulta:1', 1, NULL, 1),

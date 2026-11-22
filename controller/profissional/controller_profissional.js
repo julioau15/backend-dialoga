@@ -6,6 +6,7 @@
  * *********************************************************************************/
 
 const config_message = require('../module/configMessages.js')
+const { celularValido, celularInformado } = require('../module/validarCelular.js')
 const profissionalDAO = require('../../model/DAO/profissional/profissional.js')
 const usuarioController = require('../usuario/controller_usuario.js')
 const vinculoController = require('../vinculo/controller_vinculo.js')
@@ -527,9 +528,9 @@ const validarDados = async (profissional, contentType) => {
         return message.ERROR_BAD_REQUEST // 400
     }
 
-    // Valida o celular opcional
-    if(profissional.celular != undefined && profissional.celular != null &&
-       (typeof profissional.celular != 'string' || profissional.celular.length > 20)){
+    // Valida o celular opcional: se informado, precisa ser um celular brasileiro válido
+    if(celularInformado(profissional.celular) && !celularValido(profissional.celular)){
+        message.ERROR_BAD_REQUEST.message = 'Informe um celular válido com DDD.'
         message.ERROR_BAD_REQUEST.field = '[CELULAR] INVÁLIDO'
         return message.ERROR_BAD_REQUEST // 400
     }
@@ -574,17 +575,11 @@ const validarDadosAtualizacao = async (profissional, contentType) => {
         return message.ERROR_BAD_REQUEST
     }
 
-    // Celular, se enviado
-    if(
-        profissional.celular != undefined &&
-        profissional.celular != null &&
-        (
-            typeof profissional.celular != 'string' ||
-            profissional.celular.length > 20
-        )
-    ){
+    // Valida o celular opcional: se informado, precisa ser um celular brasileiro válido
+    if(celularInformado(profissional.celular) && !celularValido(profissional.celular)){
+        message.ERROR_BAD_REQUEST.message = 'Informe um celular válido com DDD.'
         message.ERROR_BAD_REQUEST.field = '[CELULAR] INVÁLIDO'
-        return message.ERROR_BAD_REQUEST
+        return message.ERROR_BAD_REQUEST // 400
     }
 
     return false

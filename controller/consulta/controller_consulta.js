@@ -8,13 +8,14 @@
 const config_message = require('../module/configMessages.js')
 const consultaDAO = require('../../model/DAO/consulta/consulta.js')
 const disponibilidadeDAO = require('../../model/DAO/disponibilidade/disponibilidade.js')
-const notificacaoDAO = require('../../model/DAO/notificacao/notificacao.js')
 const { decodeJWT } = require('../../middleware/middlewareJWT.js')
 const agenda = require('../module/agendaHorarios.js')
+const { notificarSePermitido } = require('../../services/lembreteConsultas.js')
 
 // ids de tbl_categoria (script-inserts.sql): 1 agenda/lembrete_consulta, 2 agenda/consulta_cancelada
-const CATEGORIA_AGENDA = 1
-const CATEGORIA_AGENDA_CANCELADA = 2
+// tipos da categoria 'agenda' em tbl_categoria (o id é buscado pelo nome)
+const TIPO_NOVA_CONSULTA = 'nova_consulta'          // nova consulta e reagendamento
+const TIPO_CONSULTA_CANCELADA = 'consulta_cancelada'
 
 const nivelDoToken = (decode) =>
     decode.nivel == 0 ? "administrador"
@@ -69,10 +70,11 @@ const exigirVinculoAtivo = (vinculo) => {
  *  1. o vínculo existe, é do usuário logado e está ativo
  *  2. data e hora válidas e no futuro (nada de consulta no passado)
  *  3. a especialidade, se informada, é uma das do profissional (se ele tem só uma e nada veio, usa ela)
- *  4. quando quem marca é o PACIENTE, o horário precisa estar na disponibilidade do profissional
+ *  4. o horário precisa estar na disponibilidade do profissional (para o paciente E para o profissional);
+ *     na edição, o horário que a consulta já tinha continua aceito (horarioAtual = { data, hora })
  *  5. o profissional não pode ter outra consulta no mesmo horário
  */
-const validarAgendamento = async (consulta, decode, nivel, idConsultaIgnorar = 0) => {
+const validarAgendamento = async (consulta, decode, nivel, idConsultaIgnorar = 0, horarioAtual = null) => {
     let message = JSON.parse(JSON.stringify(config_message))
 
     // 1. vínculo
@@ -110,12 +112,17 @@ const validarAgendamento = async (consulta, decode, nivel, idConsultaIgnorar = 0
         return { erro: respostaErro(400, 'Essa especialidade não pertence ao profissional escolhido.', '[ESPECIALIDADE] INVÁLIDO') }
     }
 
-    // 4. disponibilidade do profissional (vale para o paciente)
+    // 4. disponibilidade do profissional (vale para o paciente e para o profissional)
     let disponibilidades = await disponibilidadeDAO.selectDisponibilidadesComDiasByIdProfissional(vinculo.id_profissional)
     if(!disponibilidades) return { erro: message.ERROR_INTERNAL_SERVER_MODEL }
 
-    if(nivel === 'paciente' && !agenda.horariosDoDia(disponibilidades, data).includes(hora)){
-        return { erro: respostaErro(409, 'O profissional não atende nesse dia/horário. Escolha um dos horários disponíveis.', '[HORA] INDISPONÍVEL') }
+    let mantemHorarioAtual = horarioAtual && horarioAtual.data === data && horarioAtual.hora === hora
+
+    if(!mantemHorarioAtual && !agenda.horariosDoDia(disponibilidades, data).includes(hora)){
+        let texto = nivel === 'profissional'
+            ? 'Esse horário está fora da sua disponibilidade. Escolha um dos horários disponíveis.'
+            : 'O profissional não atende nesse dia/horário. Escolha um dos horários disponíveis.'
+        return { erro: respostaErro(400, texto, '[HORA] INDISPONÍVEL') }
     }
 
     // 5. horário livre
@@ -133,20 +140,16 @@ const validarAgendamento = async (consulta, decode, nivel, idConsultaIgnorar = 0
 const dataBr = (iso) => iso.split('-').reverse().join('/')
 
 // avisa o outro lado da consulta (a bolinha de "tem novidade" no app vem destas notificações não lidas)
-const notificarConsulta = async (vinculo, nivelAutor, idCategoria, evento, texto) => {
+// tipo: tipo_especifico da categoria 'agenda' (a categoria é buscada pelo nome, e as
+// preferências de notificação de cada destinatário são respeitadas)
+const notificarConsulta = async (vinculo, nivelAutor, tipo, evento, texto) => {
     try {
         let destinos = []
         if(nivelAutor !== 'profissional') destinos.push({ id_profissional: vinculo.id_profissional, id_paciente: null })
         if(nivelAutor !== 'paciente') destinos.push({ id_profissional: null, id_paciente: vinculo.id_paciente })
 
         for (let destino of destinos) {
-            await notificacaoDAO.insertNotificacao({
-                titulo_mensagem: texto,
-                lida: 0,
-                referencia_evento: evento,
-                id_categoria: idCategoria,
-                ...destino
-            })
+            await notificarSePermitido({ categoria: 'agenda', tipo, destino, titulo: texto, referencia: evento })
         }
     } catch (error) { console.log(error) }
 }
@@ -182,7 +185,7 @@ const inserirNovaConsulta = async (consulta, token, contentType) => {
         consulta.id_profissional = regras.vinculo.id_profissional
 
         await notificarConsulta(
-            regras.vinculo, nivel, CATEGORIA_AGENDA, 'nova_consulta',
+            regras.vinculo, nivel, TIPO_NOVA_CONSULTA, `nova_consulta:${result}`,
             `Nova consulta agendada para ${dataBr(regras.data)} às ${regras.hora}.`
         )
 
@@ -214,7 +217,9 @@ const atualizarConsulta = async (consulta, token, id, contentType) => {
         let doDono = await carregarVinculoDoUsuario(Number(existente.id_vinculo), decodedToken.decode, nivel)
         if(doDono.erro) return doDono.erro
 
-        let regras = await validarAgendamento(consulta, decodedToken.decode, nivel, Number(id))
+        // o horário que a consulta já tinha continua aceito, mesmo fora da disponibilidade atual
+        let horarioAtual = { data: agenda.paraIsoData(existente.data), hora: agenda.paraHoraHHmm(existente.hora) }
+        let regras = await validarAgendamento(consulta, decodedToken.decode, nivel, Number(id), horarioAtual)
         if(regras.erro) return regras.erro
 
         consulta.criado_por = existente.criado_por
@@ -228,7 +233,7 @@ const atualizarConsulta = async (consulta, token, id, contentType) => {
         if(!result) return message.ERROR_INTERNAL_SERVER_MODEL // 500
 
         await notificarConsulta(
-            regras.vinculo, nivel, CATEGORIA_AGENDA, 'consulta_alterada',
+            regras.vinculo, nivel, TIPO_NOVA_CONSULTA, `consulta_alterada:${Number(id)}`,
             `Uma consulta foi reagendada para ${dataBr(regras.data)} às ${regras.hora}.`
         )
 
@@ -305,7 +310,7 @@ const excluirConsulta = async (id, token) => {
         let dia = agenda.paraIsoData(existente.data)
         let hora = agenda.paraHoraHHmm(existente.hora)
         await notificarConsulta(
-            doDono.vinculo, nivel, CATEGORIA_AGENDA_CANCELADA, 'consulta_cancelada',
+            doDono.vinculo, nivel, TIPO_CONSULTA_CANCELADA, `consulta_cancelada:${Number(id)}`,
             dia && hora ? `A consulta de ${dataBr(dia)} às ${hora} foi cancelada.` : 'Uma consulta foi cancelada.'
         )
 
