@@ -219,9 +219,9 @@ INSERT INTO tbl_registro_humor (data, sentimento, energia, humor, padrao_pensame
 -- TRATAMENTO / HORARIOS / REGISTRO DE DOSE
 -- ------------------------------------------------------------
 INSERT INTO tbl_tratamento (nome_medicamento, dosagem, frequencia, lembrete_ativo, id_paciente) VALUES
-('Sertralina',  '50 mg', '1x ao dia',  1,    1),
-('Clonazepam',  '0,5 mg','2x ao dia',  1,    2),
-('Melatonina',  '3 mg',  'à noite',    NULL, 4);
+('Sertralina',  '50 mg', 'Uma vez ao dia',    1,    1),
+('Clonazepam',  '0,5 mg','Duas vezes ao dia', 1,    2),
+('Melatonina',  '3 mg',  'Uma vez ao dia',    NULL, 4);
 
 INSERT INTO tbl_horario_tratamento (horario, id_tratamento) VALUES
 ('08:00:00', 1),

@@ -451,6 +451,9 @@ CREATE TABLE tbl_registro_humor (
     data_criacao DATETIME NOT NULL,
     id_paciente INT NOT NULL,
 
+    -- RN10: um registro de humor por paciente por dia
+    CONSTRAINT UQ_REGISTROHUMOR_PACIENTE_DATA UNIQUE (id_paciente, data),
+
     CONSTRAINT FK_PACIENTE_REGISTROHUMOR
     FOREIGN KEY (id_paciente)
     REFERENCES tbl_paciente (id)

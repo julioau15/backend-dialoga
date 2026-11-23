@@ -53,3 +53,16 @@ WHERE NOT EXISTS (SELECT 1 FROM tbl_categoria WHERE categoria = 'agenda' AND tip
 UPDATE tbl_categoria_compartilhada SET categoria = 'Humor'         WHERE categoria = 'humor';
 UPDATE tbl_categoria_compartilhada SET categoria = 'Horas de sono' WHERE categoria = 'sono';
 UPDATE tbl_categoria_compartilhada SET categoria = 'Tratamentos'   WHERE categoria = 'medicacao';
+
+-- [Ajustes] frequência dos tratamentos com as opções da tela (registros antigos: "1x ao dia", "à noite")
+UPDATE tbl_tratamento SET frequencia = 'Uma vez ao dia'    WHERE frequencia IN ('1x ao dia', 'à noite');
+UPDATE tbl_tratamento SET frequencia = 'Duas vezes ao dia' WHERE frequencia = '2x ao dia';
+UPDATE tbl_tratamento SET frequencia = 'Três vezes ao dia' WHERE frequencia = '3x ao dia';
+UPDATE tbl_tratamento SET frequencia = 'Quatro vezes ao dia' WHERE frequencia = '4x ao dia';
+
+-- [Ajustes] RN10: um registro de humor por paciente por dia.
+-- Se este comando falhar por duplicidade, liste os dias repetidos com:
+--   SELECT id_paciente, data, COUNT(*) FROM tbl_registro_humor GROUP BY id_paciente, data HAVING COUNT(*) > 1;
+-- e decida qual registro manter antes de rodar de novo.
+ALTER TABLE tbl_registro_humor
+ADD CONSTRAINT UQ_REGISTROHUMOR_PACIENTE_DATA UNIQUE (id_paciente, data);

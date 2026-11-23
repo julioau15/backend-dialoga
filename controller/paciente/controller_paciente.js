@@ -281,7 +281,9 @@ const primeiroAcessoPaciente = async (paciente, token) => {
                 padrao_pensamentos: paciente.registro_humor.padrao_pensamentos || null,
                 horas_sono: paciente.registro_humor.horas_sono || null,
                 relato: paciente.registro_humor.relato || paciente.registro_humor.observacoes || null,
-                id_paciente: idPaciente
+                id_paciente: idPaciente,
+                // dia no fuso de São Paulo; se já houver registro hoje, o índice UNIQUE impede outro (RN10)
+                data: require('../module/agendaHorarios.js').agoraNoFuso().data
             }
             await registroHumorDAO.insertRegistroHumor(humorData)
         }
