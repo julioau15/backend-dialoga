@@ -27,7 +27,8 @@ const {
     listarProfissionaisVinculados,
     inserirNovoVinculo,
     excluirVinculo,
-    buscarPacientePorNomeOuEmail
+    buscarPacientePorNomeOuEmail,
+    buscarPerfilPacienteParaProfissional
 } = require('../controller/paciente/controller_paciente.js')
 
 const {
@@ -46,6 +47,11 @@ const {
 } = require('../controller/tratamento/controller_tratamento.js')
 
 const { listarConsultasByToken } = require('../controller/consulta/controller_consulta.js')
+
+const {
+    listarDosesDoDiaByToken,
+    confirmarDoseByToken
+} = require('../controller/registro_dose/controller_registro_dose.js')
 
 const formatarJson = async (dados, acao) => {
     const pacienteInserir = {
@@ -99,6 +105,13 @@ router.get('/me/tratamentos', async (req,res) => {
     res.status(result.status_code).json(result)
 })
 
+// endpoint para listar as doses de hoje do paciente pelo token (situação de cada horário)
+router.get('/me/doses', async (req,res) => {
+    let token = req.headers['x-access-token']
+    let result = await listarDosesDoDiaByToken(token)
+    res.status(result.status_code).json(result)
+})
+
 // endpoint para retornar anotacoes de um paciente pelo token
 router.get('/:id/anotacoes', async (req,res) => {
     let token = req.headers['x-access-token']
@@ -132,7 +145,8 @@ router.get('/me', async (req,res) => {
 // endpoint para buscar pacientes pelo nome ou e-mail
 router.get('/busca', async (req,res) => {
     let busca = req.query.busca || req.query.q || req.query.nome
-    let result = await buscarPacientePorNomeOuEmail(busca)
+    let token = req.headers['x-access-token']
+    let result = await buscarPacientePorNomeOuEmail(busca, token)
     res.status(result.status_code).json(result)
 })
 
@@ -143,9 +157,11 @@ router.get('/', async (req,res) => {
 })
 
 // endpoint para buscar um paciente pelo id
+// só o profissional com vínculo ativo com o paciente (senão 403)
 router.get('/:id/perfil-profissional', async (req,res) => {
     let id = req.params.id
-    let result = await buscarPaciente(id)
+    let token = req.headers['x-access-token']
+    let result = await buscarPerfilPacienteParaProfissional(id, token)
     res.status(result.status_code).json(result)
 })
 
@@ -167,6 +183,14 @@ router.post('/me/tratamentos', bodyParserJSON, async (req,res) => {
     let contentType = req.headers['content-type']
 
     let result = await inserirNovaTratamentoByToken(dados, token, contentType)
+    res.status(result.status_code).json(result)
+})
+
+// endpoint para confirmar (marcar como tomada) a dose de hoje de um horário do paciente pelo token
+router.post('/me/doses/:idHorario/confirmar', async (req,res) => {
+    let token = req.headers['x-access-token']
+    let idHorario = req.params.idHorario
+    let result = await confirmarDoseByToken(token, idHorario)
     res.status(result.status_code).json(result)
 })
 

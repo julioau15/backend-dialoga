@@ -281,7 +281,27 @@ const selectEspecialidadesDoProfissional = async (idProfissional) => {
     return false
 }
 
+// consultas agendadas entre duas datas (lembrete automático), com o paciente e o profissional do vínculo
+const selectConsultasAgendadasEntre = async (de, ate) => {
+    let sql = `SELECT c.id, c.nome_da_consulta, c.data, c.hora, c.status,
+                      v.id_paciente, v.id_profissional,
+                      p.nome_completo AS nome_paciente
+               FROM tbl_consulta c
+               INNER JOIN tbl_vinculo v ON c.id_vinculo = v.id
+               INNER JOIN tbl_paciente p ON p.id = v.id_paciente
+               WHERE c.status = 'agendada'
+                 AND c.data BETWEEN ? AND ?`
+    try {
+        let response = await knexConex.raw(sql, [de, ate])
+
+        if(response) return response[0]
+    } catch (error) { console.log(error) }
+
+    return false
+}
+
 module.exports = {
+    selectConsultasAgendadasEntre,
     selectVinculoParaAgenda,
     selectConsultasOcupadasDoProfissional,
     selectEspecialidadesDoProfissional,

@@ -10,6 +10,7 @@ const tratamentoDAO = require('../../model/DAO/tratamento/tratamento.js')
 const horarioTratamentoController = require('../horario_tratamento/controller_horario_tratamento.js')
 const { decodeJWT } = require('../../middleware/middlewareJWT.js')
 const pacienteDAO = require('../../model/DAO/paciente/paciente.js')
+const agenda = require('../module/agendaHorarios.js')
 
 // O token traz o id do USUÁRIO (ex.: 10), mas o tratamento guarda o id do PACIENTE (tbl_paciente.id).
 // Gravar o id do usuário quebra a chave estrangeira FK_PACIENTE_TRATAMENTO (ou, pior, cai no paciente errado).
@@ -17,6 +18,49 @@ const obterIdPacienteDoToken = async (idUsuario) => {
     let result = await pacienteDAO.selectByIdUsuarioPaciente(idUsuario)
     if(!result || result.length < 1) return false
     return result[0].id
+}
+
+// Sincroniza os horários do tratamento: mantém os que continuam iguais, apaga os removidos e insere os novos.
+// Assim o histórico de doses (tbl_registro_dose), ligado ao id do horário, não é apagado em cascata a cada edição.
+// Devolve false se alguma operação falhar.
+const sincronizarHorarios = async (idTratamento, horariosEnviados, contentType) => {
+    let resultAtuais = await horarioTratamentoController.listarHorarioTratamentoByIdTratamento(idTratamento)
+    if(!resultAtuais.status && resultAtuais.status_code != 404) return false
+
+    let atuais = resultAtuais.status ? resultAtuais.response.horarioTratamento : []
+    let enviados = Array.isArray(horariosEnviados) ? horariosEnviados : []
+
+    // horários comparados no formato 'HH:mm' (o banco devolve 'HH:mm:ss')
+    let chavesEnviadas = new Set(enviados.map((item) => agenda.paraHoraHHmm(item.horario)))
+    let mantidos = new Map() // 'HH:mm' -> id do horário que continua
+
+    for(let atual of atuais){
+        let chave = agenda.paraHoraHHmm(atual.horario)
+
+        if(chavesEnviadas.has(chave) && !mantidos.has(chave)){
+            mantidos.set(chave, atual.id)
+        } else {
+            let resultExcluir = await horarioTratamentoController.excluirHorarioTratamento(atual.id)
+            if(!resultExcluir.status) return false
+        }
+    }
+
+    for(let horario of enviados){
+        let chave = agenda.paraHoraHHmm(horario.horario)
+
+        if(mantidos.has(chave)){
+            horario.id = mantidos.get(chave)
+            continue
+        }
+
+        let resultInserir = await horarioTratamentoController.inserirNovaHorarioTratamento(horario, idTratamento, contentType)
+        if(!resultInserir.status) return false
+
+        horario.id = resultInserir.response.horarioTratamento.id
+        mantidos.set(chave, horario.id)
+    }
+
+    return true
 }
 
 // inserir nova tratamento
@@ -48,21 +92,14 @@ const atualizarTratamento = async (tratamento, id, contentType) => {
         let resultBuscarId = await buscarTratamento(id)
         if(!resultBuscarId.status) return resultBuscarId // 400 e 404
 
-        let resultDeleteHorarios = await horarioTratamentoController.excluirHorarioTratamentoByIdTratamento(id)
-
         tratamento.id = Number(id)
         let result = await tratamentoDAO.updateTratamento(tratamento)
 
         if(!result) return message.ERROR_INTERNAL_SERVER_MODEL // 500
 
-        for(let horario of tratamento.horarios){
-            let resultInsertHorario = await horarioTratamentoController.inserirNovaHorarioTratamento(horario, id, contentType)
-           
-            if (resultInsertHorario.status) {
-                let idHorario = resultInsertHorario.response.horarioTratamento.id
-                horario.id = idHorario
-            }
-        }
+        // atualiza só os horários que mudaram (preserva o histórico de doses)
+        let resultHorarios = await sincronizarHorarios(id, tratamento.horarios, contentType)
+        if(!resultHorarios) return message.ERROR_INTERNAL_SERVER_MODEL // 500
 
         return await montarMensagem(message, message.SUCESS_UPDATE_ITEM, tratamento)
 

@@ -6,22 +6,30 @@
  * *********************************************************************************/
 
 const config_message = require('../module/configMessages.js')
+const { celularValido, celularInformado } = require('../module/validarCelular.js')
 const administradorDAO = require('../../model/DAO/administrador/administrador.js')
 const usuarioController = require('../usuario/controller_usuario.js')
 const usuarioDAO = require('../../model/DAO/usuario/usuario.js')
 const {uploadFiles} = require('../upload/controller_upload_azure.js')
 const bcrypt = require('../../services/bcrypt.js')
 const { decodeJWT } = require('../../middleware/middlewareJWT.js')
+const { buscarAdministradorDoToken } = require('../module/autorizacao.js')
 const crypto = require('crypto')
 const { enviarSenhaAcesso } = require('../../services/email.js')
 
 // inserir novo administrador
-const inserirNovaAdministrador = async (administrador, foto_avatar, contentType) => {
+const inserirNovaAdministrador = async (administrador, foto_avatar, contentType, token) => {
     let message = JSON.parse(JSON.stringify(config_message))
 
     try {
         let validar = await validarDados(administrador, contentType)
         if (validar) return validar
+
+        // só um administrador cadastra outro; ele fica registrado como criador
+        let autorizacao = await buscarAdministradorDoToken(token)
+        if (!autorizacao.ok) return autorizacao.erro // 401, 403 ou 500
+
+        administrador.id_administrador_criador = Number(autorizacao.administrador.id)
 
         // Realiza o upload da imagem do administrador
         if (foto_avatar) {
@@ -210,21 +218,22 @@ const excluirAdministrador = async (id, token) => {
 
         let alvo = resultBuscarId.response.administrador[0]
 
-        let decodedToken = await decodeJWT(token)
-        if(!decodedToken.status) return message.ERROR_INVALID_TOKEN
+        // o token traz o id de tbl_usuario; o solicitante precisa ser administrador
+        let autorizacao = await buscarAdministradorDoToken(token)
+        if(!autorizacao.ok) return autorizacao.erro // 401, 403 ou 500
 
-        // Bloqueia a remoção da própria conta (o token traz o id de tbl_usuario)
-        if(Number(decodedToken.decode.id) === Number(alvo.id_usuario)){
-            message.ERROR_FORBIDDEN.message = 'Não é possível remover a própria conta.'
-            return message.ERROR_FORBIDDEN // 403
-        }
-
-        // Bloqueia a remoção do último administrador
         let administradores = await administradorDAO.selectAllAdministrador()
         if(!administradores) return message.ERROR_INTERNAL_SERVER_MODEL // 500
 
-        if(administradores.length <= 1){
-            message.ERROR_FORBIDDEN.message = 'Não é possível remover o último administrador.'
+        // própria conta, quem criou o seu perfil ou o último administrador
+        let motivo = motivoBloqueioExclusao({
+            solicitante: autorizacao.administrador,
+            alvo,
+            totalAdmins: administradores.length
+        })
+
+        if(motivo){
+            message.ERROR_FORBIDDEN.message = motivo
             return message.ERROR_FORBIDDEN // 403
         }
 
@@ -243,12 +252,11 @@ const buscarAdministradorByToken = async (token) => {
 
     try {
 
-        let decodedToken = await decodeJWT(token)
-        if(!decodedToken.status) return message.ERROR_INVALID_TOKEN
+        // o token traz o id de tbl_usuario; o administrador é localizado pelo id_usuario
+        let autorizacao = await buscarAdministradorDoToken(token)
+        if(!autorizacao.ok) return autorizacao.erro // 401, 403 ou 500
 
-        let idAdministrador = decodedToken.decode.id
-
-        let resultBuscarId = await buscarAdministrador(idAdministrador)
+        let resultBuscarId = await buscarAdministrador(autorizacao.administrador.id)
         if(!resultBuscarId.status) return resultBuscarId // 400 e 404
 
         return resultBuscarId
@@ -354,8 +362,17 @@ const atualizarSenhaAdministradorByToken = async (dados, token, contentType) => 
     return message.ERROR_INTERNAL_SERVER_CONTROLLER // 500
 }
 
-// gera senha aleatória (mínimo 6 caracteres), sem caracteres ambíguos como 0/O e l/1/I
+// regra de exclusão de administrador: devolve o motivo do bloqueio ou null quando pode excluir
+const motivoBloqueioExclusao = ({ solicitante, alvo, totalAdmins }) => {
+    if(Number(solicitante.id) === Number(alvo.id)) return 'Não é possível remover a própria conta.'
 
+    if(solicitante.id_administrador_criador != null && Number(solicitante.id_administrador_criador) === Number(alvo.id))
+        return 'Não é possível remover o administrador que criou o seu perfil.'
+
+    if(Number(totalAdmins) <= 1) return 'Não é possível remover o último administrador.'
+
+    return null
+}
 
 // gera senha aleatória (mínimo 6 caracteres), sem caracteres ambíguos como 0/O e l/1/I
 const gerarSenhaAleatoria = (tamanho = 8) => {
@@ -395,11 +412,11 @@ const validarDados = async (administrador, contentType) => {
         return message.ERROR_BAD_REQUEST
     }
 
-    // Valida celular opcional
-    if(administrador.celular != undefined && administrador.celular != null &&
-       (typeof administrador.celular != 'string' || administrador.celular.length > 20)){
+    // Valida o celular opcional: se informado, precisa ser um celular brasileiro válido
+    if(celularInformado(administrador.celular) && !celularValido(administrador.celular)){
+        message.ERROR_BAD_REQUEST.message = 'Informe um celular válido com DDD.'
         message.ERROR_BAD_REQUEST.field = '[CELULAR] INVÁLIDO'
-        return message.ERROR_BAD_REQUEST
+        return message.ERROR_BAD_REQUEST // 400
     }
 
     // Valida avatar opcional
@@ -492,5 +509,6 @@ module.exports = {
     excluirAdministrador,
     buscarAdministradorByToken,
     editarAdministradorByToken,
-    atualizarSenhaAdministradorByToken
+    atualizarSenhaAdministradorByToken,
+    motivoBloqueioExclusao
 }

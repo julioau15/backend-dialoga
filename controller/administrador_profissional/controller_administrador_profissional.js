@@ -8,7 +8,9 @@
 const config_message = require('../module/configMessages.js')
 const administradorProfissionalDAO = require('../../model/DAO/administrador_profissional/administrador_profissional.js')
 const profissionalController = require('../profissional/controller_profissional.js')
-const JWT = require('../../middleware/middlewareJWT.js')
+const { buscarAdministradorDoToken } = require('../module/autorizacao.js')
+
+const MENSAGEM_CONFLITO_DECISAO = 'Esta solicitação já foi decidida ou está atribuída a outro administrador.'
 
 // inserir nova administradorProfissional
 const inserirNovaAdministradorProfissional = async (administradorProfissional, contentType) => {
@@ -51,10 +53,20 @@ const atualizarAdministradorProfissional = async (administradorProfissional, id,
 }
 
 // listar todas administradorProfissionals
-const listarAdministradorProfissional = async () => {
+// Antes de listar, distribui as pendentes sem responsável (divisão fixa entre os admins).
+// Cada item informa o responsável e se a solicitação está atribuída a quem chamou.
+const listarAdministradorProfissional = async (token) => {
     let message = JSON.parse(JSON.stringify(config_message))
 
     try {
+        let autorizacao = await buscarAdministradorDoToken(token)
+        if(!autorizacao.ok) return autorizacao.erro // 401, 403 ou 500
+
+        let distribuicao = await distribuirSolicitacoesPendentes()
+        if(!distribuicao) return message.ERROR_INTERNAL_SERVER_MODEL // 500
+
+        let idAdministrador = Number(autorizacao.administrador.id)
+
         let result = await administradorProfissionalDAO.selectAllAdministradorProfissional()
 
         if(!result) return message.ERROR_INTERNAL_SERVER_MODEL // 500
@@ -63,6 +75,12 @@ const listarAdministradorProfissional = async () => {
         if(result.length <= 0) return message.ERROR_NOT_FOUND // status_code 404
 
         for(let administradorProfissional of result){
+            administradorProfissional.responsavel = administradorProfissional.id_admin_responsavel
+                ? { id: Number(administradorProfissional.id_admin_responsavel), nome_completo: administradorProfissional.nome_admin_responsavel }
+                : null
+            administradorProfissional.atribuida_a_mim = Number(administradorProfissional.id_admin_responsavel) === idAdministrador
+            delete administradorProfissional.nome_admin_responsavel
+
             let resultBuscarProfissional = await profissionalController.buscarProfissional(administradorProfissional.id_profissional)
             if(resultBuscarProfissional.status){
                 administradorProfissional.profissional = resultBuscarProfissional.response.profissional
@@ -129,50 +147,88 @@ const excluirAdministradorProfissional = async (id) => {
 
 // aprova um profissional pelo id
 const aprovarAdministradorProfissional = async (id, token) => {
-    let message = JSON.parse(JSON.stringify(config_message))
-
-    try {
-
-        let idAdministrador = await JWT.decodeJWT(token)
-        if(!idAdministrador) return message.ERROR_UNAUTHORIZED
-
-        let administradorProfissional = {
-            id_profissional: Number(id),
-            id_administrador: Number(idAdministrador.decode.id)
-        }
-
-        let result = await administradorProfissionalDAO.aprovarAdministradorProfissional(administradorProfissional)
-
-        if(!result) return message.ERROR_INTERNAL_SERVER_MODEL // 500
-
-        return await montarMensagem(message, message.SUCESS_UPDATE_ITEM, administradorProfissional)
-
-    }catch (error) {console.log(error)}
-    return message.ERROR_INTERNAL_SERVER_CONTROLLER // 500
+    return await decidirSolicitacao(id, token, administradorProfissionalDAO.aprovarAdministradorProfissional)
 }
 
 // reprova um profissional pelo id
 const reprovarAdministradorProfissional = async (id, token) => {
+    return await decidirSolicitacao(id, token, administradorProfissionalDAO.reprovarAdministradorProfissional)
+}
+
+// aprova ou reprova: só o admin responsável decide, e uma decisão nunca é sobrescrita (409)
+const decidirSolicitacao = async (id, token, gravarDecisao) => {
     let message = JSON.parse(JSON.stringify(config_message))
 
     try {
+        const validarID = await validarId(id)
+        if(validarID) return validarID // 400
 
-        let idAdministrador = await JWT.decodeJWT(token)
-        if(!idAdministrador) return message.ERROR_UNAUTHORIZED
+        // o token traz o id de tbl_usuario; a FK aponta para tbl_administrador(id)
+        let autorizacao = await buscarAdministradorDoToken(token)
+        if(!autorizacao.ok) return autorizacao.erro // 401, 403 ou 500
 
         let administradorProfissional = {
             id_profissional: Number(id),
-            id_administrador: Number(idAdministrador.decode.id)
+            id_administrador: Number(autorizacao.administrador.id)
         }
 
-        let result = await administradorProfissionalDAO.reprovarAdministradorProfissional(administradorProfissional)
-
+        let result = await gravarDecisao(administradorProfissional)
         if(!result) return message.ERROR_INTERNAL_SERVER_MODEL // 500
+
+        // nenhuma linha alterada: inexistente, já decidida ou atribuída a outro administrador
+        if(result.afetadas === 0){
+            message.ERROR_CONFLICT.message = MENSAGEM_CONFLITO_DECISAO
+            return message.ERROR_CONFLICT // 409
+        }
 
         return await montarMensagem(message, message.SUCESS_UPDATE_ITEM, administradorProfissional)
 
-    }catch (error) {console.log(error)}
+    } catch (error) {console.log(error)}
     return message.ERROR_INTERNAL_SERVER_CONTROLLER // 500
+}
+
+// atribui cada pendente sem responsável ao admin com menos pendentes no momento
+const distribuirSolicitacoesPendentes = async () => {
+    let pendentes = await administradorProfissionalDAO.selectPendentesSemResponsavel()
+    if(!pendentes) return false
+    if(pendentes.length === 0) return true
+
+    let cargas = await administradorProfissionalDAO.selectCargaPendentesPorAdministrador()
+    if(!cargas) return false
+
+    for(let pendente of pendentes){
+        let idResponsavel = escolherResponsavel(cargas)
+        if(idResponsavel == null) break
+
+        let result = await administradorProfissionalDAO.atribuirResponsavelAdministradorProfissional(pendente.id, idResponsavel)
+        if(!result) return false
+
+        if(result.afetadas > 0) cargas.find((carga) => carga.id === idResponsavel).pendentes++
+    }
+
+    return true
+}
+
+// função pura: admin com menos pendentes; no empate, o de menor id (null sem admins)
+const escolherResponsavel = (cargas) => {
+    let escolhido = null
+
+    for(let carga of cargas){
+        if(escolhido == null ||
+           carga.pendentes < escolhido.pendentes ||
+           (carga.pendentes === escolhido.pendentes && carga.id < escolhido.id)){
+            escolhido = carga
+        }
+    }
+
+    return escolhido ? escolhido.id : null
+}
+
+// função pura: 'ok' | 'ja_decidida' | 'outro_responsavel' (mesma regra do UPDATE no DAO)
+const podeDecidir = ({ status_aprovacao, id_admin_responsavel }, idAdministrador) => {
+    if(status_aprovacao !== null && status_aprovacao !== undefined) return 'ja_decidida'
+    if(id_admin_responsavel != null && Number(id_admin_responsavel) !== Number(idAdministrador)) return 'outro_responsavel'
+    return 'ok'
 }
 
 const validarDados = async (administradorProfissional, contentType) => {
@@ -244,5 +300,7 @@ module.exports = {
     buscarAdministradorProfissional,
     excluirAdministradorProfissional,
     aprovarAdministradorProfissional,
-    reprovarAdministradorProfissional
+    reprovarAdministradorProfissional,
+    podeDecidir,
+    escolherResponsavel
 }

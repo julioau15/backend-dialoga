@@ -6,7 +6,11 @@ const config_message = require('../module/configMessages.js')
 const solicitacaoAcessoDAO = require('../../model/DAO/solicitacao_acesso/solicitacao_acesso.js')
 const { decodeJWT } = require('../../middleware/middlewareJWT.js')
 
-const categoriasPermitidas = ['Sentimento', 'Energia', 'Humor', 'Pensamentos', 'Horas de sono', 'Acontecimentos']
+// 'Tratamentos' = consentimento para o profissional ver os tratamentos (medicação) do paciente
+const categoriasPermitidas = ['Sentimento', 'Energia', 'Humor', 'Pensamentos', 'Horas de sono', 'Acontecimentos', 'Tratamentos']
+
+// os tratamentos só aparecem para o profissional quando o paciente autorizou a categoria 'Tratamentos'
+const tratamentosLiberados = (status, categorias) => status == 'aprovada' && categorias.includes('Tratamentos')
 
 // Consulta o perfil correspondente ao usuário autenticado.
 const buscarPerfilDoUsuario = async (token, nivelEsperado = null) => {
@@ -215,8 +219,8 @@ const listarIndicadoresCompartilhados = async (token, idPaciente) => {
             }
         }
 
-        // O tratamento aparece para o profissional quando o paciente liberou qualquer uma das informações.
-        let tratamentos = (result.status == 'aprovada' && categorias.length > 0) ? (result.tratamentos || []) : []
+        // O tratamento só aparece para o profissional quando o paciente autorizou 'Tratamentos'.
+        let tratamentos = tratamentosLiberados(result.status, categorias) ? (result.tratamentos || []) : []
 
         let resposta = montarMensagem(message, message.SUCESS_RESPONSE)
         resposta.response = { status: result.status, categorias: categorias, registroHumor: registros, tratamento: tratamentos }
@@ -246,5 +250,7 @@ module.exports = {
     atualizarCategoriasCompartilhadas,
     reprovarSolicitacaoAcesso,
     excluirSolicitacaoAcesso,
-    listarIndicadoresCompartilhados
+    listarIndicadoresCompartilhados,
+    obterCategoriasAutorizadas,
+    tratamentosLiberados
 }

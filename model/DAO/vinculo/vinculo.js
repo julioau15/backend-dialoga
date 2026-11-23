@@ -354,10 +354,10 @@ const deleteVinculoPacienteProfissional = async (idPaciente, idProfissional) => 
     }
 }
 
-// aceitar um vinculo
+// aceitar um vinculo (grava 'ativo', como no seed)
 const aceitarVinculo = async (id) => {
     let sql = `UPDATE tbl_vinculo
-               SET status = 1,
+               SET status = 'ativo',
                    data_aceite = now(),
                    data_inicio_acompanhamento = now()
                WHERE id = ?`
@@ -373,10 +373,10 @@ const aceitarVinculo = async (id) => {
     return false
 }
 
-// recusar um vinculo
+// recusar um vinculo (grava 'recusado', como no seed)
 const recusarVinculo = async (id) => {
     let sql = `UPDATE tbl_vinculo
-               SET status = 2
+               SET status = 'recusado'
                WHERE id = ?`
     try {
         let response = await knexConex.raw(sql, [
@@ -390,7 +390,21 @@ const recusarVinculo = async (id) => {
     return false
 }
 
+// ao aceitar o primeiro vínculo, o paciente deixa de estar 'pendente'
+// (não mexe em quem está 'inativo' ou já 'ativo')
+const ativarPacientePendente = async (idPaciente) => {
+    let sql = `UPDATE tbl_paciente
+               SET status_atividade = 'ativo'
+               WHERE id = ? AND status_atividade = 'pendente'`
+    try {
+        let response = await knexConex.raw(sql, [idPaciente])
+        if(response) return response
+    } catch (error) { console.log(error) }
+    return false
+}
+
 module.exports = {
+    ativarPacientePendente,
     insertVinculo,
     updateVinculo,
     selectAllVinculo,

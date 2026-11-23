@@ -240,6 +240,12 @@ const aceitarVinculo = async (id) => {
 
         if(!result) return message.ERROR_INTERNAL_SERVER_MODEL // 500
 
+        // o paciente aceito sai de 'pendente' (é esse campo que o card de pacientes recentes mostra)
+        if (pacId) {
+            let resultPaciente = await vinculoDAO.ativarPacientePendente(pacId)
+            if(!resultPaciente) return message.ERROR_INTERNAL_SERVER_MODEL // 500
+        }
+
         // origem 2 (ou 'paciente') = o paciente solicitou, então quem aceita é o profissional e o aviso vai para o paciente
         // origem 1 (ou 'profissional') = o profissional convidou, então quem aceita é o paciente e o aviso vai para o profissional
         let pacienteSolicitou = ['2', 'paciente'].includes(String(vinculoInfo.origem_cadastro).toLowerCase())

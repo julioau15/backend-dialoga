@@ -6,12 +6,15 @@
  * *********************************************************************************/
 
 const config_message = require('../module/configMessages.js')
+const { celularValido, celularInformado } = require('../module/validarCelular.js')
 const pacienteDAO = require('../../model/DAO/paciente/paciente.js')
 const usuarioController = require('../usuario/controller_usuario.js')
 const vinculoController = require('../vinculo/controller_vinculo.js')
 const profissionalDAO = require('../../model/DAO/profissional/profissional.js')
 const bycrypt = require('../../services/bcrypt.js')
 const { decodeJWT } = require('../../middleware/middlewareJWT.js')
+
+const NIVEL_PROFISSIONAL_BUSCA = 1
 const {uploadFiles} = require('../upload/controller_upload_azure.js')
 
 // inserir nova paciente
@@ -278,7 +281,9 @@ const primeiroAcessoPaciente = async (paciente, token) => {
                 padrao_pensamentos: paciente.registro_humor.padrao_pensamentos || null,
                 horas_sono: paciente.registro_humor.horas_sono || null,
                 relato: paciente.registro_humor.relato || paciente.registro_humor.observacoes || null,
-                id_paciente: idPaciente
+                id_paciente: idPaciente,
+                // dia no fuso de São Paulo; se já houver registro hoje, o índice UNIQUE impede outro (RN10)
+                data: require('../module/agendaHorarios.js').agoraNoFuso().data
             }
             await registroHumorDAO.insertRegistroHumor(humorData)
         }
@@ -439,11 +444,48 @@ const excluirVinculo = async (token, idProfissional) => {
     return message.ERROR_INTERNAL_SERVER_CONTROLLER // 500
 }
 
-// buscar paciente pelo nome ou e-mail
-const buscarPacientePorNomeOuEmail = async (busca) => {
+// perfil do paciente na visão do profissional: só com vínculo ATIVO entre os dois
+const buscarPerfilPacienteParaProfissional = async (id, token) => {
     let message = JSON.parse(JSON.stringify(config_message))
 
     try {
+        const validarID = await validarId(id)
+        if(validarID) return validarID // 400
+
+        let decodedToken = await decodeJWT(token)
+        if(!decodedToken.status) return message.ERROR_INVALID_TOKEN // 401
+
+        message.ERROR_FORBIDDEN.message = 'Você não tem vínculo ativo com este paciente.'
+        if(Number(decodedToken.decode.nivel) !== NIVEL_PROFISSIONAL_BUSCA) return message.ERROR_FORBIDDEN // 403
+
+        let profissional = await profissionalDAO.selectByIdUsuarioProfissional(decodedToken.decode.id)
+        if(!profissional) return message.ERROR_INTERNAL_SERVER_MODEL // 500
+        if(profissional.length < 1) return message.ERROR_FORBIDDEN // 403
+
+        const vinculoDAO = require('../../model/DAO/vinculo/vinculo.js')
+        let vinculo = await vinculoDAO.selectVinculoAceito(Number(id), profissional[0].id)
+        if(!vinculo) return message.ERROR_INTERNAL_SERVER_MODEL // 500
+        if(vinculo.length < 1) return message.ERROR_FORBIDDEN // 403
+
+        return await buscarPaciente(id) // 200, 404 ou 500
+
+    } catch (error) {console.log(error)}
+    return message.ERROR_INTERNAL_SERVER_CONTROLLER // 500
+}
+
+// buscar paciente pelo início do nome ou pelo e-mail exato (só profissionais)
+const buscarPacientePorNomeOuEmail = async (busca, token) => {
+    let message = JSON.parse(JSON.stringify(config_message))
+
+    try {
+        let decodedToken = await decodeJWT(token)
+        if(!decodedToken.status) return message.ERROR_INVALID_TOKEN // 401
+
+        if(Number(decodedToken.decode.nivel) !== NIVEL_PROFISSIONAL_BUSCA){
+            message.ERROR_FORBIDDEN.message = 'Apenas profissionais podem buscar pacientes.'
+            return message.ERROR_FORBIDDEN // 403
+        }
+
         const validarBusca = await validarTermoBusca(busca)
         if(validarBusca) return validarBusca // 400
 
@@ -489,9 +531,9 @@ const validarDados = async (paciente, contentType) => {
         return message.ERROR_BAD_REQUEST // 400
     }
 
-    // Valida o celular opcional
-    if(paciente.celular != undefined && paciente.celular != null &&
-       (typeof paciente.celular != 'string' || paciente.celular.length > 20)){
+    // Valida o celular opcional: se informado, precisa ser um celular brasileiro válido
+    if(celularInformado(paciente.celular) && !celularValido(paciente.celular)){
+        message.ERROR_BAD_REQUEST.message = 'Informe um celular válido com DDD.'
         message.ERROR_BAD_REQUEST.field = '[CELULAR] INVÁLIDO'
         return message.ERROR_BAD_REQUEST // 400
     }
@@ -605,5 +647,6 @@ module.exports = {
     listarProfissionaisVinculados,
     inserirNovoVinculo,
     excluirVinculo,
-    buscarPacientePorNomeOuEmail
+    buscarPacientePorNomeOuEmail,
+    buscarPerfilPacienteParaProfissional
 }

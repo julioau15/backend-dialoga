@@ -169,26 +169,62 @@ const updatePrimeiroAcessoPaciente = async (paciente, id) => {
 }
 
 // busca de pacientes pelo nome ou email
+// função pura: monta o filtro da busca de pacientes
+//   com "@"  -> { tipo: 'email', valor }   (e-mail exato)
+//   sem "@"  -> { tipo: 'nome', padroes }  (cada palavra precisa casar com o INÍCIO de uma
+//               palavra do nome: 'ma%' ou '% ma%'; AND entre as palavras do termo)
+// O e-mail nunca entra no LIKE, então "ma" ou "gmail" não casam com o domínio.
+const BUSCA_LIMITE = 8
+
+const escaparLike = (texto) => texto.replace(/[\\%_]/g, (c) => '\\' + c)
+
+const montarFiltroBusca = (termo) => {
+    const texto = String(termo ?? '').trim()
+
+    if (texto.includes('@')) return { tipo: 'email', valor: texto.toLowerCase() }
+
+    const padroes = texto
+        .split(/\s+/)
+        .filter(Boolean)
+        .map((palavra) => {
+            const escapada = escaparLike(palavra)
+            return [`${escapada}%`, `% ${escapada}%`]
+        })
+
+    return { tipo: 'nome', padroes }
+}
+
+// busca pacientes pelo início das palavras do nome ou pelo e-mail exato (no máximo 8)
+// não devolve celular nem data de nascimento
 const selectBuscaPaciente = async (busca) => {
+    const filtro = montarFiltroBusca(busca)
+
+    let where
+    let valores = []
+
+    if (filtro.tipo === 'email') {
+        where = 'u.email = ?'
+        valores.push(filtro.valor)
+    } else {
+        if (filtro.padroes.length === 0) return []
+        where = filtro.padroes.map(() => "(p.nome_completo LIKE ? ESCAPE '\\\\' OR p.nome_completo LIKE ? ESCAPE '\\\\')").join(' AND ')
+        filtro.padroes.forEach(([inicio, meio]) => valores.push(inicio, meio))
+    }
+
     let sql = `SELECT
                    p.id,
                    p.nome_completo,
                    p.apelido,
-                   p.data_nascimento,
-                   p.celular,
                    p.foto_avatar,
-                   p.primeiro_acesso_concluido,
                    p.status_atividade,
-                   p.id_usuario,
                    u.email
                FROM tbl_paciente AS p
                INNER JOIN tbl_usuario AS u ON u.id = p.id_usuario
-               WHERE p.nome_completo LIKE ?
-                  OR u.email LIKE ?
-               ORDER BY p.nome_completo ASC`
+               WHERE ${where}
+               ORDER BY p.nome_completo ASC
+               LIMIT ${BUSCA_LIMITE}`
     try {
-        let termo = `%${busca}%`
-        let response = await knexConex.raw(sql, [termo, termo])
+        let response = await knexConex.raw(sql, valores)
 
         if(response) return response[0]
 
@@ -205,5 +241,6 @@ module.exports = {
     deletePaciente,
     updatePrimeiroAcessoPaciente,
     selectByIdUsuarioPaciente,
-    selectBuscaPaciente
+    selectBuscaPaciente,
+    montarFiltroBusca
 }

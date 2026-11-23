@@ -9,6 +9,14 @@ const config_message = require('../module/configMessages.js')
 const registroHumorDAO = require('../../model/DAO/registro_humor/registro_humor.js')
 const pacienteDAO = require('../../model/DAO/paciente/paciente.js')
 const { decodeJWT } = require('../../middleware/middlewareJWT.js')
+const agenda = require('../module/agendaHorarios.js')
+
+// RN10: um registro de humor por dia (o dia é o de São Paulo, o mesmo da tela)
+const registroDoDiaJaExiste = (message) => {
+    message.ERROR_CONFLICT.message = 'Você já registrou seu humor hoje. Volte amanhã para um novo registro.'
+    message.ERROR_CONFLICT.field = '[DATA] JÁ REGISTRADO'
+    return message.ERROR_CONFLICT // 409
+}
 
 // inserir novo registroHumor
 const inserirNovaRegistroHumor = async (registroHumor, contentType) => {
@@ -17,8 +25,10 @@ const inserirNovaRegistroHumor = async (registroHumor, contentType) => {
         let validar = await validarDados(registroHumor, contentType)
         if(validar) return validar // 400 ou 415
 
+        registroHumor.data = agenda.agoraNoFuso().data
         let result = await registroHumorDAO.insertRegistroHumor(registroHumor)
 
+        if(result?.duplicado) return registroDoDiaJaExiste(message) // 409 (RN10)
         if(!result) return message.ERROR_INTERNAL_SERVER_MODEL
 
         registroHumor.id = result
@@ -129,8 +139,17 @@ const inserirNovaRegistroHumorByToken = async (registroHumor, token, contentType
         let validar = await validarDados(registroHumor, contentType)
         if(validar) return validar // 400 ou 415
 
+        // RN10: só um registro por dia
+        let hoje = agenda.agoraNoFuso().data
+        let doDia = await registroHumorDAO.selectByIdPacienteRegistroHumor(idPaciente, { inicio: hoje, fim: hoje })
+        if(!doDia) return message.ERROR_INTERNAL_SERVER_MODEL // 500
+        if(doDia.length > 0) return registroDoDiaJaExiste(message) // 409
+
+        registroHumor.data = hoje
         let result = await registroHumorDAO.insertRegistroHumor(registroHumor)
 
+        // dois envios ao mesmo tempo: o índice UNIQUE barra o segundo
+        if(result?.duplicado) return registroDoDiaJaExiste(message) // 409
         if(!result) return message.ERROR_INTERNAL_SERVER_MODEL
 
         registroHumor.id = result

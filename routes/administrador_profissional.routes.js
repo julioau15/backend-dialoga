@@ -34,7 +34,8 @@ router.post('/',bodyParserJSON, async (req,res) => {
 
 // endpoint para retornar todas administradorProfissionals
 router.get('/', async (req,res) => {
-    let result = await listarAdministradorProfissional()
+    let token = req.headers['x-access-token']
+    let result = await listarAdministradorProfissional(token)
     res.status(result.status_code).json(result)
 })
 

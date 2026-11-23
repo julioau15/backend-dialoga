@@ -39,11 +39,17 @@ CREATE TABLE tbl_administrador (
     celular VARCHAR(20) UNIQUE,
     foto_avatar TEXT,
     id_usuario  INT NOT NULL UNIQUE, -- CORRIGIDO: 1 usuário só pode virar 1 administrador
+    id_administrador_criador INT NULL, -- quem cadastrou este admin (NULL nos admins iniciais)
     
     CONSTRAINT FK_USUARIO_ADMINISTRADOR
     FOREIGN KEY (id_usuario)
     REFERENCES tbl_usuario (id)
-    ON DELETE CASCADE
+    ON DELETE CASCADE,
+
+    CONSTRAINT FK_ADMINISTRADOR_CRIADOR
+    FOREIGN KEY (id_administrador_criador)
+    REFERENCES tbl_administrador (id)
+    ON DELETE SET NULL
 );
 
 # ------- PROFISSIONAL ---------
@@ -97,6 +103,12 @@ CREATE TABLE tbl_administrador_profissional (
     criado_em DATETIME NOT NULL,
 	id_profissional INT NOT NULL,
     id_administrador INT,
+    id_admin_responsavel INT NULL, -- divisão fixa: admin que deve decidir a solicitação pendente
+
+    CONSTRAINT FK_ADMINISTRADOR_RESPONSAVEL_APROVACAO
+    FOREIGN KEY (id_admin_responsavel)
+    REFERENCES tbl_administrador (id)
+    ON DELETE SET NULL,
 
     CONSTRAINT FK_PROFISSIONAL_ADMINISTRADORPROFISSIONAL
     FOREIGN KEY (id_profissional)
@@ -303,6 +315,9 @@ CREATE TABLE tbl_notificacao (
     ON DELETE CASCADE
 );
 
+-- índice usado para não enviar o mesmo lembrete duas vezes (busca por referencia_evento)
+CREATE INDEX IDX_NOTIFICACAO_REFERENCIA ON tbl_notificacao (referencia_evento);
+
 -- cria tbl_preferencia_notificacao
 CREATE TABLE tbl_preferencia_notificacao (
 	id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
@@ -436,6 +451,9 @@ CREATE TABLE tbl_registro_humor (
     data_criacao DATETIME NOT NULL,
     id_paciente INT NOT NULL,
 
+    -- RN10: um registro de humor por paciente por dia
+    CONSTRAINT UQ_REGISTROHUMOR_PACIENTE_DATA UNIQUE (id_paciente, data),
+
     CONSTRAINT FK_PACIENTE_REGISTROHUMOR
     FOREIGN KEY (id_paciente)
     REFERENCES tbl_paciente (id)
@@ -477,6 +495,10 @@ CREATE TABLE tbl_registro_dose (
     status VARCHAR(25) NOT NULL,
     data_hora_confirmacao DATETIME,
     id_horario_tratamento INT NOT NULL,
+
+    -- uma única dose por horário em cada data/hora prevista (evita duplicidade de confirmação e de lembrete)
+    CONSTRAINT UQ_REGISTRODOSE_HORARIO_DATA
+    UNIQUE (id_horario_tratamento, data_hora_prevista),
 
     CONSTRAINT FK_HORARIOTRATAMENTO_REGISTRODOSE
     FOREIGN KEY (id_horario_tratamento)

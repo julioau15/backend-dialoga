@@ -26,6 +26,14 @@ const selectSolicitacoesByPerfil = async (idPerfil, nivel) => {
                    WHERE recente.id_profissional = s.id_profissional
                      AND recente.id_paciente = s.id_paciente
                      AND recente.id > s.id
+               )
+               -- só solicitações do vínculo atual (as de vínculos anteriores não valem mais)
+               AND EXISTS (
+                   SELECT 1 FROM tbl_vinculo v
+                   WHERE v.id_profissional = s.id_profissional
+                     AND v.id_paciente = s.id_paciente
+                     AND v.status IN ('1', 'ativo')
+                     AND (v.data_aceite IS NULL OR s.data_solicitacao >= v.data_aceite)
                )`
     const params = []
     if (nivel == 1) {
@@ -58,20 +66,25 @@ const bloquearProfissional = async (conexao, idProfissional) => {
     await conexao.raw(sql, [idProfissional])
 }
 
-const selectUltimaSolicitacao = async (conexao, idProfissional, idPaciente) => {
+// última solicitação do par; com "desde" (data de aceite do vínculo atual), só as feitas a partir dela:
+// uma autorização de um vínculo anterior não vale para um vínculo novo (o profissional pede de novo)
+const selectUltimaSolicitacao = async (conexao, idProfissional, idPaciente, desde = null) => {
     let sql = `SELECT * FROM tbl_solicitacao_acesso
                WHERE id_profissional = ? AND id_paciente = ?
+                 AND (? IS NULL OR data_solicitacao >= ?)
                ORDER BY id DESC LIMIT 1`
-    let response = await conexao.raw(sql, [idProfissional, idPaciente])
+    let response = await conexao.raw(sql, [idProfissional, idPaciente, desde, desde])
     return response[0][0]
 }
 
+// vínculo ativo do par: { id, data_aceite } ou null (data_aceite marca o início do acompanhamento atual)
 const selectVinculoAtivo = async (conexao, idProfissional, idPaciente) => {
-    let sql = `SELECT id FROM tbl_vinculo
+    let sql = `SELECT id, data_aceite FROM tbl_vinculo
                WHERE id_profissional = ? AND id_paciente = ?
-                 AND status IN ('1', 'ativo') LIMIT 1`
+                 AND status IN ('1', 'ativo')
+               ORDER BY id DESC LIMIT 1`
     let response = await conexao.raw(sql, [idProfissional, idPaciente])
-    return response[0].length > 0
+    return response[0][0] ?? null
 }
 
 const selectCategoriasByIdSolicitacao = async (idSolicitacao, conexao = knexConex) => {
@@ -110,7 +123,8 @@ const insertSolicitacaoAcesso = async (solicitacaoAcesso) => {
             let vinculoAtivo = await selectVinculoAtivo(conexao, idProfissional, idPaciente)
             if (!vinculoAtivo) return { semVinculo: true }
 
-            let solicitacao = await selectUltimaSolicitacao(conexao, idProfissional, idPaciente)
+            // só conta pedido feito no vínculo atual
+            let solicitacao = await selectUltimaSolicitacao(conexao, idProfissional, idPaciente, vinculoAtivo.data_aceite)
             if (solicitacao && (solicitacao.status == 'pendente' || solicitacao.status == 'aprovada')) {
                 return { solicitacao: solicitacao, criada: false }
             }
@@ -188,7 +202,8 @@ const selectIndicadoresCompartilhados = async (idProfissional, idPaciente) => {
             let vinculoAtivo = await selectVinculoAtivo(conexao, idProfissional, idPaciente)
             if (!vinculoAtivo) return { semVinculo: true }
 
-            let solicitacao = await selectUltimaSolicitacao(conexao, idProfissional, idPaciente)
+            // acesso só com autorização dada no vínculo atual (paciente adicionado de novo = pedir de novo)
+            let solicitacao = await selectUltimaSolicitacao(conexao, idProfissional, idPaciente, vinculoAtivo.data_aceite)
             if (!solicitacao || solicitacao.status != 'aprovada') {
                 return { status: solicitacao ? solicitacao.status : 'sem_acesso', categorias: [], registros: [] }
             }
