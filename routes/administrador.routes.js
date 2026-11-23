@@ -57,8 +57,9 @@ router.post('/',upload.single('foto_avatar'), async (req,res) => {
     const administrador = await formatarJson(dados, 'inserir')
 
     let contentType = req.headers['content-type']
+    let token = req.headers['x-access-token']
 
-    let result = await inserirNovaAdministrador(administrador,foto_avatar,contentType)
+    let result = await inserirNovaAdministrador(administrador,foto_avatar,contentType,token)
     res.status(result.status_code).json(result)
 })
 

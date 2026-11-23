@@ -257,6 +257,25 @@ const marcarTodasNotificacoesComoLidasByIdProfissional = async (idProfissional) 
 
 // verifica se o paciente já recebeu a notificação de um evento (ex.: 'dose:15'),
 // usado pelo lembrete de doses para não notificar a mesma dose duas vezes
+// notificação com a mesma referência para o mesmo destinatário (paciente OU profissional)
+const selectNotificacaoByReferenciaDestino = async (referenciaEvento, destino) => {
+    let campo = destino.id_profissional ? 'id_profissional' : 'id_paciente'
+    let id = destino.id_profissional || destino.id_paciente
+
+    let sql = `SELECT id
+               FROM tbl_notificacao
+               WHERE referencia_evento = ? AND ${campo} = ?
+               LIMIT 1`
+    try {
+        let response = await knexConex.raw(sql, [referenciaEvento, id])
+
+        if(response) return response[0]
+
+    } catch (error) { console.log(error) }
+
+    return false
+}
+
 const selectNotificacaoByReferenciaEvento = async (referenciaEvento, idPaciente) => {
     let sql = `SELECT id
                FROM tbl_notificacao
@@ -283,5 +302,6 @@ module.exports = {
     marcarNotificacaoComoLida,
     marcarTodasNotificacoesComoLidasByIdPaciente,
     marcarTodasNotificacoesComoLidasByIdProfissional,
-    selectNotificacaoByReferenciaEvento
+    selectNotificacaoByReferenciaEvento,
+    selectNotificacaoByReferenciaDestino
 }

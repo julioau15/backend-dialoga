@@ -2,10 +2,12 @@
  * Objetivo: Regras de agenda (sem banco): data de hoje no fuso do Brasil, horários que o
  *           profissional atende e quais deles ainda estão livres.
  * Observação: a tabela de disponibilidade não tem duração da consulta, então cada consulta
- *             ocupa um horário de DURACAO_MINUTOS (1 hora). Para mudar, altere só essa constante.
+ *             ocupa DURACAO_MINUTOS (1 hora). Os horários oferecidos começam a cada
+ *             PASSO_MINUTOS (30 min): com uma consulta às 08:00, 08:30 fica bloqueado.
  * *********************************************************************************/
 
 const DURACAO_MINUTOS = 60
+const PASSO_MINUTOS = 30
 const FUSO_HORARIO = 'America/Sao_Paulo'
 
 // Data e hora de agora no fuso de São Paulo: { data: 'YYYY-MM-DD', hora: 'HH:mm' }
@@ -109,7 +111,7 @@ const horariosDoDia = (disponibilidades, iso) => {
         }
 
         const limite = horaParaMinutos(fim)
-        for (let min = horaParaMinutos(inicio); min + DURACAO_MINUTOS <= limite; min += DURACAO_MINUTOS) {
+        for (let min = horaParaMinutos(inicio); min + DURACAO_MINUTOS <= limite; min += PASSO_MINUTOS) {
             horarios.add(minutosParaHora(min))
         }
     }
@@ -157,6 +159,7 @@ const diasComHorariosLivres = (disponibilidades, ocupados, de, ate, agora = agor
 
 module.exports = {
     DURACAO_MINUTOS,
+    PASSO_MINUTOS,
     FUSO_HORARIO,
     agoraNoFuso,
     paraIsoData,

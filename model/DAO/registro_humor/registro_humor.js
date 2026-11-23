@@ -12,12 +12,14 @@ const knexConex = knex(knexConfig.development)
 
 // insert de registroHumor
 const insertRegistroHumor = async (registroHumor) => {
+    // data: dia do registro no fuso de São Paulo (vem do controller); sem ela, usa a data do banco
     let sql = `INSERT INTO tbl_registro_humor (data, sentimento, energia, humor, padrao_pensamentos, horas_sono, relato, data_criacao, id_paciente)
-               VALUES (NOW(), ?, ?, ?, ?, ?, ?, now(), ?)`
+               VALUES (COALESCE(?, CURDATE()), ?, ?, ?, ?, ?, ?, now(), ?)`
 
     try {
         let response = await knexConex.raw(sql, [
-            registroHumor.sentimento, 
+            registroHumor.data || null,
+            registroHumor.sentimento,
             registroHumor.energia, 
             registroHumor.humor, 
             registroHumor.padrao_pensamentos, 
@@ -26,9 +28,13 @@ const insertRegistroHumor = async (registroHumor) => {
             registroHumor.id_paciente
         ])
 
-        if(response) return response[0].insertId 
+        if(response) return response[0].insertId
 
-    } catch (error) { console.log(error) }
+    } catch (error) {
+        console.log(error)
+        // RN10: o índice UNIQUE (id_paciente, data) barra um segundo registro no mesmo dia
+        if(error.code === 'ER_DUP_ENTRY') return { duplicado: true }
+    }
 
     return false
 }
