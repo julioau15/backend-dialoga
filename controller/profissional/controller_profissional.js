@@ -417,8 +417,27 @@ const inserirNovoVinculo = async (token, idPaciente) => {
 
         let idProfissional = resultToken.id
 
-        let resultBuscarIdPaciente = await usuarioController.buscarUsuario(idPaciente)
-        if(!resultBuscarIdPaciente.status) return resultBuscarIdPaciente // 400 e 404
+        // o id da rota é o id do PACIENTE (tbl_paciente), não o id do usuário
+        if(!Number.isSafeInteger(Number(idPaciente)) || Number(idPaciente) <= 0){
+            message.ERROR_BAD_REQUEST.field = '[ID_PACIENTE] INVÁLIDO'
+            return message.ERROR_BAD_REQUEST // 400
+        }
+        idPaciente = Number(idPaciente)
+
+        const pacienteDAO = require('../../model/DAO/paciente/paciente.js')
+        const vinculoDAO = require('../../model/DAO/vinculo/vinculo.js')
+
+        let resultPaciente = await pacienteDAO.selectByIdPaciente(idPaciente)
+        if(!resultPaciente) return message.ERROR_INTERNAL_SERVER_MODEL // 500
+        if(resultPaciente.length < 1) return message.ERROR_NOT_FOUND // 404
+
+        // não cria um segundo pedido se já existe vínculo pendente ou ativo com este paciente
+        let vinculoExistente = await vinculoDAO.selectVinculoExato(idPaciente, idProfissional)
+        if(vinculoExistente === false) return message.ERROR_INTERNAL_SERVER_MODEL // 500
+        if(vinculoExistente.length > 0){
+            message.ERROR_CONFLICT.message = 'Este paciente já está na sua lista ou já tem um pedido de vínculo pendente.'
+            return message.ERROR_CONFLICT // 409
+        }
 
         let vinculo = {
             id_profissional: idProfissional,
@@ -427,7 +446,8 @@ const inserirNovoVinculo = async (token, idPaciente) => {
 
         let resultInsertVinculo = await vinculoController.inserirNovoVinculoByProfissional(vinculo)
 
-        if(!resultInsertVinculo) return message.ERROR_INTERNAL_SERVER_MODEL // 500
+        // o controller devolve uma mensagem (objeto) também no erro: confere o status
+        if(!resultInsertVinculo || !resultInsertVinculo.status) return resultInsertVinculo || message.ERROR_INTERNAL_SERVER_MODEL // 500
 
         return await montarMensagem(message, message.SUCESS_CREATED_ITEM, vinculo)
 

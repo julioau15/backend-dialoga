@@ -7,6 +7,7 @@
 
 
 const express = require('express')
+const { somenteAdmin } = require('../controller/module/somenteAdmin.js')
 const router = express.Router()
 const bodyParser = require('body-parser')
 const bodyParserJSON = bodyParser.json()
@@ -47,13 +48,13 @@ router.post('/',bodyParserJSON, async (req,res) => {
 })
 
 // endpoint para retornar todas tratamentos
-router.get('/', async (req,res) => {
+router.get('/', somenteAdmin, async (req,res) => {
     let result = await listarTratamento()
     res.status(result.status_code).json(result)
 })
 
 // endpoint para buscar um tratamento pelo id
-router.get('/:id', async (req,res) => {
+router.get('/:id', somenteAdmin, async (req,res) => {
     let id = req.params.id
     let result = await buscarTratamento(id)
     res.status(result.status_code).json(result)
