@@ -7,6 +7,7 @@
 
 
 const express = require('express')
+const { somenteAdmin } = require('../controller/module/somenteAdmin.js')
 const router = express.Router()
 const bodyParser = require('body-parser')
 const bodyParserJSON = bodyParser.json()
@@ -151,7 +152,7 @@ router.get('/busca', async (req,res) => {
 })
 
 // endpoint para retornar todas pacientes
-router.get('/', async (req,res) => {
+router.get('/', somenteAdmin, async (req,res) => {
     let result = await listarPaciente()
     res.status(result.status_code).json(result)
 })

@@ -84,7 +84,7 @@ const selectBuscaProfissionaisAprovados = async (termo) => {
                JOIN tbl_usuario u ON u.id = p.id_usuario
                WHERE (p.nome_completo LIKE ? OR u.email LIKE ?)
                  AND EXISTS (SELECT 1 FROM tbl_administrador_profissional ap
-                              WHERE ap.id_profissional = p.id AND (ap.status_aprovacao = 1 OR ap.status_aprovacao = 0))
+                              WHERE ap.id_profissional = p.id AND ap.status_aprovacao = 1) -- 1 = aprovado (0 = reprovado, NULL = em análise)
                ORDER BY p.nome_completo
                LIMIT 8`
     try {

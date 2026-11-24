@@ -138,6 +138,51 @@ const buscarAnotacao = async (id) => {
     return message.ERROR_INTERNAL_SERVER_CONTROLLER // 500
 }
 
+// lista só as anotações escritas pelo profissional do token (RNF087: anotação é privada)
+const listarAnotacaoDoToken = async (token) => {
+    let message = JSON.parse(JSON.stringify(config_message))
+
+    try {
+        let decodedToken = await decodeJWT(token)
+        if(!decodedToken.status) return message.ERROR_INVALID_TOKEN // 401
+
+        let idProfissional = await obterIdProfissionalDoToken(decodedToken.decode.id)
+        if(!idProfissional) return message.ERROR_FORBIDDEN // 403 (paciente/admin não leem anotações)
+
+        let result = await anotacaoDAO.selectAllAnotacao()
+        if(!result) return message.ERROR_INTERNAL_SERVER_MODEL // 500
+
+        let minhas = result.filter((a) => Number(a.id_profissional) === Number(idProfissional))
+        if(minhas.length <= 0) return message.ERROR_NOT_FOUND // 404
+
+        let resposta = await montarMensagem(message, message.SUCESS_RESPONSE, minhas)
+        message.DEFAULT_MESSAGE.response.count = minhas.length
+        return resposta // 200
+
+    } catch (error) {console.log(error)}
+    return message.ERROR_INTERNAL_SERVER_CONTROLLER // 500
+}
+
+// busca uma anotação pelo id, só se ela for do profissional do token
+const buscarAnotacaoDoToken = async (id, token) => {
+    let message = JSON.parse(JSON.stringify(config_message))
+
+    try {
+        let decodedToken = await decodeJWT(token)
+        if(!decodedToken.status) return message.ERROR_INVALID_TOKEN // 401
+
+        let resultBuscarId = await buscarAnotacao(id)
+        if(!resultBuscarId.status) return resultBuscarId // 400 e 404
+
+        let naoEhDono = await exigirDonoDaAnotacao(resultBuscarId.response.anotacao[0], decodedToken.decode)
+        if(naoEhDono) return naoEhDono // 403
+
+        return resultBuscarId // 200
+
+    } catch (error) {console.log(error)}
+    return message.ERROR_INTERNAL_SERVER_CONTROLLER // 500
+}
+
 // excluir anotacao pelo id
 const excluirAnotacao = async (id, token) => {
     let message = JSON.parse(JSON.stringify(config_message))
@@ -254,5 +299,7 @@ module.exports = {
     listarAnotacao,
     buscarAnotacao,
     excluirAnotacao,
-    listarAnotacaoByIdPaciente
+    listarAnotacaoByIdPaciente,
+    listarAnotacaoDoToken,
+    buscarAnotacaoDoToken
 }

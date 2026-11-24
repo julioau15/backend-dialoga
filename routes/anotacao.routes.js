@@ -14,8 +14,8 @@ const bodyParserJSON = bodyParser.json()
 const {
     inserirNovaAnotacao,
     atualizarAnotacao,
-    listarAnotacao,
-    buscarAnotacao,
+    listarAnotacaoDoToken,
+    buscarAnotacaoDoToken,
     excluirAnotacao
 } = require('../controller/anotacao/controller_anotacao.js')
 
@@ -23,24 +23,27 @@ const {
 
 // endpoint para inserir anotacao
 router.post('/',bodyParserJSON, async (req,res) => {
-    // recebe o conteudo dentro do body da requisição
+    // recebe o conteudo dentro do body da requisição (precisa de id_paciente)
+    let token = req.headers['x-access-token']
     let dados = req.body
     let contentType = req.headers['content-type']
 
-    let result = await inserirNovaAnotacao(dados,contentType)
+    let result = await inserirNovaAnotacao(dados, dados?.id_paciente, token, contentType)
     res.status(result.status_code).json(result)
 })
 
-// endpoint para retornar todas anotacaos
+// endpoint para retornar as anotações do profissional do token (anotação é privada - RNF087)
 router.get('/', async (req,res) => {
-    let result = await listarAnotacao()
+    let token = req.headers['x-access-token']
+    let result = await listarAnotacaoDoToken(token)
     res.status(result.status_code).json(result)
 })
 
 // endpoint para buscar um anotacao pelo id
 router.get('/:id', async (req,res) => {
+    let token = req.headers['x-access-token']
     let id = req.params.id
-    let result = await buscarAnotacao(id)
+    let result = await buscarAnotacaoDoToken(id, token)
     res.status(result.status_code).json(result)
 })
 
