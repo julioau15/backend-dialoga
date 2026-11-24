@@ -13,6 +13,9 @@ const tarefaDestinatarioController = require('../tarefa_destinatario/controller_
 const { decodeJWT } = require('../../middleware/middlewareJWT.js')
 const {uploadFiles} = require('../upload/controller_upload_azure.js')
 
+// resposta quando o anexo não sobe para a Azure (ex.: token SAS inválido ou vencido no .env)
+const ERROR_UPLOAD_ANEXO = { status: false, status_code: 502, message: 'Não foi possível enviar o anexo. Tente novamente.' }
+
 // inserir nova tarefa
 const inserirNovaTarefa = async (tarefa, anexo_arquivo, contentType) => {
     let message = JSON.parse(JSON.stringify(config_message))
@@ -23,10 +26,11 @@ const inserirNovaTarefa = async (tarefa, anexo_arquivo, contentType) => {
         // Realiza o upload da imagem da tarefa
         if (anexo_arquivo) {
             let urlArquivo = await uploadFiles(anexo_arquivo)
-            
-            if(urlArquivo){
-                tarefa.anexo_arquivo = urlArquivo
-            }
+
+            // o arquivo foi enviado mas não chegou ao storage: não grava a tarefa sem o anexo
+            if(!urlArquivo) return ERROR_UPLOAD_ANEXO // 502
+
+            tarefa.anexo_arquivo = urlArquivo
         }
 
         let result = await tarefaDAO.insertTarefa(tarefa)
@@ -54,10 +58,11 @@ const atualizarTarefa = async (tarefa, id, anexo_arquivo, contentType) => {
         // Realiza o upload da imagem da tarefa
         if (anexo_arquivo) {
             let urlArquivo = await uploadFiles(anexo_arquivo)
-            
-            if(urlArquivo){
-                tarefa.anexo_arquivo = urlArquivo
-            }
+
+            // o arquivo foi enviado mas não chegou ao storage: não grava a tarefa sem o anexo
+            if(!urlArquivo) return ERROR_UPLOAD_ANEXO // 502
+
+            tarefa.anexo_arquivo = urlArquivo
         }
 
         tarefa.id = Number(id)
@@ -231,10 +236,11 @@ const inserirTarefaByToken = async (tarefa, anexo_arquivo, token, contentType) =
         // Realiza o upload da imagem da tarefa
         if (anexo_arquivo) {
             let urlArquivo = await uploadFiles(anexo_arquivo)
-            
-            if(urlArquivo){
-                tarefa.anexo_arquivo = urlArquivo
-            }
+
+            // o arquivo foi enviado mas não chegou ao storage: não grava a tarefa sem o anexo
+            if(!urlArquivo) return ERROR_UPLOAD_ANEXO // 502
+
+            tarefa.anexo_arquivo = urlArquivo
         }
 
         if(nivel == 2) {
